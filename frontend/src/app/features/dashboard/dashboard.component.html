@@ -1,0 +1,351 @@
+<div class="space-y-8">
+  <!-- Store Header Banner -->
+  <div class="bg-gradient-to-r from-white via-sky-50/40 to-white border border-slate-200 rounded-2xl p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl">
+    <div class="space-y-1.5">
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 border border-emerald-500/30 flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          ระบบเปิดทำการปกติ
+        </span>
+        <span class="text-xs text-slate-500">ระบบบริหารร้านกล้องและเลนส์มือสอง</span>
+      </div>
+      <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight">
+        {{ authService.currentStore()?.storeName ?? 'MUE2MUEDEE' }}
+      </h1>
+      <p class="text-xs text-slate-500">
+        ยินดีต้อนรับ, <span class="text-slate-700 font-medium">{{ authService.currentUser()?.fullName }}</span> 
+        (สิทธิ์ระดับ 
+        <span class="font-semibold"
+              [ngClass]="{
+                'text-amber-600': authService.currentRole() === 'Owner',
+                'text-blue-600': authService.currentRole() === 'Admin',
+                'text-slate-600': authService.currentRole() === 'Staff'
+              }">
+          {{ authService.currentRole() }}
+        </span>)
+      </p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <button (click)="refresh()" [disabled]="dashboardService.loading()" title="รีเฟรชข้อมูล" 
+              class="p-2.5 rounded-xl bg-slate-100/80 hover:bg-slate-200 text-slate-600 border border-slate-300 transition-colors cursor-pointer disabled:opacity-50">
+        <span class="material-icons-outlined text-base" [class.animate-spin]="dashboardService.loading()">refresh</span>
+      </button>
+
+      <a routerLink="/purchase/new" class="px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold shadow-lg shadow-sky-600/30 flex items-center gap-2 transition-all cursor-pointer">
+        <span class="material-icons-outlined text-base">add_shopping_cart</span>
+        <span>เปิดบิลรับซื้อ (PO)</span>
+      </a>
+
+      <a routerLink="/sales/pos" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-lg shadow-emerald-600/30 flex items-center gap-2 transition-all cursor-pointer">
+        <span class="material-icons-outlined text-base">point_of_sale</span>
+        <span>ขายหน้าร้าน (POS)</span>
+      </a>
+
+      @if (authService.isAdmin()) {
+        <a routerLink="/reports" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold border border-slate-300 flex items-center gap-2 transition-all cursor-pointer">
+          <span class="material-icons-outlined text-base">trending_up</span>
+          <span>รายงาน & สถิติ</span>
+        </a>
+      }
+    </div>
+  </div>
+
+  <!-- Operational KPI Summary Cards -->
+  <div>
+    <div class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3 flex items-center justify-between">
+      <span>ภาพรวมสถานะสินค้าและยอดขายประจำวัน</span>
+      @if (dashboardService.loading()) {
+        <span class="text-[11px] text-sky-600 flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-sky-400 animate-ping"></span>
+          กำลังอัปเดตข้อมูลสถิติ...
+        </span>
+      }
+    </div>
+
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Card 1: สินค้าพร้อมขาย -->
+      <a routerLink="/inventory" class="bg-white/90 hover:bg-sky-50 border border-slate-200 hover:border-emerald-500/40 rounded-2xl p-5 transition-all group block shadow-md">
+        <div class="flex items-center justify-between text-slate-500 mb-2">
+          <span class="text-xs font-medium text-slate-600">สินค้าพร้อมขาย</span>
+          <span class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <span class="material-icons-outlined text-lg">check_circle</span>
+          </span>
+        </div>
+        <div class="text-2xl font-black text-slate-800 tracking-tight">
+          {{ dashboardService.metrics()?.availableItems ?? '--' }}
+          <span class="text-xs font-normal text-slate-500">ชิ้น</span>
+        </div>
+        <div class="text-[11px] text-emerald-600 mt-2 flex items-center gap-1">
+          <span class="material-icons-outlined text-xs">inventory</span>
+          <span>ในคลังสินค้าทั้งหมด {{ dashboardService.metrics()?.totalActiveStockCount ?? 0 }} ชิ้น</span>
+        </div>
+      </a>
+
+      <!-- Card 2: รอดำเนินการตรวจสภาพ -->
+      <a routerLink="/purchase" class="bg-white/90 hover:bg-sky-50 border border-slate-200 hover:border-amber-500/40 rounded-2xl p-5 transition-all group block shadow-md">
+        <div class="flex items-center justify-between text-slate-500 mb-2">
+          <span class="text-xs font-medium text-slate-600">รอดำเนินการตรวจสภาพ</span>
+          <span class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <span class="material-icons-outlined text-lg">pending_actions</span>
+          </span>
+        </div>
+        <div class="text-2xl font-black text-amber-600 tracking-tight">
+          {{ dashboardService.metrics()?.pendingInspection ?? '--' }}
+          <span class="text-xs font-normal text-slate-500">ชิ้น</span>
+        </div>
+        <div class="text-[11px] text-amber-600/90 mt-2 flex items-center gap-1">
+          <span class="material-icons-outlined text-xs">arrow_forward</span>
+          <span>รอตรวจรับเพื่อกำหนดราคา</span>
+        </div>
+      </a>
+
+      <!-- Card 3: สินค้าเริ่มค้างสต็อก (> 60 วัน) -->
+      <a routerLink="/reports" class="bg-white/90 hover:bg-sky-50 border border-slate-200 hover:border-rose-500/40 rounded-2xl p-5 transition-all group block shadow-md">
+        <div class="flex items-center justify-between text-slate-500 mb-2">
+          <span class="text-xs font-medium text-slate-600">สินค้าค้างเกิน 60 วัน</span>
+          <span class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <span class="material-icons-outlined text-lg">schedule</span>
+          </span>
+        </div>
+        <div class="text-2xl font-black text-rose-600 tracking-tight">
+          {{ dashboardService.metrics()?.stockAgingOver60DaysCount ?? '--' }}
+          <span class="text-xs font-normal text-slate-500">ชิ้น</span>
+        </div>
+        <div class="text-[11px] text-slate-500 mt-2 flex items-center gap-1">
+          <span>ค้างนาน >90 วัน: </span>
+          <span class="text-rose-700 font-semibold">{{ dashboardService.metrics()?.stockAgingOver90DaysCount ?? 0 }} ชิ้น</span>
+        </div>
+      </a>
+
+      <!-- Card 4: ยอดขายวันนี้ -->
+      <a routerLink="/sales" class="bg-white/90 hover:bg-sky-50 border border-slate-200 hover:border-sky-500/40 rounded-2xl p-5 transition-all group block shadow-md">
+        <div class="flex items-center justify-between text-slate-500 mb-2">
+          <span class="text-xs font-medium text-slate-600">ยอดขายวันนี้</span>
+          <span class="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <span class="material-icons-outlined text-lg">payments</span>
+          </span>
+        </div>
+        <div class="text-2xl font-black text-slate-800 tracking-tight">
+          ฿{{ (dashboardService.metrics()?.salesTodayAmount ?? 0) | number:'1.0-0' }}
+        </div>
+        <div class="text-[11px] text-sky-600 mt-2 flex items-center gap-1">
+          <span class="material-icons-outlined text-xs">receipt</span>
+          <span>ขายได้ {{ dashboardService.metrics()?.salesTodayCount ?? 0 }} บิลในวันนี้</span>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Financial Intelligence & Executive Performance Panel -->
+  @if (dashboardService.metrics()?.isFinancialVisible) {
+    <div class="bg-white border border-sky-500/25 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+      <div class="absolute -right-12 -top-12 w-48 h-48 bg-sky-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <div class="flex items-center gap-2.5">
+          <span class="w-8 h-8 rounded-lg bg-sky-500/20 text-sky-600 flex items-center justify-center">
+            <span class="material-icons-outlined text-base">analytics</span>
+          </span>
+          <div>
+            <h2 class="text-base font-bold text-slate-800 tracking-tight">การเงินและผลกำไรจริง (Executive Intelligence)</h2>
+            <p class="text-xs text-slate-500">คำนวณจากต้นทุนจริง (Actual Cost) และยอดขายสุทธิระดับร้านค้า</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="text-[11px] px-3 py-1 rounded-full bg-sky-500/10 text-sky-700 border border-sky-500/20 font-mono">
+            สิทธิ์: {{ authService.currentRole() }}
+          </span>
+          <a routerLink="/reports" class="text-xs text-sky-600 hover:text-sky-700 font-semibold flex items-center gap-1 transition-colors">
+            <span>ดูรายงานฉบับเต็ม</span>
+            <span class="material-icons-outlined text-sm">arrow_forward</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Metric 1: มูลค่าคลังต้นทุนจริง -->
+        <div class="bg-sky-50/70 border border-slate-200 rounded-xl p-4.5">
+          <div class="text-xs text-slate-500 font-medium">มูลค่าคลังสินค้า (Total Cost)</div>
+          <div class="text-2xl font-black text-slate-800 mt-1.5">
+            ฿{{ (dashboardService.metrics()?.inventoryCostValue ?? 0) | number:'1.0-0' }}
+          </div>
+          <div class="text-[11px] text-slate-500 mt-1">
+            มูลค่าขายประมาณการ: ฿{{ (dashboardService.metrics()?.inventorySalesValue ?? 0) | number:'1.0-0' }}
+          </div>
+        </div>
+
+        <!-- Metric 2: ยอดขายสุทธิเดือนนี้ -->
+        <div class="bg-sky-50/70 border border-slate-200 rounded-xl p-4.5">
+          <div class="text-xs text-slate-500 font-medium">ยอดขายสุทธิเดือนนี้</div>
+          <div class="text-2xl font-black text-sky-600 mt-1.5">
+            ฿{{ (dashboardService.metrics()?.salesThisMonthAmount ?? 0) | number:'1.0-0' }}
+          </div>
+          <div class="text-[11px] text-slate-500 mt-1">
+            ขายได้ {{ dashboardService.metrics()?.salesThisMonthCount ?? 0 }} บิล ({{ dashboardService.metrics()?.soldThisMonthCount ?? 0 }} ชิ้น)
+          </div>
+        </div>
+
+        <!-- Metric 3: กำไรขั้นต้นเดือนนี้ -->
+        <div class="bg-sky-50/70 border border-slate-200 rounded-xl p-4.5">
+          <div class="text-xs text-slate-500 font-medium">กำไรขั้นต้นเดือนนี้ (Gross Profit)</div>
+          <div class="text-2xl font-black text-emerald-600 mt-1.5">
+            ฿{{ (dashboardService.metrics()?.grossProfitThisMonth ?? 0) | number:'1.0-0' }}
+          </div>
+          <div class="text-[11px] text-emerald-600/90 mt-1 font-semibold">
+            อัตรากำไรเฉลี่ย ~{{ dashboardService.metrics()?.averageProfitMarginThisMonth ?? 0 }}%
+          </div>
+        </div>
+
+        <!-- Metric 4: เงินจมในสินค้า > 90 วัน -->
+        <div class="bg-sky-50/70 border border-slate-200 rounded-xl p-4.5">
+          <div class="text-xs text-slate-500 font-medium">เงินจมในสต็อก > 90 วัน</div>
+          <div class="text-2xl font-black text-rose-600 mt-1.5">
+            ฿{{ (dashboardService.metrics()?.deadCapitalCost ?? 0) | number:'1.0-0' }}
+          </div>
+          <div class="text-[11px] text-rose-600/80 mt-1">
+            สินค้าค้างนาน {{ dashboardService.metrics()?.stockAgingOver90DaysCount ?? 0 }} ชิ้น (ควรเร่งระบาย)
+          </div>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <!-- Notice for Staff Role -->
+    <div class="bg-white/60 border border-slate-200 rounded-2xl p-5 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <span class="w-9 h-9 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center shrink-0">
+          <span class="material-icons-outlined text-lg">visibility_off</span>
+        </span>
+        <div>
+          <div class="text-xs font-semibold text-slate-600">การเข้าถึงข้อมูลต้นทุนและกำไรจำกัด</div>
+          <div class="text-[11px] text-slate-500">ระบบซ่อนข้อมูลต้นทุนจริงและมาร์จิ้นสำหรับผู้ใช้งานระดับ Staff</div>
+        </div>
+      </div>
+      <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-300">
+        Role: Staff
+      </span>
+    </div>
+  }
+
+  <!-- Split Operational Activity: Recent Sales & Recent Purchases -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Left Column: Recent Sales -->
+    <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-md flex flex-col">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-200 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="material-icons-outlined text-emerald-600 text-lg">receipt_long</span>
+          <h3 class="text-sm font-bold text-slate-800">รายการขายล่าสุด (Recent Sales)</h3>
+        </div>
+        <a routerLink="/sales" class="text-xs text-sky-600 hover:text-sky-700 font-semibold flex items-center gap-1 transition-colors">
+          <span>ดูทั้งหมด</span>
+          <span class="material-icons-outlined text-sm">arrow_forward</span>
+        </a>
+      </div>
+
+      <div class="flex-1 space-y-3">
+        @if (dashboardService.metrics()?.recentSales?.length) {
+          @for (sale of dashboardService.metrics()!.recentSales; track sale.orderId) {
+            <a [routerLink]="['/sales', sale.orderId]" class="p-3.5 rounded-xl bg-sky-50/60 hover:bg-slate-100/60 border border-slate-200/80 hover:border-slate-300 transition-all flex items-center justify-between gap-4 block group">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2">
+                  <span class="font-mono font-bold text-xs text-sky-600 group-hover:text-sky-700">{{ sale.saleNumber }}</span>
+                  <app-status-badge [status]="sale.status"></app-status-badge>
+                </div>
+                <div class="text-xs text-slate-600 mt-1 truncate">
+                  {{ sale.customerName }} • {{ sale.itemCount }} ชิ้น
+                </div>
+                <div class="text-[10px] text-slate-500 mt-0.5">
+                  {{ sale.saleDate | date:'dd/MM/yyyy HH:mm' }}
+                </div>
+              </div>
+
+              <div class="text-right shrink-0">
+                <div class="text-sm font-black text-slate-800">
+                  ฿{{ sale.netAmount | number:'1.2-2' }}
+                </div>
+                @if (dashboardService.metrics()?.isFinancialVisible && sale.grossProfit !== null && sale.grossProfit !== undefined) {
+                  <div class="text-[10px] text-emerald-600 font-medium">
+                    กำไร +฿{{ sale.grossProfit | number:'1.0-0' }}
+                  </div>
+                }
+              </div>
+            </a>
+          }
+        } @else {
+          <div class="text-center py-10 text-slate-500 text-xs">
+            ยังไม่มีรายการขายในระบบ
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Right Column: Recent Purchases -->
+    <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-md flex flex-col">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-200 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="material-icons-outlined text-amber-600 text-lg">shopping_bag</span>
+          <h3 class="text-sm font-bold text-slate-800">บิลรับซื้อล่าสุด (Recent Purchases)</h3>
+        </div>
+        <a routerLink="/purchase" class="text-xs text-sky-600 hover:text-sky-700 font-semibold flex items-center gap-1 transition-colors">
+          <span>ดูทั้งหมด</span>
+          <span class="material-icons-outlined text-sm">arrow_forward</span>
+        </a>
+      </div>
+
+      <div class="flex-1 space-y-3">
+        @if (dashboardService.metrics()?.recentPurchases?.length) {
+          @for (po of dashboardService.metrics()!.recentPurchases; track po.purchaseOrderId) {
+            <a [routerLink]="['/purchase', po.purchaseOrderId]" class="p-3.5 rounded-xl bg-sky-50/60 hover:bg-slate-100/60 border border-slate-200/80 hover:border-slate-300 transition-all flex items-center justify-between gap-4 block group">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2">
+                  <span class="font-mono font-bold text-xs text-amber-600 group-hover:text-amber-700">{{ po.poNumber }}</span>
+                  <app-status-badge [status]="po.status"></app-status-badge>
+                </div>
+                <div class="text-xs text-slate-600 mt-1 truncate">
+                  ผู้ขาย: {{ po.customerName }} • {{ po.itemCount }} ชิ้น
+                </div>
+                <div class="text-[10px] text-slate-500 mt-0.5">
+                  {{ po.purchaseDate | date:'dd/MM/yyyy HH:mm' }}
+                </div>
+              </div>
+
+              <div class="text-right shrink-0">
+                <div class="text-sm font-black text-amber-700">
+                  ฿{{ po.totalAgreedPrice | number:'1.2-2' }}
+                </div>
+                <div class="text-[10px] text-slate-500">
+                  ราคารับซื้อจริง
+                </div>
+              </div>
+            </a>
+          }
+        } @else {
+          <div class="text-center py-10 text-slate-500 text-xs">
+            ยังไม่มีบิลรับซื้อในระบบ
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Quick Links & Actions -->
+  <div class="bg-gradient-to-r from-sky-50/30 via-white to-sky-50/30 border border-slate-200 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <span class="w-10 h-10 rounded-xl bg-sky-600/20 text-sky-600 flex items-center justify-center shrink-0">
+        <span class="material-icons-outlined text-xl">insights</span>
+      </span>
+      <div>
+        <h4 class="text-sm font-bold text-slate-800">ต้องการรายงานวิเคราะห์เชิงลึก?</h4>
+        <p class="text-xs text-slate-500">เข้าสู่หน้ารายงานเพื่อดูผลกำไรรายแบรนด์, ตารางวิเคราะห์อายุสต็อก (Stock Aging), และดาวน์โหลดไฟล์ CSV</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3 shrink-0">
+      <a routerLink="/reports" class="px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold shadow-lg shadow-sky-600/30 flex items-center gap-2 transition-all cursor-pointer">
+        <span class="material-icons-outlined text-base">bar_chart</span>
+        <span>เข้าสู่ศูนย์รายงาน (Reports Center)</span>
+      </a>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Mue2MueDee.Application/Mue2MueDee.Application.csproj" />
+    <Project Path="src/Mue2MueDee.Domain/Mue2MueDee.Domain.csproj" />
+    <Project Path="src/Mue2MueDee.Infrastructure/Mue2MueDee.Infrastructure.csproj" />
+    <Project Path="src/Mue2MueDee.Web/Mue2MueDee.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Mue2MueDee.Application.Tests/Mue2MueDee.Application.Tests.csproj" />
+    <Project Path="tests/Mue2MueDee.Domain.Tests/Mue2MueDee.Domain.Tests.csproj" />
+  </Folder>
+</Solution>

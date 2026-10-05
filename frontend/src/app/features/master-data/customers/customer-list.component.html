@@ -1,0 +1,178 @@
+<div class="customer-container">
+  <!-- Header -->
+  <div class="header-section">
+    <div>
+      <h1 class="page-title">สมุดรายชื่อลูกค้า & ผู้ขายสินค้าเข้า (Customers)</h1>
+      <p class="page-subtitle">จัดการข้อมูลลูกค้า ผู้ขายกล้องเข้า บันทึกบัตรประชาชนตามกฎหมาย และเลขบัญชีรับเงิน</p>
+    </div>
+    <div>
+      <button type="button" class="btn-primary" (click)="openCreate()">
+        <svg class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+        </svg>
+        เพิ่มรายชื่อลูกค้าใหม่
+      </button>
+    </div>
+  </div>
+
+  <!-- Feedback Alert -->
+  <div *ngIf="feedback()" class="alert-box" [class.alert-success]="feedback()?.type === 'success'" [class.alert-error]="feedback()?.type === 'error'">
+    <span>{{ feedback()?.text }}</span>
+    <button type="button" (click)="feedback.set(null)" class="alert-close">&times;</button>
+  </div>
+
+  <!-- Data Card -->
+  <div class="card">
+    <div class="search-bar">
+      <div class="search-input-box">
+        <svg class="search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input
+          type="text"
+          [formControl]="searchControl"
+          placeholder="ค้นหาชื่อ, เบอร์โทร, เลขบัตรประชาชน..."
+          class="search-input"
+        />
+      </div>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ชื่อ - สกุล</th>
+          <th>ประเภท</th>
+          <th>เบอร์โทรศัพท์</th>
+          <th>เลขบัตรประชาชน</th>
+          <th>บัญชีธนาคารโอนเงินเข้า</th>
+          <th class="text-center">ประวัติขายเข้า (ชิ้น)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of masterDataService.customers()" class="table-row">
+          <td>
+            <div class="customer-name-cell">
+              <span class="customer-name">{{ c.name }}</span>
+              <span *ngIf="c.lineId" class="contact-sub">Line: {{ c.lineId }}</span>
+            </div>
+          </td>
+          <td>
+            <span class="type-pill">{{ c.customerTypeName }}</span>
+          </td>
+          <td>
+            <span class="phone-text">{{ c.phone }}</span>
+          </td>
+          <td>
+            <span *ngIf="c.idCardNumber" class="font-mono text-gray-700">{{ c.idCardNumber }}</span>
+            <span *ngIf="!c.idCardNumber" class="text-gray-400">-</span>
+          </td>
+          <td>
+            <div *ngIf="c.bankAccountNumber" class="bank-cell">
+              <span class="bank-name">{{ c.bankName }}</span>
+              <span class="bank-acc font-mono">{{ c.bankAccountNumber }}</span>
+            </div>
+            <span *ngIf="!c.bankAccountNumber" class="text-gray-400">-</span>
+          </td>
+          <td class="text-center">
+            <span class="sourced-badge">
+              {{ c.sourcedItemCount }} รายการ
+            </span>
+          </td>
+        </tr>
+
+        <tr *ngIf="masterDataService.customers().length === 0 && !masterDataService.loading()">
+          <td colspan="6" class="empty-state">
+            <p>ไม่พบรายชื่อลูกค้า</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal: Create Customer -->
+  <div *ngIf="showCreateModal()" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">เพิ่มข้อมูลลูกค้า / ผู้ขายสินค้าเข้า</h3>
+        <button type="button" class="modal-close" (click)="closeCreate()">&times;</button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="modal-body">
+        <div class="modal-grid">
+          <div class="col-span-2">
+            <app-textbox
+              label="ชื่อ - นามสกุล *"
+              placeholder="เช่น คุณสมชาย กล้องดี"
+              formControlName="name"
+              [errorMessage]="form.controls.name.touched && form.controls.name.errors?.['required'] ? 'กรุณาระบุชื่อลูกค้า' : ''"
+            ></app-textbox>
+          </div>
+
+          <app-textbox
+            label="เบอร์โทรศัพท์ *"
+            placeholder="เช่น 0812345678"
+            formControlName="phone"
+            [errorMessage]="form.controls.phone.touched && form.controls.phone.errors?.['required'] ? 'กรุณาระบุเบอร์โทรศัพท์' : ''"
+          ></app-textbox>
+
+          <app-select
+            label="ประเภทลูกค้า *"
+            placeholder="เลือกประเภท"
+            [options]="customerTypeOptions"
+            formControlName="customerType"
+          ></app-select>
+
+          <app-textbox
+            label="เลขบัตรประชาชน (สำหรับสัญญาซื้อขาย)"
+            placeholder="เช่น 1100200300400"
+            formControlName="idCardNumber"
+          ></app-textbox>
+
+          <app-textbox
+            label="Line ID"
+            placeholder="เช่น somchai_cam"
+            formControlName="lineId"
+          ></app-textbox>
+
+          <app-textbox
+            label="ธนาคารสำหรับโอนค่าของเข้า"
+            placeholder="เช่น กสิกรไทย, ไทยพาณิชย์"
+            formControlName="bankName"
+          ></app-textbox>
+
+          <app-textbox
+            label="เลขที่บัญชีธนาคาร"
+            placeholder="เช่น 123-4-56789-0"
+            formControlName="bankAccountNumber"
+          ></app-textbox>
+
+          <div class="col-span-2">
+            <app-textarea
+              label="ที่อยู่ลูกค้า"
+              placeholder="ที่อยู่ตามบัตรประชาชนหรือที่ติดต่อได้"
+              formControlName="address"
+              [rows]="2"
+            ></app-textarea>
+          </div>
+
+          <div class="col-span-2">
+            <app-textarea
+              label="หมายเหตุเพิ่มเติม"
+              placeholder="บันทึกข้อความภายใน"
+              formControlName="notes"
+              [rows]="2"
+            ></app-textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeCreate()">ยกเลิก</button>
+          <button type="submit" class="btn-primary" [disabled]="isSubmitting()">
+            <span *ngIf="isSubmitting()">กำลังบันทึก...</span>
+            <span *ngIf="!isSubmitting()">บันทึกข้อมูลลูกค้า</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

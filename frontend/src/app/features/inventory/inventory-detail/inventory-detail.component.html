@@ -1,0 +1,531 @@
+<div class="detail-container">
+  <!-- Top Navigation & Breadcrumb -->
+  <div class="top-bar">
+    <div class="breadcrumb">
+      <a routerLink="/inventory" class="breadcrumb-link">คลังสินค้า</a>
+      <span class="breadcrumb-sep">/</span>
+      <span class="breadcrumb-current">{{ inventoryService.selectedItem()?.sku || 'กำลังโหลด...' }}</span>
+    </div>
+    <div class="action-buttons">
+      <button type="button" class="btn-secondary" (click)="openChangeStatus()">
+        เปลี่ยนสถานะสต็อก
+      </button>
+      <button type="button" class="btn-secondary" (click)="openAddCost()">
+        + บันทึกต้นทุนเพิ่ม
+      </button>
+      <button type="button" class="btn-primary" (click)="openUpdatePrice()">
+        ฿ ปรับราคาขาย
+      </button>
+    </div>
+  </div>
+
+  <!-- Feedback Alert -->
+  <div *ngIf="feedbackMessage()" class="alert-box" [class.alert-success]="feedbackMessage()?.type === 'success'" [class.alert-error]="feedbackMessage()?.type === 'error'">
+    <span>{{ feedbackMessage()?.text }}</span>
+    <button type="button" (click)="feedbackMessage.set(null)" class="alert-close">&times;</button>
+  </div>
+
+  <div *ngIf="inventoryService.selectedItem() as item" class="content-grid">
+    <!-- Main Column -->
+    <div class="main-column">
+      <!-- Item Hero Card -->
+      <div class="hero-card">
+        <div class="hero-header">
+          <div>
+            <div class="sku-row">
+              <span class="sku-pill">{{ item.sku }}</span>
+              <span class="product-code-pill">{{ item.productCode }}</span>
+              <app-status-badge [status]="item.statusName"></app-status-badge>
+            </div>
+            <h1 class="hero-title">{{ item.brandName }} {{ item.productModelName }}</h1>
+            <p class="hero-subtitle">หมวดหมู่: {{ item.categoryName }} • รับเข้าเมื่อ {{ item.receivedAt | date:'d MMM yyyy, HH:mm' }}</p>
+          </div>
+          <div class="grade-box">
+            <span class="grade-title">เกรดสภาพ</span>
+            <span class="grade-code">{{ item.conditionGradeCode }}</span>
+            <span class="grade-subtext">{{ item.conditionGradeName }}</span>
+          </div>
+        </div>
+
+        <div class="meta-stats-row">
+          <div class="meta-stat">
+            <span class="meta-label">Serial Number</span>
+            <span class="meta-val font-mono">{{ item.serialNumber }}</span>
+          </div>
+          <div class="meta-stat">
+            <span class="meta-label">จำนวนชัตเตอร์ (Shutter)</span>
+            <span class="meta-val">{{ item.shutterCount ? (item.shutterCount | number) + ' sc' : 'ไม่ระบุ' }}</span>
+          </div>
+          <div class="meta-stat">
+            <span class="meta-label">อายุในสต็อก (Stock Aging)</span>
+            <span class="meta-val" [class.text-amber-600]="item.stockAgeDays > 60" [class.text-red-600]="item.stockAgeDays > 90">
+              {{ item.stockAgeDays }} วัน
+            </span>
+          </div>
+          <div class="meta-stat">
+            <span class="meta-label">ผู้ขายเข้า</span>
+            <span class="meta-val">{{ item.customerName || 'รับซื้อหน้าร้าน' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="nav-tabs">
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab() === 'overview'"
+          (click)="activeTab.set('overview')"
+        >
+          📋 ข้อมูลสินค้า & สภาพ
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab() === 'costs'"
+          (click)="activeTab.set('costs')"
+        >
+          💰 แจกแจงต้นทุนจริง (Cost Breakdown)
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab() === 'pricing'"
+          (click)="activeTab.set('pricing')"
+        >
+          💡 คำนวณราคาขาย & กำไร (Pricing Engine)
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab() === 'timeline'"
+          (click)="activeTab.set('timeline')"
+        >
+          ⏱️ ประวัติสต็อก (Stock Timeline)
+        </button>
+      </div>
+
+      <!-- TAB 1: OVERVIEW -->
+      <div *ngIf="activeTab() === 'overview'" class="tab-pane">
+        <div class="info-card">
+          <h2 class="card-title">อุปกรณ์และสภาพตำหนิ</h2>
+          <div class="info-grid">
+            <div class="info-block">
+              <span class="info-label">อุปกรณ์ที่มาด้วย (Accessories)</span>
+              <p class="info-content">{{ item.accessories || 'ไม่มีอุปกรณ์เสริมระบุ' }}</p>
+            </div>
+            <div class="info-block">
+              <span class="info-label">ตำหนิและริ้วรอย (Defects)</span>
+              <p class="info-content">{{ item.defects || 'สภาพดี ไม่มีตำหนิสำคัญ' }}</p>
+            </div>
+            <div class="info-block col-span-2">
+              <span class="info-label">หมายเหตุร้านค้า (Internal Notes)</span>
+              <p class="info-content">{{ item.notes || '-' }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: COST BREAKDOWN -->
+      <div *ngIf="activeTab() === 'costs'" class="tab-pane">
+        <div class="info-card">
+          <div class="flex-between">
+            <div>
+              <h2 class="card-title">โครงสร้างและประเภทต้นทุนสินค้า (Cost Breakdown)</h2>
+              <p class="card-subtitle">ต้นทุนจริง (Actual Cost) ต้องรวมทั้งค่ารับซื้อ ค่าซ่อมบำรุง ค่าทำความสะอาด และค่าขนส่ง</p>
+            </div>
+            <button type="button" class="btn-primary" (click)="openAddCost()">
+              + บันทึกต้นทุนเพิ่ม
+            </button>
+          </div>
+
+          <!-- Category Cost Summary Cards -->
+          <div *ngIf="inventoryService.costBreakdown() as breakdown" class="cost-categories-grid">
+            <div class="cost-cat-card">
+              <span class="cat-label">🏷️ รับซื้อเข้า</span>
+              <span class="cat-amount">฿{{ breakdown.purchaseCost | number:'1.2-2' }}</span>
+            </div>
+            <div class="cost-cat-card">
+              <span class="cat-label">🔧 ซ่อมแซม/อะไหล่</span>
+              <span class="cat-amount text-amber-600">฿{{ breakdown.repairCost | number:'1.2-2' }}</span>
+            </div>
+            <div class="cost-cat-card">
+              <span class="cat-label">🧼 ล้าง/ทำความสะอาด</span>
+              <span class="cat-amount text-blue-600">฿{{ breakdown.cleaningCost | number:'1.2-2' }}</span>
+            </div>
+            <div class="cost-cat-card">
+              <span class="cat-label">🚚 ขนส่ง/พัสดุ</span>
+              <span class="cat-amount text-purple-600">฿{{ breakdown.shippingCost | number:'1.2-2' }}</span>
+            </div>
+            <div class="cost-cat-card">
+              <span class="cat-label">📦 อื่นๆ</span>
+              <span class="cat-amount text-gray-600">฿{{ breakdown.otherCost | number:'1.2-2' }}</span>
+            </div>
+            <div class="cost-cat-card highlight-actual-cost">
+              <span class="cat-label font-bold text-gray-900">รวมต้นทุนจริงทั้งหมด</span>
+              <span class="cat-amount font-bold text-gray-900 text-lg">฿{{ breakdown.totalActualCost | number:'1.2-2' }}</span>
+            </div>
+          </div>
+
+          <!-- Cost Items Table -->
+          <div class="cost-items-section">
+            <h3 class="section-title">รายการบันทึกต้นทุนย่อย (Itemized Costs)</h3>
+            <table *ngIf="(inventoryService.costBreakdown()?.costItems?.length || 0) > 0" class="data-table">
+              <thead>
+                <tr>
+                  <th>วันที่เกิดค่าใช้จ่าย</th>
+                  <th>ประเภทต้นทุน</th>
+                  <th>รายละเอียด / รายการ</th>
+                  <th>ผู้บันทึก</th>
+                  <th class="text-right">จำนวนเงิน (บาท)</th>
+                  <th class="text-center">จัดการ</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let c of inventoryService.costBreakdown()?.costItems">
+                  <td>{{ c.incurredAt | date:'d MMM yyyy, HH:mm' }}</td>
+                  <td><span class="cost-type-pill">{{ c.costTypeName }}</span></td>
+                  <td>{{ c.description || '-' }}</td>
+                  <td>{{ c.createdBy || 'ระบบ' }}</td>
+                  <td class="text-right font-bold">฿{{ c.amount | number:'1.2-2' }}</td>
+                  <td class="text-center">
+                    <button type="button" class="btn-delete-small" (click)="deleteCostItem(c.id)" title="ลบรายการนี้">
+                      ลบ
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div *ngIf="(inventoryService.costBreakdown()?.costItems?.length || 0) === 0" class="empty-hint">
+              ยังไม่มีบันทึกต้นทุนย่อยเพิ่มเติม (ต้นทุนปัจจุบันมาจากราคารับซื้อเข้า ฿{{ item.purchaseCost | number:'1.2-2' }})
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: PRICING ENGINE -->
+      <div *ngIf="activeTab() === 'pricing'" class="tab-pane">
+        <div class="info-card">
+          <div class="flex-between">
+            <div>
+              <h2 class="card-title">ระบบแนะนำราคาขายและผลกำไร (Pricing Engine)</h2>
+              <p class="card-subtitle">คำนวณตามสูตรมาร์จิ้นบนราคาขายจริง: Price = ActualCost / (1 - TargetMargin) และส่วนลดตามอายุสต็อก</p>
+            </div>
+            <button type="button" class="btn-primary" (click)="openUpdatePrice()">
+              ฿ ปรับราคาขายสินค้า
+            </button>
+          </div>
+
+          <!-- Live Margin Adjustment Box -->
+          <div class="margin-slider-box">
+            <div class="slider-header">
+              <span class="slider-title">อัตรากำไรเป้าหมาย (Target Margin): <strong>{{ targetMarginControl.value }}%</strong></span>
+              <span *ngIf="inventoryService.pricingRecommendation() as rec" class="source-tag">ที่มา: {{ rec.targetMarginSource }}</span>
+            </div>
+            <div class="slider-row">
+              <input
+                type="range"
+                min="5"
+                max="50"
+                step="1"
+                [formControl]="targetMarginControl"
+                (change)="recalculatePricing()"
+                class="margin-slider"
+              />
+              <button type="button" class="btn-secondary btn-sm" (click)="recalculatePricing()">
+                คำนวณใหม่
+              </button>
+            </div>
+          </div>
+
+          <!-- Pricing Recommendations Grid -->
+          <div *ngIf="inventoryService.pricingRecommendation() as rec" class="pricing-deck">
+            <!-- Break-even -->
+            <div class="price-card break-even">
+              <span class="deck-tag">จุดคุ้มทุน (Cost)</span>
+              <span class="deck-price">฿{{ rec.breakEvenPrice | number:'1.0-0' }}</span>
+              <span class="deck-desc">เท่าทุนจริง (กำไร 0 บาท)</span>
+            </div>
+
+            <!-- Minimum -->
+            <div class="price-card min-price">
+              <span class="deck-tag">ราคาขั้นต่ำ (Min 5%)</span>
+              <span class="deck-price">฿{{ rec.minimumPrice | number:'1.0-0' }}</span>
+              <span class="deck-desc">กำไรขั้นต่ำเพื่อเคลียร์สต็อก</span>
+            </div>
+
+            <!-- RECOMMENDED (HERO) -->
+            <div class="price-card recommended-hero">
+              <div class="rec-badge-row">
+                <span class="hero-tag">⭐ ราคาแนะนำ (Recommended)</span>
+                <span *ngIf="rec.agingDiscountPercentage > 0" class="aging-disc-tag">
+                  -{{ rec.agingDiscountPercentage }}% สต็อก {{ rec.agingDays }} วัน
+                </span>
+              </div>
+              <span class="hero-price">฿{{ rec.recommendedPrice | number:'1.0-0' }}</span>
+              <div class="hero-profit-row">
+                <span>กำไรคาดการณ์: <strong>+฿{{ rec.estimatedGrossProfit | number:'1.0-0' }}</strong></span>
+                <span>Margin: <strong>{{ rec.estimatedMarginPercentage }}%</strong></span>
+              </div>
+              <button type="button" class="btn-apply-rec" (click)="openUpdatePrice(rec.recommendedPrice, 'ปรับตามราคาแนะนำ ' + rec.targetMarginPercentage + '% (' + rec.agingBucket + ')')">
+                ✓ ปรับใช้ราคานี้ (Apply)
+              </button>
+            </div>
+
+            <!-- Maximum -->
+            <div class="price-card max-price">
+              <span class="deck-tag">ราคาเพดานสูงสุด (Max)</span>
+              <span class="deck-price">฿{{ rec.maximumPrice | number:'1.0-0' }}</span>
+              <span class="deck-desc">มาร์จิ้นสูงสำหรับต่อรอง</span>
+            </div>
+          </div>
+
+          <!-- Rationale Note -->
+          <div *ngIf="inventoryService.pricingRecommendation() as rec" class="rationale-box">
+            <span class="rationale-icon">ℹ️</span>
+            <span class="rationale-text">{{ rec.pricingRationale }}</span>
+          </div>
+
+          <!-- Price History Table -->
+          <div class="price-history-section">
+            <h3 class="section-title">ประวัติการปรับราคาขาย (Price Change History)</h3>
+            <table *ngIf="inventoryService.priceHistories().length > 0" class="data-table">
+              <thead>
+                <tr>
+                  <th>วันเวลาที่ปรับ</th>
+                  <th>ราคาเดิม</th>
+                  <th>ราคาใหม่</th>
+                  <th>ส่วนต่าง</th>
+                  <th>เหตุผลการปรับราคา</th>
+                  <th>ผู้ดำเนินการ</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let h of inventoryService.priceHistories()">
+                  <td>{{ h.changedAt | date:'d MMM yyyy, HH:mm' }}</td>
+                  <td class="font-mono">฿{{ h.oldPrice | number:'1.0-0' }}</td>
+                  <td class="font-mono font-bold text-blue-600">฿{{ h.newPrice | number:'1.0-0' }}</td>
+                  <td [class.text-green-600]="h.priceDifference > 0" [class.text-rose-600]="h.priceDifference < 0">
+                    {{ h.priceDifference > 0 ? '+' : '' }}฿{{ h.priceDifference | number:'1.0-0' }}
+                  </td>
+                  <td>{{ h.reason || '-' }}</td>
+                  <td>{{ h.changedBy }}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div *ngIf="inventoryService.priceHistories().length === 0" class="empty-hint">
+              ยังไม่มีประวัติการปรับราคาสำหรับสินค้านี้
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: STOCK TIMELINE -->
+      <div *ngIf="activeTab() === 'timeline'" class="tab-pane">
+        <div class="info-card">
+          <h2 class="card-title">ประวัติการเคลื่อนไหวสต็อก (Stock Timeline)</h2>
+          <div class="timeline">
+            <div *ngFor="let m of inventoryService.movements()" class="timeline-item">
+              <div class="timeline-dot"></div>
+              <div class="timeline-content">
+                <div class="timeline-header">
+                  <span class="timeline-type">{{ m.movementTypeName }}</span>
+                  <span class="timeline-time">{{ m.createdAt | date:'d MMM yyyy, HH:mm' }}</span>
+                </div>
+                <p class="timeline-notes">{{ m.notes }}</p>
+                <span class="timeline-user">ดำเนินการโดย: {{ m.createdBy || 'ระบบ' }}</span>
+              </div>
+            </div>
+
+            <div *ngIf="inventoryService.movements().length === 0" class="timeline-empty">
+              ยังไม่มีประวัติการเคลื่อนไหวสต็อก
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar Column: Summary & Quick Actions -->
+    <div class="sidebar-column">
+      <div class="finance-card">
+        <h2 class="finance-card-title">วิเคราะห์ต้นทุนและผลกำไร</h2>
+
+        <div class="cost-row">
+          <span class="cost-label">ราคารับซื้อเข้า (Purchase)</span>
+          <span class="cost-val">฿{{ item.purchaseCost | number:'1.2-2' }}</span>
+        </div>
+
+        <div class="cost-row">
+          <span class="cost-label">ต้นทุนเพิ่ม (ซ่อม/ล้าง/ขนส่ง)</span>
+          <span class="cost-val text-red-600">
+            +฿{{ (item.actualCost - item.purchaseCost) | number:'1.2-2' }}
+          </span>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="cost-row actual-cost-row">
+          <span class="cost-label font-bold text-gray-900">ต้นทุนจริงรวม (Actual Cost)</span>
+          <span class="cost-val font-bold text-gray-900">฿{{ item.actualCost | number:'1.2-2' }}</span>
+        </div>
+
+        <div class="cost-row selling-price-row">
+          <span class="cost-label font-bold text-blue-700">ราคาตั้งขายปัจจุบัน</span>
+          <span class="cost-val font-bold text-blue-700 text-lg">฿{{ item.sellingPrice | number:'1.2-2' }}</span>
+        </div>
+
+        <div class="profit-box">
+          <div class="profit-row">
+            <span class="profit-label">กำไรคาดการณ์ (Expected Profit)</span>
+            <span class="profit-val">+฿{{ item.expectedProfit | number:'1.2-2' }}</span>
+          </div>
+          <div class="profit-row">
+            <span class="profit-label">อัตรากำไร (Margin)</span>
+            <span class="profit-val">{{ item.expectedMarginPercent }}%</span>
+          </div>
+        </div>
+
+        <div class="sidebar-buttons">
+          <button type="button" class="btn-sidebar-pricing" (click)="activeTab.set('pricing')">
+            💡 ดูราคาแนะนำ & มาร์จิ้น
+          </button>
+          <button type="button" class="btn-sidebar-addcost" (click)="openAddCost()">
+            + บันทึกค่าใช้จ่าย/ต้นทุน
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="inventoryService.loading() && !inventoryService.selectedItem()" class="loading-box">
+    <div class="spinner"></div>
+    <span>กำลังโหลดข้อมูลสินค้า...</span>
+  </div>
+
+  <!-- Modal: Add Cost Item -->
+  <div *ngIf="showAddCostModal()" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">บันทึกต้นทุนเพิ่มเติม (Add Item Cost)</h3>
+        <button type="button" class="modal-close" (click)="closeAddCost()">&times;</button>
+      </div>
+
+      <form [formGroup]="costItemForm" (ngSubmit)="submitAddCostItem()" class="modal-body">
+        <app-select
+          label="ประเภทค่าใช้จ่าย *"
+          [options]="costTypeOptions"
+          formControlName="costType"
+        ></app-select>
+
+        <app-number
+          currency
+          label="จำนวนเงินต้นทุนเพิ่มเติม (บาท) *"
+          placeholder="0.00"
+          formControlName="amount"
+        ></app-number>
+
+        <app-textbox
+          label="รายละเอียด / เหตุผล *"
+          placeholder="เช่น ค่าล้างเซนเซอร์รา, ค่าเปลี่ยนยางบวม, ค่าขนส่ง"
+          formControlName="description"
+        ></app-textbox>
+
+        <div class="quick-reasons">
+          <span class="quick-label">คลิกเลือกด่วน:</span>
+          <button
+            type="button"
+            *ngFor="let s of costSuggestions"
+            class="reason-chip"
+            (click)="setCostDescription(s)"
+          >
+            {{ s }}
+          </button>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeAddCost()">ยกเลิก</button>
+          <button type="submit" class="btn-primary" [disabled]="isSubmitting()">
+            <span *ngIf="isSubmitting()">กำลังบันทึก...</span>
+            <span *ngIf="!isSubmitting()">บันทึกต้นทุน</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Update Price -->
+  <div *ngIf="showUpdatePriceModal()" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">ปรับราคาขายสินค้า (Update Selling Price)</h3>
+        <button type="button" class="modal-close" (click)="closeUpdatePrice()">&times;</button>
+      </div>
+
+      <form [formGroup]="updatePriceForm" (ngSubmit)="submitUpdatePrice()" class="modal-body">
+        <app-number
+          currency
+          label="ราคาขายใหม่ (บาท) *"
+          placeholder="0.00"
+          formControlName="newPrice"
+        ></app-number>
+
+        <app-textbox
+          label="เหตุผลการปรับราคา *"
+          placeholder="เช่น ปรับราคาตามโปรโมชั่น, ลดราคาตามอายุสต็อก 60 วัน"
+          formControlName="reason"
+        ></app-textbox>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeUpdatePrice()">ยกเลิก</button>
+          <button type="submit" class="btn-primary" [disabled]="isSubmitting()">
+            <span *ngIf="isSubmitting()">กำลังบันทึก...</span>
+            <span *ngIf="!isSubmitting()">ยืนยันปรับราคา</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Change Status -->
+  <div *ngIf="showChangeStatusModal()" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">เปลี่ยนสถานะสินค้า (Change Inventory Status)</h3>
+        <button type="button" class="modal-close" (click)="closeChangeStatus()">&times;</button>
+      </div>
+
+      <form [formGroup]="statusForm" (ngSubmit)="submitChangeStatus()" class="modal-body">
+        <app-select
+          label="สถานะใหม่ *"
+          placeholder="เลือกสถานะ"
+          [options]="statusOptions"
+          formControlName="newStatus"
+        ></app-select>
+
+        <app-textbox
+          label="เลขที่อ้างอิง (ถ้ามี)"
+          placeholder="เช่น เลขที่ใบจอง, เลขที่ใบเสร็จ POS"
+          formControlName="referenceNumber"
+        ></app-textbox>
+
+        <app-textarea
+          label="เหตุผล / บันทึกการเปลี่ยนสถานะ"
+          placeholder="เช่น ลูกค้ามัดจำเงินจอง 2,000 บาท, ขายหน้าร้านเงินสด"
+          formControlName="reason"
+          [rows]="2"
+        ></app-textarea>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeChangeStatus()">ยกเลิก</button>
+          <button type="submit" class="btn-primary" [disabled]="isSubmitting()">
+            <span *ngIf="isSubmitting()">กำลังบันทึก...</span>
+            <span *ngIf="!isSubmitting()">ยืนยันเปลี่ยนสถานะ</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

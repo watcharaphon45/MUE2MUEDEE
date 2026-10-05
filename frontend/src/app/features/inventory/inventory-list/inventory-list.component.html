@@ -1,0 +1,255 @@
+<div class="inventory-container">
+  <!-- Header Bar -->
+  <div class="header-section">
+    <div>
+      <h1 class="page-title">คลังสินค้ากล้อง & เลนส์ (Inventory)</h1>
+      <p class="page-subtitle">จัดการสต็อกสินค้ามือสอง ตรวจสอบ Serial Number ต้นทุนจริง กำไร และอายุสต็อก</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/inventory/new" class="btn-primary">
+        <svg class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        รับสินค้าเข้าสต็อก (New Intake)
+      </a>
+    </div>
+  </div>
+
+  <!-- Summary Metric Cards -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-icon-box bg-blue-50 text-blue-600">
+        <svg class="metric-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      </div>
+      <div>
+        <span class="metric-label">สินค้าพร้อมขายในหน้านี้</span>
+        <h3 class="metric-value">{{ totalAvailableItems }} <span class="metric-unit">ชิ้น</span></h3>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon-box bg-purple-50 text-purple-600">
+        <svg class="metric-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div>
+        <span class="metric-label">ต้นทุนจริงรวม (Actual Cost)</span>
+        <h3 class="metric-value">฿{{ totalActualCost | number:'1.2-2' }}</h3>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon-box bg-emerald-50 text-emerald-600">
+        <svg class="metric-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div>
+        <span class="metric-label">มูลค่าขายรวม (Retail Value)</span>
+        <h3 class="metric-value">฿{{ totalSellingPrice | number:'1.2-2' }}</h3>
+      </div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-icon-box bg-amber-50 text-amber-600">
+        <svg class="metric-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+        </svg>
+      </div>
+      <div>
+        <span class="metric-label">กำไรคาดการณ์รวม (Projected Profit)</span>
+        <h3 class="metric-value text-emerald-600">+฿{{ totalExpectedProfit | number:'1.2-2' }}</h3>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Card -->
+  <div class="filter-card">
+    <form [formGroup]="filterForm" (ngSubmit)="search(1)" class="filter-form">
+      <div class="filter-grid">
+        <app-textbox
+          label="ค้นหา (SKU, Serial, รุ่น, อาการตำหนิ)"
+          placeholder="พิมพ์ค้นหา..."
+          formControlName="search"
+        ></app-textbox>
+
+        <app-select
+          label="แบรนด์สินค้า"
+          placeholder="เลือกแบรนด์"
+          [options]="brandOptions()"
+          formControlName="brandId"
+        ></app-select>
+
+        <app-select
+          label="หมวดหมู่สินค้า"
+          placeholder="เลือกหมวดหมู่"
+          [options]="categoryOptions()"
+          formControlName="categoryId"
+        ></app-select>
+
+        <app-select
+          label="สถานะสต็อก"
+          placeholder="เลือกสถานะ"
+          [options]="statusOptions"
+          formControlName="status"
+        ></app-select>
+
+        <app-number
+          currency
+          label="ราคาขายขั้นต่ำ"
+          placeholder="0.00"
+          formControlName="minPrice"
+        ></app-number>
+
+        <app-number
+          currency
+          label="ราคาขายสูงสุด"
+          placeholder="999,999.00"
+          formControlName="maxPrice"
+        ></app-number>
+      </div>
+
+      <div class="filter-actions">
+        <button type="button" class="btn-secondary" (click)="resetFilters()">
+          ล้างตัวกรอง
+        </button>
+        <button type="submit" class="btn-primary">
+          <svg class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          ค้นหา
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Inventory Data Table -->
+  <div class="table-container">
+    <div *ngIf="inventoryService.loading()" class="loading-overlay">
+      <div class="spinner"></div>
+      <span>กำลังโหลดข้อมูลคลังสินค้า...</span>
+    </div>
+
+    <table class="inventory-table">
+      <thead>
+        <tr>
+          <th>SKU / รหัสสินค้า</th>
+          <th>รายการสินค้า & แบรนด์</th>
+          <th>Serial Number</th>
+          <th>เกรดสภาพ</th>
+          <th>ชัตเตอร์</th>
+          <th class="text-right">ต้นทุนจริง</th>
+          <th class="text-right">ราคาตั้งขาย</th>
+          <th class="text-right">กำไรคาดการณ์</th>
+          <th>อายุสต็อก</th>
+          <th>สถานะ</th>
+          <th class="text-center">การจัดการ</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of inventoryService.pagedResult().items" class="table-row">
+          <td>
+            <div class="sku-cell">
+              <span class="sku-badge">{{ item.sku }}</span>
+              <span class="product-code">{{ item.productCode }}</span>
+            </div>
+          </td>
+          <td>
+            <div class="item-name-cell">
+              <span class="model-name">{{ item.productModelName }}</span>
+              <span class="brand-category">{{ item.brandName }} • {{ item.categoryName }}</span>
+            </div>
+          </td>
+          <td>
+            <div class="serial-cell">
+              <span class="serial-text">{{ item.serialNumber }}</span>
+            </div>
+          </td>
+          <td>
+            <span class="grade-badge">{{ item.conditionGradeCode }}</span>
+          </td>
+          <td>
+            <span *ngIf="item.shutterCount" class="shutter-count">{{ item.shutterCount | number }} sc</span>
+            <span *ngIf="!item.shutterCount" class="text-gray-400">-</span>
+          </td>
+          <td class="text-right">
+            <div class="cost-cell">
+              <span class="font-medium text-gray-900">฿{{ item.actualCost | number:'1.2-2' }}</span>
+              <span *ngIf="item.actualCost > item.purchaseCost" class="cost-adjusted-tag">
+                +฿{{ (item.actualCost - item.purchaseCost) | number:'1.2-2' }}
+              </span>
+            </div>
+          </td>
+          <td class="text-right font-semibold text-gray-900">
+            ฿{{ item.sellingPrice | number:'1.2-2' }}
+          </td>
+          <td class="text-right">
+            <div class="profit-cell">
+              <span class="profit-value" [class.profit-positive]="item.expectedProfit > 0">
+                ฿{{ item.expectedProfit | number:'1.2-2' }}
+              </span>
+              <span class="margin-percent">({{ item.expectedMarginPercent }}%)</span>
+            </div>
+          </td>
+          <td>
+            <span class="age-badge" [class.age-warning]="item.stockAgeDays > 60" [class.age-danger]="item.stockAgeDays > 90">
+              {{ item.stockAgeDays }} วัน
+            </span>
+          </td>
+          <td>
+            <app-status-badge [status]="item.statusName"></app-status-badge>
+          </td>
+          <td class="text-center">
+            <div class="actions-group">
+              <a [routerLink]="['/inventory', item.id]" class="action-btn" title="ดูรายละเอียดและประวัติ">
+                <svg class="action-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              </a>
+            </div>
+          </td>
+        </tr>
+
+        <tr *ngIf="inventoryService.pagedResult().items.length === 0 && !inventoryService.loading()">
+          <td colspan="11" class="empty-state">
+            <svg class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            </svg>
+            <p class="empty-text">ไม่พบสินค้าในสต็อกตามเงื่อนไขที่กำหนด</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div *ngIf="inventoryService.pagedResult().totalPages > 1" class="pagination-bar">
+      <span class="pagination-info">
+        แสดงรายการที่ {{ (inventoryService.pagedResult().page - 1) * inventoryService.pagedResult().pageSize + 1 }} ถึง
+        {{ Math.min(inventoryService.pagedResult().page * inventoryService.pagedResult().pageSize, inventoryService.pagedResult().totalCount) }}
+        จากทั้งหมด {{ inventoryService.pagedResult().totalCount }} รายการ
+      </span>
+      <div class="pagination-buttons">
+        <button
+          [disabled]="inventoryService.pagedResult().page <= 1"
+          (click)="search(inventoryService.pagedResult().page - 1)"
+          class="page-btn"
+        >
+          ก่อนหน้า
+        </button>
+        <span class="current-page">{{ inventoryService.pagedResult().page }} / {{ inventoryService.pagedResult().totalPages }}</span>
+        <button
+          [disabled]="inventoryService.pagedResult().page >= inventoryService.pagedResult().totalPages"
+          (click)="search(inventoryService.pagedResult().page + 1)"
+          class="page-btn"
+        >
+          ถัดไป
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

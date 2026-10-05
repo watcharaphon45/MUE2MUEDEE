@@ -1,0 +1,407 @@
+<div class="wizard-container">
+  <!-- Stepper Header -->
+  <div class="wizard-header">
+    <div class="breadcrumb">
+      <a routerLink="/purchase" class="breadcrumb-link">รายการรับซื้อ</a>
+      <span class="breadcrumb-sep">/</span>
+      <span class="breadcrumb-current">ขั้นตอนรับซื้อ & ตรวจสภาพ</span>
+    </div>
+    <h1 class="page-title">ระบบรับซื้อกล้อง & เลนส์ (Purchase Wizard)</h1>
+  </div>
+
+  <!-- Stepper Indicator -->
+  <div class="stepper-bar">
+    <div class="step-node" [class.active]="currentStep() === 1" [class.completed]="currentStep() > 1" (click)="goToStep(1)">
+      <div class="step-circle">1</div>
+      <div class="step-text">
+        <span class="step-num">ขั้นตอนที่ 1</span>
+        <span class="step-name">เลือกลูกค้าผู้ขาย</span>
+      </div>
+    </div>
+    <div class="step-line" [class.completed]="currentStep() > 1"></div>
+
+    <div class="step-node" [class.active]="currentStep() === 2" [class.completed]="currentStep() > 2" (click)="goToStep(2)">
+      <div class="step-circle">2</div>
+      <div class="step-text">
+        <span class="step-num">ขั้นตอนที่ 2</span>
+        <span class="step-name">ตรวจสภาพ Checklist</span>
+      </div>
+    </div>
+    <div class="step-line" [class.completed]="currentStep() > 2"></div>
+
+    <div class="step-node" [class.active]="currentStep() === 3" [class.completed]="currentStep() > 3" (click)="goToStep(3)">
+      <div class="step-circle">3</div>
+      <div class="step-text">
+        <span class="step-num">ขั้นตอนที่ 3</span>
+        <span class="step-name">ประเมิน & เสนอราคา</span>
+      </div>
+    </div>
+    <div class="step-line" [class.completed]="currentStep() > 3"></div>
+
+    <div class="step-node" [class.active]="currentStep() === 4" [class.completed]="currentStep() === 4">
+      <div class="step-circle">4</div>
+      <div class="step-text">
+        <span class="step-num">ขั้นตอนที่ 4</span>
+        <span class="step-name">จ่ายเงิน & รับเข้าคลัง</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Alert -->
+  <div *ngIf="errorMessage()" class="alert-error">
+    <svg class="alert-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <span>{{ errorMessage() }}</span>
+  </div>
+
+  <!-- STEP 1: CUSTOMER -->
+  <div *ngIf="currentStep() === 1" class="step-card">
+    <h2 class="card-title">1. ข้อมูลลูกค้าผู้ขายกล้อง/เลนส์เข้า</h2>
+    <p class="card-subtitle">เลือกลูกค้าจากระบบเพื่อดึงประวัติ เลขบัตรประชาชน และเลขบัญชีธนาคารสำหรับโอนเงิน</p>
+
+    <form [formGroup]="step1Form" class="step-form">
+      <div class="form-grid">
+        <div class="col-span-2">
+          <app-select
+            label="เลือกลูกค้า / ผู้ขายสินค้าเข้า *"
+            placeholder="-- ค้นหาและเลือกลูกค้า --"
+            [options]="customerOptions()"
+            formControlName="customerId"
+            [errorMessage]="step1Form.controls.customerId.touched && step1Form.controls.customerId.errors?.['required'] ? 'กรุณาเลือกลูกค้า' : ''"
+          ></app-select>
+        </div>
+
+        <div class="col-span-2">
+          <app-textarea
+            label="หมายเหตุการรับซื้อรอบนี้"
+            placeholder="เช่น ลูกค้านำกล้องมาแลกเปลี่ยน (เทรดอิน) หรือมาปล่อยขายเงินสดหน้าร้าน"
+            formControlName="notes"
+            [rows]="2"
+          ></app-textarea>
+        </div>
+      </div>
+
+      <div class="step-actions">
+        <a routerLink="/purchase" class="btn-secondary">ยกเลิก</a>
+        <button type="button" class="btn-primary" (click)="goToStep(2)">
+          ถัดไป: ตรวจสภาพสินค้า &rarr;
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- STEP 2: GEAR & CHECKLIST -->
+  <div *ngIf="currentStep() === 2" class="step-card">
+    <h2 class="card-title">2. ข้อมูลสินค้า & ตรวจเช็คสภาพตาม Checklist</h2>
+    <p class="card-subtitle">เลือกรุ่นสินค้า ระบุ Serial Number ตรวจอุปกรณ์ และทำแบบประเมินสภาพกล้อง/เลนส์</p>
+
+    <form [formGroup]="step2Form" class="step-form">
+      <div class="form-grid">
+        <div class="col-span-2">
+          <app-select
+            label="เลือกรุ่นสินค้ามาสเตอร์ *"
+            placeholder="-- เลือกรุ่นกล้องหรือเลนส์ --"
+            [options]="productOptions()"
+            formControlName="productId"
+            [errorMessage]="step2Form.controls.productId.touched && step2Form.controls.productId.errors?.['required'] ? 'กรุณาเลือกรุ่นสินค้า' : ''"
+          ></app-select>
+        </div>
+
+        <app-textbox
+          label="Serial Number ประจำตัวกล้อง/เลนส์ *"
+          placeholder="เช่น 4829103"
+          formControlName="serialNumber"
+          [errorMessage]="step2Form.controls.serialNumber.touched && step2Form.controls.serialNumber.errors?.['required'] ? 'กรุณาระบุ Serial Number' : ''"
+        ></app-textbox>
+
+        <app-select
+          label="เกรดสภาพสินค้าเบื้องต้น *"
+          placeholder="เลือกเกรด"
+          [options]="gradeOptions()"
+          formControlName="conditionGradeId"
+          [errorMessage]="step2Form.controls.conditionGradeId.touched && step2Form.controls.conditionGradeId.errors?.['required'] ? 'กรุณาเลือกเกรดสภาพ' : ''"
+        ></app-select>
+
+        <app-number
+          label="จำนวนชัตเตอร์ (Shutter Count)"
+          placeholder="เช่น 4500 (เฉพาะกล้อง)"
+          formControlName="shutterCount"
+        ></app-number>
+
+        <div class="col-span-2">
+          <app-textarea
+            label="อุปกรณ์ที่มาด้วย (Accessories)"
+            placeholder="เช่น กล่องแท้, แบตแท้ 1 ก้อน, สายคล้อง, ฝาปิดบอดี้"
+            formControlName="accessories"
+            [rows]="2"
+          ></app-textarea>
+        </div>
+
+        <div class="col-span-2">
+          <app-textarea
+            label="อาการตำหนิ / ริ้วรอย (Defects)"
+            placeholder="เช่น มีรอยขนแมวบางๆ ใต้ฐาน, ยางกริปแน่นปกติ"
+            formControlName="defects"
+            [rows]="2"
+          ></app-textarea>
+        </div>
+      </div>
+
+      <!-- Checklist Items -->
+      <div *ngIf="template() as tpl" class="checklist-section">
+        <h3 class="checklist-title">{{ tpl.name }}</h3>
+        <p class="checklist-subtitle">คลิกเลือกสถานะตรวจเช็คสภาพของแต่ละหัวข้อ</p>
+
+        <div class="checklist-items">
+          <div *ngFor="let item of tpl.items" class="checklist-row">
+            <div class="check-info">
+              <span class="check-group">{{ item.categoryGroup }}</span>
+              <span class="check-title">{{ item.title }}</span>
+              <span *ngIf="item.isCritical" class="critical-badge">สำคัญมาก</span>
+            </div>
+
+            <div class="check-actions">
+              <button
+                type="button"
+                class="btn-check btn-pass"
+                [class.selected]="getAnswer(item.id).result === 1"
+                (click)="setResult(item.id, 1)"
+              >
+                ✓ ผ่าน (Pass)
+              </button>
+              <button
+                type="button"
+                class="btn-check btn-minor"
+                [class.selected]="getAnswer(item.id).result === 2"
+                (click)="setResult(item.id, 2)"
+              >
+                ⚠ มีตำหนิเล็กน้อย
+              </button>
+              <button
+                type="button"
+                class="btn-check btn-fail"
+                [class.selected]="getAnswer(item.id).result === 3"
+                (click)="setResult(item.id, 3)"
+              >
+                ✕ ไม่ผ่าน (Fail)
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-actions">
+        <button type="button" class="btn-secondary" (click)="goToStep(1)">&larr; ย้อนกลับ</button>
+        <button type="button" class="btn-primary" (click)="goToStep(3)">
+          ถัดไป: คำนวณราคา & เสนอซื้อ &rarr;
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- STEP 3: APPRAISAL & OFFER -->
+  <div *ngIf="currentStep() === 3" class="step-card">
+    <h2 class="card-title">3. คำนวณราคารับซื้อสูงสุด (Appraisal) & เสนอราคาซื้อ</h2>
+    <p class="card-subtitle">ระบบคำนวณราคารับซื้อสูงสุดอัตโนมัติตามสูตร หักค่าซ่อมบำรุงและอุปกรณ์ไม่ครบ</p>
+
+    <div class="appraisal-grid">
+      <!-- Input Column -->
+      <form [formGroup]="step3Form" class="appraisal-form">
+        <app-number
+          currency
+          label="ราคาขายคาดการณ์หน้าร้าน (Expected Sale Price) *"
+          placeholder="เช่น 30,000.00"
+          formControlName="expectedSalePrice"
+          [errorMessage]="step3Form.controls.expectedSalePrice.touched && step3Form.controls.expectedSalePrice.errors?.['required'] ? 'กรุณาระบุราคาขายคาดการณ์' : ''"
+        ></app-number>
+
+        <app-number
+          currency
+          label="ค่าซ่อมแซมคาดการณ์ (Estimated Repair)"
+          placeholder="0.00"
+          formControlName="estimatedRepairCost"
+        ></app-number>
+
+        <app-number
+          currency
+          label="ค่าล้าง/ทำความสะอาด (Estimated Cleaning)"
+          placeholder="0.00"
+          formControlName="estimatedCleaningCost"
+        ></app-number>
+
+        <app-number
+          currency
+          label="หักค่าอุปกรณ์ไม่ครบ (Missing Accessories)"
+          placeholder="0.00"
+          formControlName="missingAccessoriesDeduction"
+        ></app-number>
+
+        <div class="offer-input-box">
+          <app-number
+            currency
+            label="ราคาที่ร้านเสนอซื้อลูกค้า (Offer Price) *"
+            placeholder="0.00"
+            formControlName="offeredPrice"
+            [errorMessage]="step3Form.controls.offeredPrice.touched && step3Form.controls.offeredPrice.errors?.['required'] ? 'กรุณาระบุราคาเสนอซื้อ' : ''"
+          ></app-number>
+
+          <div *ngIf="isOverMaxBuy" class="warning-banner">
+            <svg class="warning-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>ราคาเสนอซื้อสูงกว่าราคารับซื้อสูงสุด (฿{{ calculatedMaxBuy | number:'1.2-2' }}) จะต้องได้รับการอนุมัติจาก Owner/Admin</span>
+          </div>
+        </div>
+
+        <app-textarea
+          label="บันทึกข้อเสนอราคาต่อลูกค้า"
+          placeholder="เช่น ลูกค้าขอต่อรองราคาเพิ่ม 500 บาท สภาพสวยมากยอมให้"
+          formControlName="offerNotes"
+          [rows]="2"
+        ></app-textarea>
+      </form>
+
+      <!-- Real-Time Formula Breakdown Sidebar -->
+      <div class="formula-breakdown-card">
+        <h3 class="breakdown-title">สูตรคำนวณราคารับซื้อสูงสุด (Max Buy Price)</h3>
+
+        <div class="breakdown-row">
+          <span class="breakdown-label">ราคาขายคาดการณ์</span>
+          <span class="breakdown-val">฿{{ (step3Form.value.expectedSalePrice || 0) | number:'1.2-2' }}</span>
+        </div>
+
+        <div class="breakdown-row">
+          <span class="breakdown-label">เป้าหมายกำไรขั้นต้น (Target Margin 15%)</span>
+          <span class="breakdown-val text-blue-600">
+            -฿{{ ((step3Form.value.expectedSalePrice || 0) * 0.15) | number:'1.2-2' }}
+          </span>
+        </div>
+
+        <div class="breakdown-row">
+          <span class="breakdown-label">หัก: ค่าซ่อมแซม</span>
+          <span class="breakdown-val text-red-600">-฿{{ (step3Form.value.estimatedRepairCost || 0) | number:'1.2-2' }}</span>
+        </div>
+
+        <div class="breakdown-row">
+          <span class="breakdown-label">หัก: ค่าทำความสะอาด</span>
+          <span class="breakdown-val text-red-600">-฿{{ (step3Form.value.estimatedCleaningCost || 0) | number:'1.2-2' }}</span>
+        </div>
+
+        <div class="breakdown-row">
+          <span class="breakdown-label">หัก: อุปกรณ์ไม่ครบ</span>
+          <span class="breakdown-val text-red-600">-฿{{ (step3Form.value.missingAccessoriesDeduction || 0) | number:'1.2-2' }}</span>
+        </div>
+
+        <div class="breakdown-divider"></div>
+
+        <div class="breakdown-row max-buy-highlight">
+          <span class="breakdown-label font-bold text-gray-900">ราคารับซื้อสูงสุดที่แนะนำ:</span>
+          <span class="breakdown-val font-bold text-xl text-blue-700">
+            ฿{{ calculatedMaxBuy | number:'1.2-2' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-actions">
+      <button type="button" class="btn-secondary" (click)="goToStep(2)">&larr; ย้อนกลับ</button>
+      <button type="button" class="btn-primary" (click)="createAndSubmitPO()" [disabled]="isSubmitting()">
+        <span *ngIf="isSubmitting()">กำลังประมวลผล...</span>
+        <span *ngIf="!isSubmitting()">ยืนยันเปิดใบรับซื้อ & ยื่นข้อเสนอ &rarr;</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- STEP 4: FINALIZE, PAYMENT & RECEIVE -->
+  <div *ngIf="currentStep() === 4 && createdPO() as po" class="step-card">
+    <div class="success-banner">
+      <svg class="success-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <div>
+        <h3 class="success-title">เปิดใบรับซื้อสำเร็จ! เลขที่: {{ po.poNumber }}</h3>
+        <p class="success-subtitle">สถานะปัจจุบัน: {{ po.statusName }} • ยอดเสนอซื้อ: ฿{{ po.totalOfferedPrice | number:'1.2-2' }}</p>
+      </div>
+    </div>
+
+    <!-- Need Approval Alert -->
+    <div *ngIf="po.needsApproval" class="approval-card">
+      <div class="approval-info">
+        <h4 class="approval-title">รายการนี้ต้องการการอนุมัติจาก Owner/Admin</h4>
+        <p class="approval-desc">เนื่องจากราคาเสนอซื้อ (฿{{ po.totalOfferedPrice | number:'1.2-2' }}) สูงกว่าราคารับซื้อสูงสุด (฿{{ po.totalMaxBuyPrice | number:'1.2-2' }})</p>
+      </div>
+      <button type="button" class="btn-approve" (click)="approveOverMax()" [disabled]="isSubmitting()">
+        ✓ อนุมัติการรับซื้อราคาพิเศษ
+      </button>
+    </div>
+
+    <!-- Action 1: Customer Accept / Reject -->
+    <div *ngIf="!po.needsApproval && po.status === 3" class="stage-card">
+      <h3 class="stage-title">ลูกค้าตอบรับข้อเสนอ</h3>
+      <p class="stage-desc">ตรวจสอบว่าลูกค้าตกลงขายกล้องในราคา ฿{{ po.totalOfferedPrice | number:'1.2-2' }} หรือไม่</p>
+      <div class="stage-buttons">
+        <button type="button" class="btn-danger" (click)="rejectOffer()" [disabled]="isSubmitting()">
+          ✕ ลูกค้าปฏิเสธ / ยกเลิก
+        </button>
+        <button type="button" class="btn-success" (click)="acceptOffer()" [disabled]="isSubmitting()">
+          ✓ ลูกค้าตกลงขายตามราคานี้
+        </button>
+      </div>
+    </div>
+
+    <!-- Action 2: Payment Out to Customer -->
+    <div *ngIf="po.status === 4" class="stage-card">
+      <h3 class="stage-title">บันทึกการจ่ายเงินให้ลูกค้าผู้ขาย (Payment OUT)</h3>
+      <form [formGroup]="paymentForm" (ngSubmit)="submitPayment()" class="payment-form">
+        <div class="form-grid">
+          <app-select
+            label="ช่องทางการจ่ายเงิน *"
+            [options]="paymentMethodOptions"
+            formControlName="paymentMethod"
+          ></app-select>
+
+          <app-number
+            currency
+            label="จำนวนเงินที่จ่ายจริง (บาท) *"
+            placeholder="0.00"
+            formControlName="amount"
+          ></app-number>
+
+          <app-textbox
+            label="เลขที่อ้างอิง / เลขที่สลิปโอนเงิน"
+            placeholder="เช่น SLIP-KBANK-20261005"
+            formControlName="referenceNumber"
+          ></app-textbox>
+
+          <app-textbox
+            label="หมายเหตุ"
+            placeholder="โอนเข้าบัญชีคุณสมชาย"
+            formControlName="notes"
+          ></app-textbox>
+        </div>
+
+        <button type="submit" class="btn-primary" [disabled]="isSubmitting()">
+          <span *ngIf="isSubmitting()">กำลังบันทึก...</span>
+          <span *ngIf="!isSubmitting()">บันทึกการจ่ายเงินเรียบร้อย</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- Action 3: Receive To Stock -->
+    <div *ngIf="po.status === 6 || po.status === 4" class="receive-stock-card">
+      <div class="receive-info">
+        <h3 class="receive-title">นำสินค้าเข้าสู่คลังสินค้า (Receive to Stock)</h3>
+        <p class="receive-desc">
+          ระบบจะสร้างรหัสบาร์โค้ด SKU อัตโนมัติ บันทึกประวัติ Stock Movement และนำสินค้าเข้าสต็อกพร้อมขาย
+        </p>
+      </div>
+      <button type="button" class="btn-receive-big" (click)="receiveToStock()" [disabled]="isSubmitting()">
+        <svg class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+        นำเข้าสต็อกและเสร็จสิ้น
+      </button>
+    </div>
+  </div>
+</div>

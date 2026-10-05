@@ -1,0 +1,174 @@
+<div class="trace-container">
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div>
+      <h1 class="page-title">🔍 ตรวจสอบประวัติสินค้า (Serial Number Lifecycle Trace)</h1>
+      <p class="page-subtitle">สืบย้อนที่มาตั้งแต่รับซื้อจากใคร ➔ บันทึกต้นทุนเท่าไร ➔ อยู่ในคลัง ➔ ขายให้ใคร ➔ กำไรสุทธิเท่าไร</p>
+    </div>
+    <div class="top-actions">
+      <a routerLink="/sales/pos" class="btn-primary">
+        + ไปที่หน้าขาย POS
+      </a>
+      <a routerLink="/sales" class="btn-secondary">
+        📋 ประวัติการขาย
+      </a>
+    </div>
+  </div>
+
+  <!-- Search Card -->
+  <div class="search-card">
+    <form (ngSubmit)="searchTrace()" class="search-form">
+      <div class="input-col">
+        <label class="search-label">ระบุ Serial Number ของกล้องหรือเลนส์ที่ต้องการตรวจสอบ:</label>
+        <input
+          type="text"
+          [formControl]="serialControl"
+          placeholder="เช่น SN-SONY-7788, 3820194, 2109482..."
+          class="serial-input"
+          autofocus
+        />
+      </div>
+      <button type="submit" class="btn-search" [disabled]="saleService.loading() || !serialControl.value">
+        <span *ngIf="saleService.loading()">กำลังสืบค้น...</span>
+        <span *ngIf="!saleService.loading()">สืบค้นประวัติสินค้า</span>
+      </button>
+    </form>
+  </div>
+
+  <!-- Error Feedback -->
+  <div *ngIf="saleService.errorMessage()" class="alert-box alert-error">
+    <span>{{ saleService.errorMessage() }}</span>
+  </div>
+
+  <!-- Trace Results -->
+  <div *ngIf="saleService.serialTraceResult() as trace" class="trace-content">
+    <!-- Header Summary Card -->
+    <div class="card hero-trace-card">
+      <div class="trace-header">
+        <div>
+          <div class="badge-row">
+            <span class="sn-pill font-mono">S/N: {{ trace.serialNumber }}</span>
+            <span class="sku-pill font-mono">{{ trace.sku }}</span>
+            <span class="status-pill">{{ trace.currentStatusName }}</span>
+          </div>
+          <h2 class="trace-model-title">{{ trace.brandName }} {{ trace.productModelName }}</h2>
+          <p class="trace-sub">หมวดหมู่: {{ trace.categoryName }} • สภาพ: เกรด {{ trace.conditionGradeCode }} ({{ trace.conditionGradeName }})</p>
+        </div>
+        <div class="financial-hero">
+          <span class="fin-label">กำไรจริงที่สร้างได้:</span>
+          <span *ngIf="trace.grossProfit !== null && trace.grossProfit !== undefined" class="fin-profit font-mono">
+            +฿{{ trace.grossProfit | number:'1.0-0' }}
+            <small>({{ trace.marginPercentage }}%)</small>
+          </span>
+          <span *ngIf="trace.grossProfit === null || trace.grossProfit === undefined" class="fin-not-sold">
+            ยังไม่ขาย (ในสต็อก)
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lifecycle Steps Journey -->
+    <div class="journey-grid">
+      <!-- Step 1: Sourcing (รับซื้อเข้า) -->
+      <div class="journey-card">
+        <div class="step-badge step-source">1. รับซื้อเข้า (Sourced)</div>
+        <div class="step-body">
+          <div class="step-row">
+            <span class="step-label">รับซื้อจาก:</span>
+            <span class="step-val font-bold">{{ trace.sourcedFromCustomer || 'รับซื้อหน้าร้าน' }}</span>
+          </div>
+          <div class="step-row">
+            <span class="step-label">เลขที่ใบรับซื้อ:</span>
+            <span class="step-val font-mono">{{ trace.purchasePoNumber || '-' }}</span>
+          </div>
+          <div class="step-row">
+            <span class="step-label">วันที่รับเข้า:</span>
+            <span class="step-val">{{ trace.receivedAt ? (trace.receivedAt | date:'d MMM yyyy, HH:mm') : '-' }}</span>
+          </div>
+          <div class="step-row">
+            <span class="step-label">ราคารับซื้อ:</span>
+            <span class="step-val font-bold font-mono">฿{{ trace.purchaseCost | number:'1.2-2' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Cost & Stock (ต้นทุนจริง) -->
+      <div class="journey-card">
+        <div class="step-badge step-cost">2. บริหารต้นทุน (Costing)</div>
+        <div class="step-body">
+          <div class="step-row">
+            <span class="step-label">ต้นทุนจริงรวม:</span>
+            <span class="step-val font-bold text-gray-900 font-mono">฿{{ trace.actualCost | number:'1.2-2' }}</span>
+          </div>
+          <div class="step-row">
+            <span class="step-label">ค่าซ่อม/ล้าง/ขนส่ง:</span>
+            <span class="step-val text-amber-600 font-mono">+฿{{ (trace.actualCost - trace.purchaseCost) | number:'1.2-2' }}</span>
+          </div>
+          <div class="step-row">
+            <span class="step-label">ราคาตั้งขาย:</span>
+            <span class="step-val font-bold text-blue-600 font-mono">฿{{ trace.currentSellingPrice | number:'1.2-2' }}</span>
+          </div>
+          <div class="step-row">
+            <span class="step-label">สถานะปัจจุบัน:</span>
+            <span class="step-val font-bold">{{ trace.currentStatusName }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Sales (ขายออก & กำไร) -->
+      <div class="journey-card">
+        <div class="step-badge step-sale">3. จำหน่ายออก (Sold & Profit)</div>
+        <div class="step-body">
+          <div class="step-row">
+            <span class="step-label">ขายให้แก่:</span>
+            <span class="step-val font-bold">{{ trace.soldToCustomer || 'ยังไม่ได้ขาย' }}</span>
+          </div>
+          <div class="step-row">
+            <span class="step-label">เลขที่บิลขาย:</span>
+            <span class="step-val font-mono">{{ trace.saleNumber || '-' }}</span>
+          </div>
+          <div class="step-row">
+            <span class="step-label">วันที่ขาย:</span>
+            <span class="step-val">{{ trace.soldAt ? (trace.soldAt | date:'d MMM yyyy, HH:mm') : '-' }}</span>
+          </div>
+          <div class="step-row">
+            <span class="step-label">ราคาขายสุทธิ:</span>
+            <span class="step-val font-bold text-blue-700 font-mono">
+              {{ trace.soldPrice ? ('฿' + (trace.soldPrice | number:'1.2-2')) : '-' }}
+            </span>
+          </div>
+          <div class="step-row highlight-profit">
+            <span class="step-label font-bold text-emerald-900">กำไรสุทธิ:</span>
+            <span class="step-val font-bold text-emerald-700 font-mono">
+              {{ trace.grossProfit ? ('+฿' + (trace.grossProfit | number:'1.0-0')) : '-' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline of movements for this Serial Number -->
+    <div class="card timeline-card">
+      <h3 class="card-title">ประวัติการเคลื่อนไหวสต็อกของเครื่องนี้ (Lifecycle Movements)</h3>
+      <div class="timeline">
+        <div *ngFor="let m of trace.movements" class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-header">
+              <span class="timeline-type">{{ m.movementTypeName }}</span>
+              <span class="timeline-time">{{ m.createdAt | date:'d MMM yyyy, HH:mm' }}</span>
+            </div>
+            <p class="timeline-notes">{{ m.notes }}</p>
+            <span class="timeline-user">ดำเนินการโดย: {{ m.createdBy || 'ระบบ' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="hasSearched() && !saleService.serialTraceResult() && !saleService.loading()" class="empty-state">
+    <div class="empty-icon">🔍</div>
+    <p class="empty-title">ไม่พบประวัติสินค้าสำหรับ Serial Number ดังกล่าว</p>
+    <p class="empty-desc">โปรดตรวจสอบความถูกต้องของ Serial Number อีกครั้ง</p>
+  </div>
+</div>

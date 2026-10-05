@@ -1,0 +1,103 @@
+using Mue2MueDee.Domain.Enums;
+
+namespace Mue2MueDee.Application.DTOs;
+
+public record InventoryItemDto(
+    Guid Id,
+    string Sku,
+    Guid ProductId,
+    string ProductModelName,
+    string ProductCode,
+    string BrandName,
+    string CategoryName,
+    string SerialNumber,
+    Guid ConditionGradeId,
+    string ConditionGradeCode,
+    string ConditionGradeName,
+    InventoryStatus Status,
+    string StatusName,
+    decimal PurchaseCost,
+    decimal ActualCost,
+    decimal SellingPrice,
+    decimal ExpectedProfit,
+    decimal ExpectedMarginPercent,
+    int? ShutterCount,
+    string? Accessories,
+    string? Defects,
+    string? Notes,
+    DateTimeOffset ReceivedAt,
+    DateTimeOffset? SoldAt,
+    Guid? CustomerId,
+    string? CustomerName,
+    int StockAgeDays,
+    DateTimeOffset CreatedAt
+);
+
+public record CreateInventoryItemRequest(
+    Guid ProductId,
+    string SerialNumber,
+    Guid ConditionGradeId,
+    decimal PurchaseCost,
+    decimal? ActualCost,
+    decimal SellingPrice,
+    int? ShutterCount,
+    string? Accessories,
+    string? Defects,
+    string? Notes,
+    Guid? CustomerId,
+    DateTimeOffset? ReceivedAt
+);
+
+public record UpdateInventoryItemRequest(
+    string SerialNumber,
+    Guid ConditionGradeId,
+    decimal SellingPrice,
+    int? ShutterCount,
+    string? Accessories,
+    string? Defects,
+    string? Notes
+);
+
+public record AdjustInventoryCostRequest(
+    decimal AdditionalCost,
+    string CostTypeReason, // e.g. "ค่าทำความสะอาดเซนเซอร์", "ค่าเปลี่ยนยางบวม", "ค่าขนส่ง"
+    string? Notes
+);
+
+public record UpdateInventoryStatusRequest(
+    InventoryStatus NewStatus,
+    string? Reason,
+    string? ReferenceNumber
+);
+
+public record StockMovementDto(
+    Guid Id,
+    Guid InventoryItemId,
+    StockMovementType MovementType,
+    string MovementTypeName,
+    int Quantity,
+    string? ReferenceNumber,
+    string? Notes,
+    DateTimeOffset CreatedAt,
+    string? CreatedBy
+);
+
+public record InventoryQueryFilter(
+    string? Search,
+    Guid? BrandId,
+    Guid? CategoryId,
+    Guid? ProductId,
+    InventoryStatus? Status,
+    decimal? MinPrice,
+    decimal? MaxPrice,
+    int Page = 1,
+    int PageSize = 20
+);
+
+public record PagedResult<T>(
+    IReadOnlyList<T> Items,
+    int TotalCount,
+    int Page,
+    int PageSize,
+    int TotalPages
+);

@@ -1,0 +1,35 @@
+<div class="space-y-1.5">
+  @if (label) {
+    <label class="block text-xs font-medium text-slate-600">
+      {{ label }}
+      @if (required) {
+        <span class="text-rose-600 font-bold">*</span>
+      }
+    </label>
+  }
+
+  <textarea
+    [rows]="rows"
+    [value]="value"
+    [placeholder]="placeholder"
+    [disabled]="disabled"
+    (input)="onInput($event)"
+    (blur)="onBlur()"
+    [ngClass]="{
+      'border-rose-500 focus:border-rose-500 focus:ring-rose-500': !!errorMessage,
+      'border-slate-300/80 focus:border-sky-500 focus:ring-sky-500': !errorMessage,
+      'opacity-60 cursor-not-allowed bg-sky-50/40': disabled,
+      'bg-white': !disabled
+    }"
+    class="w-full border rounded-xl px-4 py-2.5 text-xs text-slate-800 placeholder:text-slate-500 focus:outline-none focus:ring-1 transition-colors resize-y"
+  ></textarea>
+
+  @if (errorMessage) {
+    <p class="text-[11px] text-rose-600 flex items-center gap-1">
+      <span class="material-icons-outlined text-xs">error</span>
+      <span>{{ errorMessage }}</span>
+    </p>
+  } @else if (hint) {
+    <p class="text-[11px] text-slate-500">{{ hint }}</p>
+  }
+</div>

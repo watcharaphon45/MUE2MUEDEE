@@ -1,0 +1,153 @@
+<div class="min-h-screen bg-sky-50 text-slate-800 flex selection:bg-sky-500 selection:text-white">
+  <!-- Sidebar -->
+  <aside class="w-64 bg-white/90 border-r border-slate-200 flex flex-col shrink-0">
+    <!-- Brand / Store Info -->
+    <div class="h-16 px-5 border-b border-slate-200 flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-500 to-amber-400 p-[2px] shadow-md shadow-sky-500/20 shrink-0">
+        <div class="w-full h-full bg-white rounded-[10px] flex items-center justify-center">
+          <span class="material-icons-outlined text-amber-600 text-lg">photo_camera</span>
+        </div>
+      </div>
+      <div class="min-w-0 flex-1">
+        <div class="font-bold text-sm text-slate-800 tracking-tight truncate">
+          {{ authService.currentStore()?.storeName ?? 'MUE2MUEDEE' }}
+        </div>
+        <div class="text-[10px] text-slate-500 flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+          <span>รหัสร้าน: {{ authService.currentStore()?.storeCode ?? 'N/A' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Links -->
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-500 px-3 mb-2">
+        เมนูหลัก (Core Flow)
+      </div>
+
+      <a routerLink="/dashboard" routerLinkActive="bg-sky-600 text-white font-medium shadow-md shadow-sky-600/30" class="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-sky-700 text-xs transition-colors">
+        <span class="material-icons-outlined text-lg">dashboard</span>
+        <span>Dashboard ภาพรวม</span>
+      </a>
+
+      <a routerLink="/inventory" routerLinkActive="bg-sky-600 text-white font-medium shadow-md shadow-sky-600/30" [routerLinkActiveOptions]="{exact: false}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-sky-700 text-xs transition-colors">
+        <span class="material-icons-outlined text-lg">inventory_2</span>
+        <span>คลังสินค้า (Inventory)</span>
+      </a>
+
+      <a routerLink="/products" routerLinkActive="bg-sky-600 text-white font-medium shadow-md shadow-sky-600/30" class="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-sky-700 text-xs transition-colors">
+        <span class="material-icons-outlined text-lg">camera_alt</span>
+        <span>รุ่นสินค้ามาสเตอร์</span>
+      </a>
+
+      <a routerLink="/customers" routerLinkActive="bg-sky-600 text-white font-medium shadow-md shadow-sky-600/30" class="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-sky-700 text-xs transition-colors">
+        <span class="material-icons-outlined text-lg">contacts</span>
+        <span>ลูกค้า & ผู้ขายสินค้า</span>
+      </a>
+
+      <a routerLink="/purchase" routerLinkActive="bg-sky-600 text-white font-medium shadow-md shadow-sky-600/30" [routerLinkActiveOptions]="{exact: false}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-sky-700 text-xs transition-colors">
+        <span class="material-icons-outlined text-lg">shopping_bag</span>
+        <span>รับซื้อ & ตรวจสภาพ (PO)</span>
+      </a>
+
+      <a routerLink="/sales/pos" routerLinkActive="bg-sky-600 text-white font-medium shadow-md shadow-sky-600/30" class="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-sky-700 text-xs transition-colors">
+        <span class="material-icons-outlined text-lg">point_of_sale</span>
+        <span>POS ขายหน้าร้าน</span>
+      </a>
+
+      <a routerLink="/sales" routerLinkActive="bg-sky-600 text-white font-medium shadow-md shadow-sky-600/30" [routerLinkActiveOptions]="{exact: true}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-sky-700 text-xs transition-colors">
+        <span class="material-icons-outlined text-lg">receipt_long</span>
+        <span>ประวัติการขาย (Sales)</span>
+      </a>
+
+      <a routerLink="/sales/trace" routerLinkActive="bg-sky-600 text-white font-medium shadow-md shadow-sky-600/30" class="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-sky-700 text-xs transition-colors">
+        <span class="material-icons-outlined text-lg">manage_search</span>
+        <span>สืบค้น Serial Trace</span>
+      </a>
+
+      <a routerLink="/reports" routerLinkActive="bg-sky-600 text-white font-medium shadow-md shadow-sky-600/30" class="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-sky-700 text-xs transition-colors">
+        <span class="material-icons-outlined text-lg">trending_up</span>
+        <span>รายงาน & สถิติ</span>
+      </a>
+
+      <div class="text-[10px] font-semibold uppercase tracking-wider text-slate-500 px-3 pt-4 mb-2">
+        ตั้งค่าระบบ
+      </div>
+
+      <a routerLink="/settings" routerLinkActive="bg-sky-600 text-white font-medium shadow-md shadow-sky-600/30" class="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-sky-700 text-xs transition-colors">
+        <span class="material-icons-outlined text-lg">storefront</span>
+        <span>ข้อมูลร้านค้า & ผู้ใช้งาน</span>
+      </a>
+    </nav>
+
+    <!-- Current User Profile in Sidebar -->
+    <div class="p-3 border-t border-slate-200 bg-white/60">
+      <div class="flex items-center gap-3 px-2 py-1.5">
+        <div class="w-8 h-8 rounded-lg bg-sky-500/20 text-sky-700 flex items-center justify-center font-bold text-xs">
+          {{ authService.currentUser()?.fullName?.charAt(0) ?? 'U' }}
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="text-xs font-semibold text-slate-800 truncate">
+            {{ authService.currentUser()?.fullName }}
+          </div>
+          <div class="text-[10px] text-slate-500 flex items-center gap-1">
+            <span class="px-1.5 py-0.2 rounded text-[9px] font-medium"
+                  [ngClass]="{
+                    'bg-amber-500/20 text-amber-700': authService.currentRole() === 'Owner',
+                    'bg-blue-500/20 text-blue-700': authService.currentRole() === 'Admin',
+                    'bg-slate-200 text-slate-600': authService.currentRole() === 'Staff'
+                  }">
+              {{ authService.currentRole() }}
+            </span>
+          </div>
+        </div>
+        <button (click)="authService.logout()" title="ออกจากระบบ" class="text-slate-500 hover:text-rose-600 p-1 rounded-lg transition-colors cursor-pointer">
+          <span class="material-icons-outlined text-lg">logout</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+    <!-- Header -->
+    <header class="h-16 border-b border-slate-200 bg-white/50 backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-40">
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2 text-xs text-slate-500">
+          <span class="material-icons-outlined text-base text-slate-500">store</span>
+          <span>ร้านปัจจุบัน:</span>
+          <span class="font-semibold text-slate-700">{{ authService.currentStore()?.storeName }}</span>
+        </div>
+      </div>
+
+      <!-- Store Switcher Dropdown -->
+      <div class="flex items-center gap-3">
+        @if (authService.availableStores().length > 1) {
+          <div class="relative">
+            <select 
+              (change)="onStoreChange($event)"
+              class="bg-slate-100 border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-sky-500 cursor-pointer">
+              @for (store of authService.availableStores(); track store.storeId) {
+                <option [value]="store.storeId" [selected]="store.storeId === authService.currentStore()?.storeId">
+                  {{ store.storeName }} ({{ store.role }})
+                </option>
+              }
+            </select>
+          </div>
+        }
+
+        <div class="w-px h-6 bg-slate-100"></div>
+
+        <button (click)="authService.logout()" class="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-rose-700 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer">
+          <span class="material-icons-outlined text-sm">power_settings_new</span>
+          <span>ออกจากระบบ</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Page Outlet Container -->
+    <main class="flex-1 p-6 lg:p-8">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

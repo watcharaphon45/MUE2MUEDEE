@@ -1,0 +1,250 @@
+<div class="detail-container">
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="breadcrumb">
+      <a routerLink="/sales" class="breadcrumb-link">ประวัติการขาย</a>
+      <span class="breadcrumb-sep">/</span>
+      <span class="breadcrumb-current">{{ saleService.selectedSale()?.saleNumber || 'กำลังโหลด...' }}</span>
+    </div>
+
+    <div *ngIf="saleService.selectedSale() as so" class="action-buttons">
+      <button type="button" class="btn-secondary" (click)="printReceipt()">
+        🖨️ พิมพ์ใบเสร็จ / ใบรับประกัน (Print)
+      </button>
+
+      <button *ngIf="so.status === 2" type="button" class="btn-danger" (click)="openCancel()">
+        ✕ ยกเลิกบิลขาย (Void Sale)
+      </button>
+    </div>
+  </div>
+
+  <!-- Feedback Alert -->
+  <div *ngIf="feedback()" class="alert-box" [class.alert-success]="feedback()?.type === 'success'" [class.alert-error]="feedback()?.type === 'error'">
+    <span>{{ feedback()?.text }}</span>
+    <button type="button" (click)="feedback.set(null)" class="alert-close">&times;</button>
+  </div>
+
+  <div *ngIf="saleService.selectedSale() as so" class="content-layout">
+    <!-- Main Column -->
+    <div class="main-column">
+      <!-- Hero Card -->
+      <div class="card">
+        <div class="hero-top">
+          <div>
+            <div class="badge-row">
+              <span class="so-pill">{{ so.saleNumber }}</span>
+              <app-status-badge [status]="so.statusName"></app-status-badge>
+            </div>
+            <h1 class="hero-title">บิลขายสินค้า {{ so.saleNumber }}</h1>
+            <p class="hero-date">ทำรายการเมื่อ: {{ so.saleDate | date:'d MMMM yyyy, HH:mm' }} • ผู้บันทึก: {{ so.createdBy }}</p>
+          </div>
+          <div class="customer-info-box">
+            <span class="customer-label">ข้อมูลลูกค้าผู้ซื้อ:</span>
+            <span class="customer-name-bold">{{ so.customerName || 'ลูกค้าหน้าร้าน (Walk-in)' }}</span>
+            <span *ngIf="so.customerPhone" class="customer-phone-text">โทร: {{ so.customerPhone }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sold Items Table -->
+      <div class="card">
+        <h2 class="card-title">รายการสินค้าที่ขาย ({{ so.items.length }} ชิ้น)</h2>
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>สินค้า / รายการ</th>
+              <th>Serial Number</th>
+              <th>เกรด</th>
+              <th>รับประกัน</th>
+              <th class="text-right">ราคาตั้ง</th>
+              <th class="text-right">ส่วนลด</th>
+              <th class="text-right">ยอดสุทธิ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of so.items">
+              <td>
+                <div class="item-title-bold">{{ item.productModelName }}</div>
+                <div class="item-sku-sub font-mono">{{ item.sku }}</div>
+              </td>
+              <td class="font-mono font-bold">{{ item.serialNumber }}</td>
+              <td><span class="grade-badge">{{ item.conditionGradeCode }}</span></td>
+              <td>{{ item.warrantyDays }} วัน</td>
+              <td class="text-right font-mono">฿{{ item.unitPrice | number:'1.2-2' }}</td>
+              <td class="text-right font-mono text-rose-600">-฿{{ item.discount | number:'1.2-2' }}</td>
+              <td class="text-right font-mono font-bold">฿{{ item.subTotal | number:'1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Payments Table -->
+      <div class="card">
+        <h2 class="card-title">การชำระเงิน (Payments)</h2>
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>วันที่ชำระ</th>
+              <th>ช่องทาง</th>
+              <th>เลขที่อ้างอิง / สลิป</th>
+              <th>หมายเหตุ</th>
+              <th class="text-right">จำนวนเงิน</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of so.payments">
+              <td>{{ p.paidAt | date:'d MMM yyyy, HH:mm' }}</td>
+              <td><span class="method-badge">{{ p.paymentMethodName }}</span></td>
+              <td class="font-mono">{{ p.referenceNumber || '-' }}</td>
+              <td>{{ p.notes || '-' }}</td>
+              <td class="text-right font-mono font-bold text-emerald-600">฿{{ p.amount | number:'1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Financial Sidebar -->
+    <div class="sidebar-column">
+      <div class="card summary-card">
+        <h3 class="summary-title">สรุปยอดขาย & กำไร</h3>
+
+        <div class="summary-row">
+          <span class="summary-label">ยอดรวมสินค้า</span>
+          <span class="summary-val font-mono">฿{{ so.totalAmount | number:'1.2-2' }}</span>
+        </div>
+
+        <div class="summary-row text-rose-600">
+          <span class="summary-label">ส่วนลดรวม</span>
+          <span class="summary-val font-mono">-฿{{ so.discountAmount | number:'1.2-2' }}</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="summary-row highlight-net">
+          <span class="summary-label font-bold text-blue-900">ยอดขายสุทธิ</span>
+          <span class="summary-val font-bold text-xl text-blue-800 font-mono">
+            ฿{{ so.netAmount | number:'1.2-2' }}
+          </span>
+        </div>
+
+        <!-- Profit Details (Owner/Admin) -->
+        <div class="profit-box">
+          <div class="summary-row">
+            <span class="summary-label">ต้นทุนจริงรวม (Cost):</span>
+            <span class="summary-val font-mono">฿{{ so.totalCost | number:'1.0-0' }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label font-bold text-emerald-900">กำไรขั้นต้น (Gross Profit):</span>
+            <span class="summary-val font-bold text-emerald-700 font-mono">+฿{{ so.totalGrossProfit | number:'1.0-0' }}</span>
+          </div>
+          <div class="summary-row">
+            <span class="summary-label font-bold text-emerald-900">อัตรากำไร (Margin %):</span>
+            <span class="summary-val font-bold text-emerald-700 font-mono">{{ so.totalMarginPercentage }}%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Printable Tax Invoice / Sales Receipt Slip (A4) -->
+  <div *ngIf="saleService.selectedSale() as so" class="printable-receipt">
+    <div class="print-header">
+      <div>
+        <h1 class="print-store-name">MUE2MUEDEE — มือสองมือดี</h1>
+        <p class="print-store-sub">ระบบบริหารและจำหน่ายกล้องและอุปกรณ์ถ่ายภาพมือสอง</p>
+      </div>
+      <div class="print-doc-meta">
+        <h2 class="print-doc-title">ใบเสร็จรับเงิน / ใบส่งมอบสินค้า</h2>
+        <div class="print-doc-no">เลขที่บิล: <strong>{{ so.saleNumber }}</strong></div>
+        <div class="print-doc-date">วันที่: {{ so.saleDate | date:'d MMMM yyyy HH:mm' }}</div>
+      </div>
+    </div>
+
+    <div class="print-customer-box">
+      <div>ลูกค้าผู้ซื้อ: <strong>{{ so.customerName || 'ลูกค้าหน้าร้าน (Walk-in)' }}</strong></div>
+      <div *ngIf="so.customerPhone">เบอร์โทรศัพท์: <strong>{{ so.customerPhone }}</strong></div>
+      <div>พนักงานผู้ขาย: <strong>{{ so.createdBy }}</strong></div>
+    </div>
+
+    <table class="print-table">
+      <thead>
+        <tr>
+          <th>ลำดับ</th>
+          <th>รายการสินค้า / รุ่น</th>
+          <th>Serial Number</th>
+          <th>สภาพ</th>
+          <th>รับประกันร้าน</th>
+          <th class="text-right">จำนวนเงิน (บาท)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of so.items; let i = index">
+          <td class="text-center">{{ i + 1 }}</td>
+          <td><strong>{{ item.productModelName }}</strong></td>
+          <td class="font-mono">{{ item.serialNumber }}</td>
+          <td class="text-center">เกรด {{ item.conditionGradeCode }}</td>
+          <td class="text-center">{{ item.warrantyDays }} วัน</td>
+          <td class="text-right font-mono font-bold">฿{{ item.subTotal | number:'1.2-2' }}</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="5" class="text-right font-bold">ยอดขายสุทธิทั้งสิ้น:</td>
+          <td class="text-right font-bold print-total font-mono">฿{{ so.netAmount | number:'1.2-2' }}</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="print-warranty-notice">
+      <strong>เงื่อนไขการรับประกันสินค้ามือสอง:</strong>
+      <p>
+        สินค้ารายการข้างต้นได้รับการตรวจเช็คสภาพการใช้งานเรียบร้อยแล้ว ร้านมือสองมือดีรับประกันการใช้งานปกติตามระยะเวลาที่ระบุข้างต้นนับจากวันส่งมอบ (ไม่รวมกรณีตกกระแทก ตกน้ำ แกะซ่อมแซมเอง หรือใช้งานผิดประเภท)
+      </p>
+    </div>
+
+    <div class="print-signatures">
+      <div class="sign-block">
+        <div class="sign-line"></div>
+        <div>ลงชื่อ ................................................................ ผู้รับมอบสินค้า</div>
+        <div class="sign-sub">({{ so.customerName || 'ลูกค้าผู้ซื้อ' }})</div>
+      </div>
+      <div class="sign-block">
+        <div class="sign-line"></div>
+        <div>ลงชื่อ ................................................................ ผู้ส่งมอบสินค้า / ร้านค้า</div>
+        <div class="sign-sub">({{ so.createdBy }})</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cancel / Void Modal -->
+  <div *ngIf="showCancelModal()" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title text-rose-600">ยกเลิกรายการขาย (Void Sale)</h3>
+        <button type="button" class="modal-close" (click)="closeCancel()">&times;</button>
+      </div>
+
+      <form [formGroup]="cancelForm" (ngSubmit)="submitCancel()" class="modal-body">
+        <p class="modal-warning">
+          ⚠️ การยกเลิกบิลขายจะนำสินค้าทุกชิ้นในบิลนี้กลับคืนสู่สถานะ "พร้อมขาย (Available)" ในคลังสินค้าทันที
+        </p>
+
+        <app-textarea
+          label="เหตุผลในการยกเลิกบิล *"
+          placeholder="เช่น ลูกค้าขอเปลี่ยนรุ่น, คิดเงินผิดพลาด"
+          formControlName="reason"
+          [rows]="3"
+        ></app-textarea>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeCancel()">ไม่ยกเลิก</button>
+          <button type="submit" class="btn-danger" [disabled]="isSubmitting()">
+            <span *ngIf="isSubmitting()">กำลังยกเลิก...</span>
+            <span *ngIf="!isSubmitting()">ยืนยันยกเลิกบิล</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,4 @@
+/* Login component specific styles */
+:host {
+  display: block;
+}

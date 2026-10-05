@@ -1,0 +1,293 @@
+<div class="detail-container">
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="breadcrumb">
+      <a routerLink="/purchase" class="breadcrumb-link">รายการรับซื้อ</a>
+      <span class="breadcrumb-sep">/</span>
+      <span class="breadcrumb-current">{{ purchaseService.selectedOrder()?.poNumber || 'กำลังโหลด...' }}</span>
+    </div>
+
+    <!-- Actions based on state -->
+    <div *ngIf="purchaseService.selectedOrder() as po" class="action-buttons">
+      <button type="button" class="btn-secondary" (click)="printReceipt()">
+        🖨️ พิมพ์ใบรับซื้อ / สัญญา
+      </button>
+
+      <button *ngIf="po.needsApproval" type="button" class="btn-warning" (click)="approvePurchase()" [disabled]="isSubmitting()">
+        ✓ อนุมัติราคาพิเศษ (Owner/Admin)
+      </button>
+
+      <button *ngIf="!po.needsApproval && po.status === 3" type="button" class="btn-secondary" (click)="rejectOffer()" [disabled]="isSubmitting()">
+        ✕ ปฏิเสธ/ยกเลิก
+      </button>
+
+      <button *ngIf="!po.needsApproval && po.status === 3" type="button" class="btn-success" (click)="acceptOffer()" [disabled]="isSubmitting()">
+        ✓ ลูกค้าตกลง (Accept)
+      </button>
+
+      <button *ngIf="po.status === 4" type="button" class="btn-primary" (click)="openPayment()">
+        ฿ จ่ายเงินให้ลูกค้า (Record Payment)
+      </button>
+
+      <button *ngIf="po.status === 6 || po.status === 4" type="button" class="btn-receive" (click)="receiveToStock()" [disabled]="isSubmitting()">
+        + นำเข้าคลังสินค้า (Receive to Stock)
+      </button>
+    </div>
+  </div>
+
+  <!-- Feedback Alert -->
+  <div *ngIf="feedback()" class="alert-box" [class.alert-success]="feedback()?.type === 'success'" [class.alert-error]="feedback()?.type === 'error'">
+    <span>{{ feedback()?.text }}</span>
+    <button type="button" (click)="feedback.set(null)" class="alert-close">&times;</button>
+  </div>
+
+  <div *ngIf="purchaseService.selectedOrder() as po" class="content-layout">
+    <!-- Main Content -->
+    <div class="main-column">
+      <!-- Header Hero Card -->
+      <div class="card">
+        <div class="hero-top">
+          <div>
+            <div class="badge-row">
+              <span class="po-pill">{{ po.poNumber }}</span>
+              <app-status-badge [status]="po.statusName"></app-status-badge>
+              <span *ngIf="po.needsApproval" class="approval-tag">ต้องการอนุมัติจาก Owner</span>
+            </div>
+            <h1 class="hero-title">ใบรับซื้อสินค้า {{ po.poNumber }}</h1>
+            <p class="hero-date">เปิดใบรับซื้อเมื่อ: {{ po.purchaseDate | date:'d MMMM yyyy, HH:mm' }}</p>
+          </div>
+          <div class="customer-info-box">
+            <span class="customer-label">ข้อมูลลูกค้าผู้ขาย:</span>
+            <span class="customer-name-bold">{{ po.customerName }}</span>
+            <span class="customer-phone-text">โทร: {{ po.customerPhone }}</span>
+            <span *ngIf="po.customerIdCardNumber" class="customer-id-text font-mono">ปชช: {{ po.customerIdCardNumber }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Items in Purchase Order -->
+      <div class="card">
+        <h2 class="card-title">รายการสินค้าที่รับซื้อ ({{ po.items.length }} ชิ้น)</h2>
+
+        <div *ngFor="let item of po.items" class="item-block">
+          <div class="item-header">
+            <div>
+              <h3 class="item-model-name">{{ item.brandName }} {{ item.productModelName }}</h3>
+              <div class="item-meta">
+                <span>Serial Number: <strong class="font-mono">{{ item.serialNumber }}</strong></span>
+                <span>• เกรด: <strong>{{ item.conditionGradeCode }}</strong> ({{ item.conditionGradeName }})</span>
+                <span *ngIf="item.shutterCount">• ชัตเตอร์: {{ item.shutterCount | number }} sc</span>
+              </div>
+            </div>
+            <div *ngIf="item.inventoryItemId" class="received-badge">
+              ✓ นำเข้าคลังแล้ว (SKU: {{ item.generatedSku || 'ในคลัง' }})
+            </div>
+          </div>
+
+          <div class="item-details-grid">
+            <div class="detail-box">
+              <span class="detail-label">อุปกรณ์ที่มาด้วย:</span>
+              <p class="detail-val">{{ item.accessories || '-' }}</p>
+            </div>
+            <div class="detail-box">
+              <span class="detail-label">อาการตำหนิ:</span>
+              <p class="detail-val">{{ item.defects || 'ไม่มีตำหนิสำคัญ' }}</p>
+            </div>
+          </div>
+
+          <!-- Inspection Results for this item -->
+          <div *ngIf="item.inspectionResults.length > 0" class="inspection-summary">
+            <h4 class="inspection-title">ผลการตรวจเช็คสภาพ (Inspection Checklist):</h4>
+            <div class="inspection-grid">
+              <div *ngFor="let check of item.inspectionResults" class="check-pill" [class.pass]="check.result === 1" [class.minor]="check.result === 2" [class.fail]="check.result === 3">
+                <span class="check-pill-title">{{ check.title }}</span>
+                <span class="check-pill-result">{{ check.resultName }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payments Table -->
+      <div *ngIf="po.payments.length > 0" class="card">
+        <h2 class="card-title">ประวัติการจ่ายเงินให้ลูกค้า (Payments)</h2>
+        <table class="payment-table">
+          <thead>
+            <tr>
+              <th>วันที่ชำระ</th>
+              <th>ช่องทาง</th>
+              <th>เลขที่อ้างอิง/สลิป</th>
+              <th>หมายเหตุ</th>
+              <th class="text-right">จำนวนเงิน</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of po.payments">
+              <td>{{ p.paidAt | date:'d MMM yyyy, HH:mm' }}</td>
+              <td><span class="method-badge">{{ p.paymentMethodName }}</span></td>
+              <td class="font-mono">{{ p.referenceNumber || '-' }}</td>
+              <td>{{ p.notes || '-' }}</td>
+              <td class="text-right font-bold text-emerald-600">฿{{ p.amount | number:'1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Financial Sidebar -->
+    <div class="sidebar-column">
+      <div class="card summary-card">
+        <h3 class="summary-title">สรุปยอดประเมิน & ราคาซื้อ</h3>
+
+        <div class="summary-row">
+          <span class="summary-label">มูลค่าขายคาดการณ์</span>
+          <span class="summary-val">฿{{ po.totalEstimatedValue | number:'1.2-2' }}</span>
+        </div>
+
+        <div class="summary-row">
+          <span class="summary-label">ราคารับซื้อสูงสุด (Max Buy)</span>
+          <span class="summary-val font-semibold">฿{{ po.totalMaxBuyPrice | number:'1.2-2' }}</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="summary-row" [class.highlight-warning]="po.needsApproval">
+          <span class="summary-label font-bold text-gray-900">ราคาเสนอซื้อ (Offered)</span>
+          <span class="summary-val font-bold text-lg" [class.text-rose-600]="po.needsApproval" [class.text-blue-600]="!po.needsApproval">
+            ฿{{ po.totalOfferedPrice | number:'1.2-2' }}
+          </span>
+        </div>
+
+        <div class="summary-row highlight-success">
+          <span class="summary-label font-bold text-emerald-900">ราคาตกลงจริง (Agreed)</span>
+          <span class="summary-val font-bold text-xl text-emerald-700">
+            ฿{{ po.totalAgreedPrice | number:'1.2-2' }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Record Payment -->
+  <div *ngIf="showPaymentModal()" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">บันทึกการจ่ายเงินให้ลูกค้า</h3>
+        <button type="button" class="modal-close" (click)="closePayment()">&times;</button>
+      </div>
+
+      <form [formGroup]="paymentForm" (ngSubmit)="submitPayment()" class="modal-body">
+        <app-select
+          label="ช่องทางการจ่ายเงิน *"
+          [options]="paymentMethodOptions"
+          formControlName="paymentMethod"
+        ></app-select>
+
+        <app-number
+          currency
+          label="จำนวนเงินที่จ่าย (บาท) *"
+          formControlName="amount"
+        ></app-number>
+
+        <app-textbox
+          label="เลขที่อ้างอิง / สลิปโอนเงิน"
+          placeholder="เช่น SLIP-KBANK-9876"
+          formControlName="referenceNumber"
+        ></app-textbox>
+
+        <app-textbox
+          label="หมายเหตุ"
+          placeholder="โอนเข้าบัญชีลูกค้าเรียบร้อย"
+          formControlName="notes"
+        ></app-textbox>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closePayment()">ยกเลิก</button>
+          <button type="submit" class="btn-primary" [disabled]="isSubmitting()">
+            <span *ngIf="isSubmitting()">กำลังบันทึก...</span>
+            <span *ngIf="!isSubmitting()">ยืนยันการจ่ายเงิน</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Printable Purchase Agreement / Contract (A4 print layout) -->
+  <div *ngIf="purchaseService.selectedOrder() as po" class="printable-contract">
+    <div class="print-header">
+      <div>
+        <h1 class="print-store-name">MUE2MUEDEE — มือสองมือดี</h1>
+        <p class="print-store-sub">ระบบจัดการและรับซื้อกล้องและอุปกรณ์ถ่ายภาพมือสอง</p>
+      </div>
+      <div class="print-doc-meta">
+        <h2 class="print-doc-title">หนังสือสัญญาซื้อขายและใบสำคัญรับซื้อสินค้า</h2>
+        <div class="print-doc-no">เลขที่เอกสาร: <strong>{{ po.poNumber }}</strong></div>
+        <div class="print-doc-date">วันที่: {{ po.purchaseDate | date:'d MMMM yyyy HH:mm' }}</div>
+      </div>
+    </div>
+
+    <div class="print-parties-grid">
+      <div class="print-party-box">
+        <div class="print-party-title">ผู้ขายสินค้า (Seller / Customer):</div>
+        <div>ชื่อ-นามสกุล: <strong>{{ po.customerName }}</strong></div>
+        <div>เลขประจำตัวประชาชน: <strong>{{ po.customerIdCardNumber || '-' }}</strong></div>
+        <div>เบอร์โทรศัพท์: <strong>{{ po.customerPhone }}</strong></div>
+      </div>
+      <div class="print-party-box">
+        <div class="print-party-title">ผู้รับซื้อ (Buyer / Store):</div>
+        <div>ร้าน: <strong>MUE2MUEDEE (มือสองมือดี)</strong></div>
+        <div>ประเภท: ร้านค้าของเก่าและอุปกรณ์ถ่ายภาพมือสอง</div>
+        <div>สถานะเอกสาร: <strong>{{ po.statusName }}</strong></div>
+      </div>
+    </div>
+
+    <table class="print-items-table">
+      <thead>
+        <tr>
+          <th>ลำดับ</th>
+          <th>รายการสินค้า / รุ่น</th>
+          <th>Serial Number</th>
+          <th>สภาพ / ชัตเตอร์</th>
+          <th>อุปกรณ์ที่มาด้วย</th>
+          <th class="text-right">ราคารับซื้อ (บาท)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of po.items; let i = index">
+          <td class="text-center">{{ i + 1 }}</td>
+          <td><strong>{{ item.brandName }} {{ item.productModelName }}</strong></td>
+          <td class="font-mono">{{ item.serialNumber }}</td>
+          <td>เกรด {{ item.conditionGradeCode }} {{ item.shutterCount ? '(' + (item.shutterCount | number) + ' sc)' : '' }}</td>
+          <td>{{ item.accessories || '-' }}</td>
+          <td class="text-right font-bold">฿{{ (item.agreedPrice || item.offeredPrice) | number:'1.2-2' }}</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="5" class="text-right font-bold">รวมยอดเงินรับซื้อทั้งสิ้น:</td>
+          <td class="text-right font-bold print-total-cell">฿{{ po.totalAgreedPrice | number:'1.2-2' }}</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="print-legal-notice">
+      <strong>ข้อตกลงและคำรับรองของผู้ขาย:</strong>
+      <p>
+        ข้าพเจ้าขอรับรองว่าเป็นเจ้าของกรรมสิทธิ์ในสินค้าและอุปกรณ์ข้างต้นอย่างถูกต้องตามกฎหมาย และมิได้เป็นทรัพย์สินที่ได้มาจากการกระทำความผิด หรือการโจรกรรม หรือติดภาระผูกพันใดๆ หากเกิดข้อพิพาทหรือความเสียหายใดๆ เกี่ยวกับกรรมสิทธิ์ ข้าพเจ้ายินยอมรับผิดชอบชดใช้ค่าเสียหายทั้งหมดทั้งทางแพ่งและทางอาญาแต่เพียงผู้เดียว
+      </p>
+    </div>
+
+    <div class="print-signatures-grid">
+      <div class="print-sign-box">
+        <div class="sign-line"></div>
+        <div class="sign-name">ลงชื่อ ................................................................ ผู้ขาย</div>
+        <div class="sign-sub">({{ po.customerName }})</div>
+      </div>
+      <div class="print-sign-box">
+        <div class="sign-line"></div>
+        <div class="sign-name">ลงชื่อ ................................................................ ผู้รับซื้อ / พยาน</div>
+        <div class="sign-sub">(เจ้าหน้าที่ร้านมือสองมือดี)</div>
+      </div>
+    </div>
+  </div>
+</div>

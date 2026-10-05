@@ -1,0 +1,6 @@
+@Mue2MueDee.Web_HostAddress = http://localhost:5101
+
+GET {{Mue2MueDee.Web_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

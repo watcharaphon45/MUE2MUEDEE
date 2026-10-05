@@ -1,0 +1,248 @@
+<div class="max-w-6xl mx-auto space-y-6">
+  <!-- Title -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800 tracking-tight">ตั้งค่าร้านค้า & จัดการผู้ใช้งาน</h1>
+      <p class="text-xs text-slate-500 mt-1">ข้อมูลนิติบุคคล ข้อมูลการติดต่อ แบรนด์ร้านค้า และสิทธิ์การเข้าถึงของทีมงาน</p>
+    </div>
+  </div>
+
+  <!-- Tabs Navigation -->
+  <div class="flex items-center gap-2 border-b border-slate-200 pb-px">
+    <button 
+      (click)="activeTab.set('profile')"
+      [class.border-indigo-500]="activeTab() === 'profile'"
+      [class.text-indigo-400]="activeTab() === 'profile'"
+      [class.border-transparent]="activeTab() !== 'profile'"
+      [class.text-slate-400]="activeTab() !== 'profile'"
+      class="px-4 py-2.5 text-xs font-semibold border-b-2 hover:text-slate-700 transition-colors cursor-pointer flex items-center gap-2">
+      <span class="material-icons-outlined text-base">store</span>
+      <span>ข้อมูลร้านค้า (Store Profile)</span>
+    </button>
+
+    <button 
+      (click)="activeTab.set('users')"
+      [class.border-indigo-500]="activeTab() === 'users'"
+      [class.text-indigo-400]="activeTab() === 'users'"
+      [class.border-transparent]="activeTab() !== 'users'"
+      [class.text-slate-400]="activeTab() !== 'users'"
+      class="px-4 py-2.5 text-xs font-semibold border-b-2 hover:text-slate-700 transition-colors cursor-pointer flex items-center gap-2">
+      <span class="material-icons-outlined text-base">group</span>
+      <span>ทีมงาน & สิทธิ์ผู้ใช้ (Team & Roles)</span>
+    </button>
+  </div>
+
+  <!-- Tab 1: Store Profile -->
+  @if (activeTab() === 'profile') {
+    <div class="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 space-y-6">
+      @if (saveSuccess()) {
+        <div class="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-xs flex items-center gap-2">
+          <span class="material-icons-outlined text-base">check_circle</span>
+          <span>บันทึกข้อมูลร้านค้าเรียบร้อยแล้ว</span>
+        </div>
+      }
+
+      <form [formGroup]="storeForm" (ngSubmit)="onSaveStore()" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <app-textbox
+            formControlName="name"
+            label="ชื่อร้านค้า (Store Name)"
+            placeholder="เช่น ABC Camera"
+            [required]="true"
+            [errorMessage]="getStoreErrorMessage('name')"
+          ></app-textbox>
+
+          <app-textbox
+            [value]="storeCode()"
+            label="รหัสร้าน (Store Code)"
+            [disabled]="true"
+            hint="รหัสสำหรับอ้างอิงและสร้างเอกสารอัตโนมัติ"
+          ></app-textbox>
+
+          <app-textbox
+            formControlName="phone"
+            label="เบอร์โทรศัพท์ (Phone)"
+            placeholder="เช่น 081-234-5678"
+            icon="call"
+          ></app-textbox>
+
+          <app-textbox
+            formControlName="email"
+            label="อีเมลร้าน (Email)"
+            type="email"
+            placeholder="contact@example.com"
+            icon="mail"
+            [errorMessage]="getStoreErrorMessage('email')"
+          ></app-textbox>
+
+          <div class="md:col-span-2">
+            <app-textarea
+              formControlName="address"
+              label="ที่อยู่ร้าน (Address)"
+              placeholder="ระบุที่อยู่ เลขที่ ถนน แขวง/ตำบล เขต/อำเภอ จังหวัด รหัสไปรษณีย์"
+              [rows]="2"
+            ></app-textarea>
+          </div>
+
+          <app-textbox
+            formControlName="taxId"
+            label="เลขประจำตัวผู้เสียภาษี (Tax ID)"
+            placeholder="เลข 13 หลัก"
+            icon="badge"
+          ></app-textbox>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1.5">สีประจำร้าน (Brand Primary Color)</label>
+            <div class="flex items-center gap-3">
+              <input 
+                type="color" 
+                formControlName="primaryColor"
+                class="w-10 h-10 rounded-lg border border-slate-300 bg-sky-50 cursor-pointer p-0.5 disabled:opacity-60"
+              />
+              <input 
+                type="text" 
+                formControlName="primaryColor"
+                class="w-32 bg-sky-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none disabled:opacity-60"
+              />
+            </div>
+          </div>
+        </div>
+
+        @if (authService.isAdmin()) {
+          <div class="flex justify-end pt-4 border-t border-slate-200">
+            <button 
+              type="submit" 
+              [disabled]="saving() || storeForm.invalid"
+              class="px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white text-xs font-semibold shadow-md shadow-sky-600/30 flex items-center gap-2 cursor-pointer">
+              <span class="material-icons-outlined text-sm">save</span>
+              <span>บันทึกการเปลี่ยนแปลง</span>
+            </button>
+          </div>
+        }
+      </form>
+    </div>
+  }
+
+  <!-- Tab 2: Users and Roles -->
+  @if (activeTab() === 'users') {
+    <div class="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-bold text-slate-800">รายชื่อทีมงานในร้าน</h2>
+          <p class="text-xs text-slate-500 mt-0.5">แบ่งสิทธิ์ Owner (เจ้าของ), Admin (ผู้จัดการ) และ Staff (พนักงาน)</p>
+        </div>
+
+        @if (authService.isAdmin()) {
+          <button 
+            (click)="showAddUserModal.set(true)"
+            class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold shadow-md shadow-sky-600/20 flex items-center gap-1.5 cursor-pointer">
+            <span class="material-icons-outlined text-sm">person_add</span>
+            <span>เพิ่มพนักงาน</span>
+          </button>
+        }
+      </div>
+
+      <!-- Users Table -->
+      <div class="overflow-x-auto rounded-xl border border-slate-200">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-sky-50/80 text-slate-500 border-b border-slate-200 uppercase tracking-wider font-semibold">
+            <tr>
+              <th class="py-3 px-4">ชื่อ - นามสกุล</th>
+              <th class="py-3 px-4">ชื่อผู้ใช้ / อีเมล</th>
+              <th class="py-3 px-4">เบอร์โทรศัพท์</th>
+              <th class="py-3 px-4">ระดับสิทธิ์ (Role)</th>
+              <th class="py-3 px-4">สถานะ</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200/80">
+            @for (user of usersList(); track user.userId) {
+              <tr class="hover:bg-slate-100/30 transition-colors">
+                <td class="py-3 px-4 font-medium text-slate-700 flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-lg bg-sky-500/20 text-sky-700 flex items-center justify-center font-bold text-xs">
+                    {{ user.fullName.charAt(0) }}
+                  </div>
+                  <span>{{ user.fullName }}</span>
+                </td>
+                <td class="py-3 px-4 text-slate-600">
+                  <div>{{ user.username }}</div>
+                  <div class="text-[10px] text-slate-500">{{ user.email }}</div>
+                </td>
+                <td class="py-3 px-4 text-slate-600">{{ user.phoneNumber || '-' }}</td>
+                <td class="py-3 px-4">
+                  <app-status-badge [status]="user.role"></app-status-badge>
+                </td>
+                <td class="py-3 px-4">
+                  <app-status-badge [status]="user.isActive ? 'ACTIVE' : 'INACTIVE'"></app-status-badge>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- Add User Modal with Shared Form Controls -->
+  @if (showAddUserModal()) {
+    <div class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+          <h3 class="font-bold text-sm text-slate-800">เพิ่มผู้ใช้งานเข้าร้านค้า</h3>
+          <button (click)="showAddUserModal.set(false)" class="text-slate-500 hover:text-sky-700 cursor-pointer">
+            <span class="material-icons-outlined text-lg">close</span>
+          </button>
+        </div>
+
+        <form [formGroup]="addUserForm" (ngSubmit)="onAddUserSubmit()" class="space-y-4">
+          <app-textbox
+            formControlName="email"
+            label="อีเมล"
+            type="email"
+            placeholder="staff@example.com"
+            icon="mail"
+            [required]="true"
+            [errorMessage]="getUserErrorMessage('email')"
+          ></app-textbox>
+
+          <app-textbox
+            formControlName="fullName"
+            label="ชื่อ - นามสกุล"
+            placeholder="เช่น สมชาย ใจดี"
+            icon="badge"
+            [required]="true"
+            [errorMessage]="getUserErrorMessage('fullName')"
+          ></app-textbox>
+
+          <app-textbox
+            formControlName="phoneNumber"
+            label="เบอร์โทรศัพท์"
+            placeholder="08x-xxx-xxxx"
+            icon="call"
+          ></app-textbox>
+
+          <app-textbox
+            formControlName="temporaryPassword"
+            label="รหัสผ่านชั่วคราว"
+            type="password"
+            placeholder="อย่างน้อย 6 ตัวอักษร"
+            icon="lock"
+            [required]="true"
+            [errorMessage]="getUserErrorMessage('temporaryPassword')"
+          ></app-textbox>
+
+          <app-select
+            formControlName="role"
+            label="ระดับสิทธิ์ในร้าน"
+            [options]="roleOptions"
+            [required]="true"
+          ></app-select>
+
+          <div class="flex justify-end gap-2 pt-3 border-t border-slate-200">
+            <button type="button" (click)="showAddUserModal.set(false)" class="px-3.5 py-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer">ยกเลิก</button>
+            <button type="submit" [disabled]="addUserForm.invalid" class="px-4 py-2 rounded-lg bg-sky-600 text-white font-medium hover:bg-sky-500 disabled:opacity-50 cursor-pointer">บันทึก</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

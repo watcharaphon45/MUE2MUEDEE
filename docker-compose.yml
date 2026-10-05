@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mue2muedee-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: mue2muedee
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - mue2muedee_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d mue2muedee"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Web UI สำหรับดูข้อมูลใน Database (เข้าผ่านเบราว์เซอร์ http://localhost:5050)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: mue2muedee-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@mue2muedee.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+volumes:
+  mue2muedee_pgdata:
+    driver: local

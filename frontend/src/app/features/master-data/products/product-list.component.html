@@ -1,0 +1,157 @@
+<div class="product-container">
+  <!-- Header -->
+  <div class="header-section">
+    <div>
+      <h1 class="page-title">รุ่นสินค้ามาสเตอร์ (Product Catalog)</h1>
+      <p class="page-subtitle">แคตตาล็อกรุ่นกล้อง เลนส์ แฟลช และอุปกรณ์เสริม เพื่อใช้ในการรับเข้าคลังสินค้า</p>
+    </div>
+    <div>
+      <button type="button" class="btn-primary" (click)="openCreate()">
+        <svg class="btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        เพิ่มรุ่นสินค้าใหม่
+      </button>
+    </div>
+  </div>
+
+  <!-- Feedback Alert -->
+  <div *ngIf="feedback()" class="alert-box" [class.alert-success]="feedback()?.type === 'success'" [class.alert-error]="feedback()?.type === 'error'">
+    <span>{{ feedback()?.text }}</span>
+    <button type="button" (click)="feedback.set(null)" class="alert-close">&times;</button>
+  </div>
+
+  <!-- Search & List Card -->
+  <div class="card">
+    <div class="search-bar">
+      <div class="search-input-box">
+        <svg class="search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input
+          type="text"
+          [formControl]="searchControl"
+          placeholder="ค้นหาตามชื่อรุ่น, รหัสสินค้า, แบรนด์..."
+          class="search-input"
+        />
+      </div>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>รหัสสินค้า (Code)</th>
+          <th>แบรนด์</th>
+          <th>รุ่นสินค้า (Model Name)</th>
+          <th>หมวดหมู่</th>
+          <th class="text-right">ราคาขายมาตรฐาน</th>
+          <th class="text-center">สต็อกพร้อมขาย</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of masterDataService.products()" class="table-row">
+          <td>
+            <span class="code-badge">{{ p.productCode }}</span>
+          </td>
+          <td>
+            <span class="brand-text">{{ p.brandName }}</span>
+          </td>
+          <td>
+            <div class="model-cell">
+              <span class="model-name">{{ p.modelName }}</span>
+              <span *ngIf="p.description" class="model-desc">{{ p.description }}</span>
+            </div>
+          </td>
+          <td>
+            <span class="category-pill">{{ p.categoryName }}</span>
+          </td>
+          <td class="text-right font-medium">
+            <span *ngIf="p.defaultSellingPrice">฿{{ p.defaultSellingPrice | number:'1.2-2' }}</span>
+            <span *ngIf="!p.defaultSellingPrice" class="text-gray-400">-</span>
+          </td>
+          <td class="text-center">
+            <span class="stock-badge" [class.in-stock]="p.inStockCount > 0">
+              {{ p.inStockCount }} ชิ้น
+            </span>
+          </td>
+        </tr>
+
+        <tr *ngIf="masterDataService.products().length === 0 && !masterDataService.loading()">
+          <td colspan="6" class="empty-state">
+            <p>ไม่พบรายการสินค้ามาสเตอร์</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal: Create Product -->
+  <div *ngIf="showCreateModal()" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">เพิ่มรุ่นสินค้ามาสเตอร์ใหม่</h3>
+        <button type="button" class="modal-close" (click)="closeCreate()">&times;</button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="modal-body">
+        <div class="modal-grid">
+          <app-select
+            label="แบรนด์สินค้า *"
+            placeholder="เลือกแบรนด์"
+            [options]="brandOptions()"
+            formControlName="brandId"
+            [errorMessage]="form.controls.brandId.touched && form.controls.brandId.errors?.['required'] ? 'กรุณาเลือกแบรนด์' : ''"
+          ></app-select>
+
+          <app-select
+            label="หมวดหมู่ *"
+            placeholder="เลือกหมวดหมู่"
+            [options]="categoryOptions()"
+            formControlName="categoryId"
+            [errorMessage]="form.controls.categoryId.touched && form.controls.categoryId.errors?.['required'] ? 'กรุณาเลือกหมวดหมู่' : ''"
+          ></app-select>
+
+          <div class="col-span-2">
+            <app-textbox
+              label="ชื่อรุ่นสินค้า (Model Name) *"
+              placeholder="เช่น Alpha 7 IV (ILCE-7M4) หรือ FE 24-70mm F2.8 GM II"
+              formControlName="modelName"
+              [errorMessage]="form.controls.modelName.touched && form.controls.modelName.errors?.['required'] ? 'กรุณาระบุชื่อรุ่น' : ''"
+            ></app-textbox>
+          </div>
+
+          <app-textbox
+            label="รหัสสินค้า (Product Code) *"
+            placeholder="เช่น SONY-A7M4 หรือ CANON-R6M2"
+            formControlName="productCode"
+            [errorMessage]="form.controls.productCode.touched && form.controls.productCode.errors?.['required'] ? 'กรุณาระบุรหัสสินค้า' : ''"
+          ></app-textbox>
+
+          <app-number
+            currency
+            label="ราคาขายแนะนำเริ่มต้น"
+            placeholder="0.00"
+            formControlName="defaultSellingPrice"
+          ></app-number>
+
+          <div class="col-span-2">
+            <app-textarea
+              label="รายละเอียด / สเปกคร่าวๆ"
+              placeholder="เช่น เซนเซอร์ 33MP BSI, วิดีโอ 4K 60p, กันสั่น 5.5 stops"
+              formControlName="description"
+              [rows]="2"
+            ></app-textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeCreate()">ยกเลิก</button>
+          <button type="submit" class="btn-primary" [disabled]="isSubmitting()">
+            <span *ngIf="isSubmitting()">กำลังบันทึก...</span>
+            <span *ngIf="!isSubmitting()">บันทึกรุ่นสินค้า</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
