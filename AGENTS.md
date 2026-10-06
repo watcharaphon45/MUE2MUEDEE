@@ -11,7 +11,8 @@
    - **Application**: DTOs, Business Services/Handlers, Interfaces, Exceptions, Response Models
    - **Infrastructure**: EF Core, Database Configurations, External Services, Persistence, Migrations
    - **Web (API)**: Thin Controllers, Middlewares, Dependency Injection registration
-2. **Angular Standalone + Reactive Forms (Frontend)**:
+2. **Angular Standalone + Reactive Forms (Frontend / SPA)**:
+   - ที่ตั้งโปรเจกต์ SPA: `backend/src/Mue2MueDee.Web/spa/` (รันแยกแบบอิสระบนพอร์ต 4200 ด้วยคำสั่ง `npm.cmd start` ในโฟลเดอร์นี้)
    - Angular 22+, Standalone Components 100%
    - Signal-based state management ใน Services
    - Strict Reactive Forms (`FormGroup`, `FormControl`, `ControlValueAccessor`)
@@ -45,6 +46,8 @@
 | `<app-textarea>` | `textarea/` | สำหรับข้อความยาว เช่น หมายเหตุ, อาการตำหนิ, รายละเอียดสินค้า |
 | `<app-select>` | `select/` | Dropdown คัดเลือกตัวเลือก รองรับ options list, placeholder, validation |
 | `<app-checkbox>` | `checkbox/` | Toggle checkbox สำหรับ boolean flag |
+| `<app-datepicker>` | `datepicker/` | ช่องเลือกวันที่ (Date Picker) ธีม Sky/Slate ความสูง 38px, ปฏิทินแสดงเดือน/ปีภาษาไทย, รองรับ Quick Today/Clear, minDate/maxDate, และ Range Highlighting |
+| `<app-image-uploader>` | `image-uploader/` | กล่องอัปโหลด/ใส่ URL รูปภาพสินค้า รองรับ Drag & Drop, อัปโหลดไฟล์ขึ้นเซิร์ฟเวอร์, Live Preview, และขยายภาพดูขนาดเต็ม (Lightbox) |
 | `<app-status-badge>` | `status-badge/` | แสดงสถานะต่างๆ (InventoryStatus, StoreRole, ฯลฯ) พร้อมสีเฉพาะสถานะ |
 
 ### 2.3 Reactive Forms Integration

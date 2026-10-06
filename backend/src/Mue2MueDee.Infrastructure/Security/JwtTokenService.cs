@@ -38,6 +38,13 @@ public class JwtTokenService : IJwtTokenService
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
+        if (user.IsSuperAdmin)
+        {
+            claims.Add(new Claim("is_super_admin", "true"));
+            claims.Add(new Claim(ClaimTypes.Role, "SUPERADMIN"));
+            claims.Add(new Claim("role", "SUPERADMIN"));
+        }
+
         if (storeId.HasValue)
         {
             claims.Add(new Claim("store_id", storeId.Value.ToString()));

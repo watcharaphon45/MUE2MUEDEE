@@ -1,0 +1,924 @@
+<div class="space-y-6">
+  <!-- Page Header -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-xl md:text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
+        <span class="material-icons-outlined text-sky-600">dataset</span>
+        <span>จัดการข้อมูลมาสเตอร์ (Master Data CRUD)</span>
+      </h1>
+      <p class="text-xs md:text-sm text-slate-500 mt-1">
+        ศูนย์กลางจัดการแบรนด์, หมวดหมู่, รุ่นสินค้า, เกรดสภาพ และข้อมูลลูกค้า จัดการได้เองในระบบทันที
+      </p>
+    </div>
+
+    <!-- Add New Record Button -->
+    <button
+      (click)="openCreateModal()"
+      class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-medium text-xs shadow-md shadow-sky-600/20 transition-all cursor-pointer self-start md:self-auto"
+    >
+      <span class="material-icons-outlined text-sm">add_circle</span>
+      <span>
+        @switch (activeTab()) {
+          @case ('products') { เพิ่มรุ่นสินค้ามาสเตอร์ }
+          @case ('brands') { เพิ่มแบรนด์สินค้า }
+          @case ('categories') { เพิ่มหมวดหมู่สินค้า }
+          @case ('grades') { เพิ่มเกรดสภาพ }
+          @case ('customers') { เพิ่มข้อมูลลูกค้า }
+        }
+      </span>
+    </button>
+  </div>
+
+  <!-- Feedback Alert Banner -->
+  @if (feedback()) {
+    <div
+      class="p-4 rounded-xl text-xs flex items-center justify-between transition-all"
+      [ngClass]="{
+        'bg-emerald-50 text-emerald-800 border border-emerald-200': feedback()?.type === 'success',
+        'bg-rose-50 text-rose-800 border border-rose-200': feedback()?.type === 'error'
+      }"
+    >
+      <div class="flex items-center gap-2">
+        <span class="material-icons-outlined text-base">
+          {{ feedback()?.type === 'success' ? 'check_circle' : 'error' }}
+        </span>
+        <span class="font-medium">{{ feedback()?.text }}</span>
+      </div>
+      <button (click)="feedback.set(null)" class="text-slate-400 hover:text-slate-600">
+        <span class="material-icons-outlined text-sm">close</span>
+      </button>
+    </div>
+  }
+
+  <!-- Master Data Tabs Navigation -->
+  <div class="flex items-center gap-2 border-b border-slate-200 overflow-x-auto pb-px">
+    <button
+      (click)="setTab('products')"
+      class="tab-btn"
+      [class.active]="activeTab() === 'products'"
+    >
+      <span class="material-icons-outlined text-base">camera_alt</span>
+      <span>รุ่นสินค้า (Products)</span>
+      <span class="tab-badge">{{ masterDataService.products().length }}</span>
+    </button>
+
+    <button
+      (click)="setTab('brands')"
+      class="tab-btn"
+      [class.active]="activeTab() === 'brands'"
+    >
+      <span class="material-icons-outlined text-base">branding_watermark</span>
+      <span>แบรนด์สินค้า (Brands)</span>
+      <span class="tab-badge">{{ masterDataService.brands().length }}</span>
+    </button>
+
+    <button
+      (click)="setTab('categories')"
+      class="tab-btn"
+      [class.active]="activeTab() === 'categories'"
+    >
+      <span class="material-icons-outlined text-base">category</span>
+      <span>หมวดหมู่ (Categories)</span>
+      <span class="tab-badge">{{ masterDataService.categories().length }}</span>
+    </button>
+
+    <button
+      (click)="setTab('grades')"
+      class="tab-btn"
+      [class.active]="activeTab() === 'grades'"
+    >
+      <span class="material-icons-outlined text-base">grade</span>
+      <span>เกรดสภาพ (Condition Grades)</span>
+      <span class="tab-badge">{{ masterDataService.conditionGrades().length }}</span>
+    </button>
+
+    <button
+      (click)="setTab('customers')"
+      class="tab-btn"
+      [class.active]="activeTab() === 'customers'"
+    >
+      <span class="material-icons-outlined text-base">contacts</span>
+      <span>ลูกค้า & ผู้ขาย (Customers)</span>
+      <span class="tab-badge">{{ masterDataService.customers().length }}</span>
+    </button>
+  </div>
+
+  <!-- Search & Filter Card -->
+  <div class="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 items-end">
+      <!-- Universal Search for Active Tab -->
+      <div class="col-span-1 sm:col-span-2">
+        <app-textbox
+          icon="search"
+          label="ค้นหาข้อมูล"
+          placeholder="พิมพ์ค้นหาตามชื่อ, รหัส, หมายเหตุ..."
+          [formControl]="searchTerm"
+        ></app-textbox>
+      </div>
+
+      <!-- Specific Filters for Products Tab -->
+      @if (activeTab() === 'products') {
+        <app-select
+          label="กรองตามแบรนด์"
+          placeholder="ทุกแบรนด์"
+          [options]="brandSelectOptions()"
+          [formControl]="productBrandFilter"
+        ></app-select>
+
+        <app-select
+          label="กรองตามหมวดหมู่"
+          placeholder="ทุกหมวดหมู่"
+          [options]="categorySelectOptions()"
+          [formControl]="productCategoryFilter"
+        ></app-select>
+      }
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- TAB 1: PRODUCTS TABLE                      -->
+  <!-- ========================================== -->
+  @if (activeTab() === 'products') {
+    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-medium">
+            <tr>
+              <th class="py-3 px-4">รหัส / รุ่นสินค้า</th>
+              <th class="py-3 px-4">แบรนด์</th>
+              <th class="py-3 px-4">หมวดหมู่</th>
+              <th class="py-3 px-4 text-right">ราคาขายกลาง (Base Price)</th>
+              <th class="py-3 px-4 text-center">สต็อกปัจจุบัน</th>
+              <th class="py-3 px-4 text-center">สถานะ</th>
+              <th class="py-3 px-4 text-right">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 text-slate-700">
+            @for (p of filteredProducts(); track p.id) {
+              <tr class="hover:bg-sky-50/40 transition-colors">
+                <td class="py-3 px-4">
+                  <div class="flex items-center gap-3">
+                    <div
+                      class="w-10 h-10 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center relative group/img"
+                      [class.cursor-pointer]="!!p.imageUrl"
+                      (click)="p.imageUrl ? openImagePreview(p.imageUrl, p.brandName + ' ' + p.modelName, $event) : null"
+                      [title]="p.imageUrl ? 'คลิกเพื่อดูรูปภาพขนาดเต็ม' : 'ยังไม่มีรูปภาพสินค้า'"
+                    >
+                      @if (p.imageUrl) {
+                        <img [src]="p.imageUrl" [alt]="p.modelName" class="w-full h-full object-cover transition-transform group-hover/img:scale-110" />
+                        <div class="absolute inset-0 bg-black/30 text-white opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                          <span class="material-icons-outlined text-xs">zoom_in</span>
+                        </div>
+                      } @else {
+                        <span class="material-icons-outlined text-slate-400 text-lg">photo_camera</span>
+                      }
+                    </div>
+                    <div>
+                      <div class="font-semibold text-slate-900">{{ p.modelName }}</div>
+                      <div class="text-[10px] text-slate-400 font-mono">{{ p.productCode }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-3 px-4">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-medium text-[11px]">
+                    {{ p.brandName }}
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-slate-600">{{ p.categoryName }}</td>
+                <td class="py-3 px-4 text-right font-mono font-medium text-slate-800">
+                  {{ p.defaultSellingPrice ? (p.defaultSellingPrice | number:'1.2-2') + ' ฿' : '-' }}
+                </td>
+                <td class="py-3 px-4 text-center">
+                  <span
+                    class="px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                    [ngClass]="p.inStockCount > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'"
+                  >
+                    {{ p.inStockCount }} ชิ้น
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-center">
+                  <span
+                    class="px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                    [ngClass]="p.isActive ? 'bg-sky-50 text-sky-700' : 'bg-slate-100 text-slate-400'"
+                  >
+                    {{ p.isActive ? 'เปิดใช้งาน' : 'ระงับใช้งาน' }}
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-right">
+                  <div class="flex items-center justify-end gap-1">
+                    <button
+                      (click)="openEditModal(p)"
+                      class="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors"
+                      title="แก้ไขรุ่นสินค้า"
+                    >
+                      <span class="material-icons-outlined text-base">edit</span>
+                    </button>
+                    <button
+                      (click)="confirmDelete('products', p.id, p.modelName)"
+                      class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                      title="ลบรุ่นสินค้า"
+                    >
+                      <span class="material-icons-outlined text-base">delete</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="py-12 text-center text-slate-400">
+                  <span class="material-icons-outlined text-3xl mb-1 block">search_off</span>
+                  <span>ไม่พบข้อมูลรุ่นสินค้า</span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- ========================================== -->
+  <!-- TAB 2: BRANDS TABLE                        -->
+  <!-- ========================================== -->
+  @if (activeTab() === 'brands') {
+    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-medium">
+            <tr>
+              <th class="py-3 px-4">ชื่อแบรนด์</th>
+              <th class="py-3 px-4">รายละเอียด</th>
+              <th class="py-3 px-4 text-center">รุ่นสินค้าที่ผูกอยู่</th>
+              <th class="py-3 px-4 text-center">สถานะ</th>
+              <th class="py-3 px-4 text-right">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 text-slate-700">
+            @for (b of filteredBrands(); track b.id) {
+              <tr class="hover:bg-sky-50/40 transition-colors">
+                <td class="py-3 px-4">
+                  <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-sky-50 text-sky-700 flex items-center justify-center font-bold text-xs border border-sky-100">
+                      {{ b.name.charAt(0) }}
+                    </div>
+                    <span class="font-semibold text-slate-900">{{ b.name }}</span>
+                  </div>
+                </td>
+                <td class="py-3 px-4 text-slate-500">{{ b.description || '-' }}</td>
+                <td class="py-3 px-4 text-center">
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-700">
+                    {{ b.productCount }} รุ่น
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-center">
+                  <span
+                    class="px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                    [ngClass]="b.isActive ? 'bg-sky-50 text-sky-700' : 'bg-slate-100 text-slate-400'"
+                  >
+                    {{ b.isActive ? 'เปิดใช้งาน' : 'ระงับใช้งาน' }}
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-right">
+                  <div class="flex items-center justify-end gap-1">
+                    <button
+                      (click)="openEditModal(b)"
+                      class="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors"
+                      title="แก้ไขแบรนด์"
+                    >
+                      <span class="material-icons-outlined text-base">edit</span>
+                    </button>
+                    <button
+                      (click)="confirmDelete('brands', b.id, b.name)"
+                      class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                      title="ลบแบรนด์"
+                    >
+                      <span class="material-icons-outlined text-base">delete</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="py-12 text-center text-slate-400">
+                  <span class="material-icons-outlined text-3xl mb-1 block">search_off</span>
+                  <span>ไม่พบข้อมูลแบรนด์สินค้า</span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- ========================================== -->
+  <!-- TAB 3: CATEGORIES TABLE                    -->
+  <!-- ========================================== -->
+  @if (activeTab() === 'categories') {
+    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-medium">
+            <tr>
+              <th class="py-3 px-4">ชื่อหมวดหมู่</th>
+              <th class="py-3 px-4">ประเภทอุปกรณ์</th>
+              <th class="py-3 px-4">รายละเอียด</th>
+              <th class="py-3 px-4 text-center">รุ่นสินค้าที่ผูกอยู่</th>
+              <th class="py-3 px-4 text-center">สถานะ</th>
+              <th class="py-3 px-4 text-right">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 text-slate-700">
+            @for (c of filteredCategories(); track c.id) {
+              <tr class="hover:bg-sky-50/40 transition-colors">
+                <td class="py-3 px-4 font-semibold text-slate-900">{{ c.name }}</td>
+                <td class="py-3 px-4">
+                  <span
+                    class="px-2 py-0.5 rounded-md text-[10px] font-semibold"
+                    [ngClass]="{
+                      'bg-blue-50 text-blue-700': c.type === 1,
+                      'bg-indigo-50 text-indigo-700': c.type === 2,
+                      'bg-slate-100 text-slate-700': c.type === 3
+                    }"
+                  >
+                    {{ c.typeName }}
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-slate-500">{{ c.description || '-' }}</td>
+                <td class="py-3 px-4 text-center">
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-700">
+                    {{ c.productCount }} รุ่น
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-center">
+                  <span
+                    class="px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                    [ngClass]="c.isActive ? 'bg-sky-50 text-sky-700' : 'bg-slate-100 text-slate-400'"
+                  >
+                    {{ c.isActive ? 'เปิดใช้งาน' : 'ระงับใช้งาน' }}
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-right">
+                  <div class="flex items-center justify-end gap-1">
+                    <button
+                      (click)="openEditModal(c)"
+                      class="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors"
+                      title="แก้ไขหมวดหมู่"
+                    >
+                      <span class="material-icons-outlined text-base">edit</span>
+                    </button>
+                    <button
+                      (click)="confirmDelete('categories', c.id, c.name)"
+                      class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                      title="ลบหมวดหมู่"
+                    >
+                      <span class="material-icons-outlined text-base">delete</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="py-12 text-center text-slate-400">
+                  <span class="material-icons-outlined text-3xl mb-1 block">search_off</span>
+                  <span>ไม่พบข้อมูลหมวดหมู่สินค้า</span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- ========================================== -->
+  <!-- TAB 4: CONDITION GRADES TABLE              -->
+  <!-- ========================================== -->
+  @if (activeTab() === 'grades') {
+    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-medium">
+            <tr>
+              <th class="py-3 px-4 text-center">ลำดับ</th>
+              <th class="py-3 px-4">รหัสเกรด</th>
+              <th class="py-3 px-4">ชื่อเกรดสภาพ</th>
+              <th class="py-3 px-4">คำอธิบายมาตรฐาน</th>
+              <th class="py-3 px-4 text-center">สถานะ</th>
+              <th class="py-3 px-4 text-right">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 text-slate-700">
+            @for (g of filteredGrades(); track g.id) {
+              <tr class="hover:bg-sky-50/40 transition-colors">
+                <td class="py-3 px-4 text-center font-mono font-medium text-slate-500">{{ g.sortOrder }}</td>
+                <td class="py-3 px-4 font-bold text-sky-700 font-mono text-sm">
+                  <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-sky-50 border border-sky-200">
+                    {{ g.gradeCode }}
+                  </span>
+                </td>
+                <td class="py-3 px-4 font-semibold text-slate-900">{{ g.gradeName }}</td>
+                <td class="py-3 px-4 text-slate-500">{{ g.description || '-' }}</td>
+                <td class="py-3 px-4 text-center">
+                  <span
+                    class="px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                    [ngClass]="g.isActive ? 'bg-sky-50 text-sky-700' : 'bg-slate-100 text-slate-400'"
+                  >
+                    {{ g.isActive ? 'เปิดใช้งาน' : 'ระงับใช้งาน' }}
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-right">
+                  <div class="flex items-center justify-end gap-1">
+                    <button
+                      (click)="openEditModal(g)"
+                      class="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors"
+                      title="แก้ไขเกรดสภาพ"
+                    >
+                      <span class="material-icons-outlined text-base">edit</span>
+                    </button>
+                    <button
+                      (click)="confirmDelete('grades', g.id, g.gradeCode)"
+                      class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                      title="ลบเกรดสภาพ"
+                    >
+                      <span class="material-icons-outlined text-base">delete</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="py-12 text-center text-slate-400">
+                  <span class="material-icons-outlined text-3xl mb-1 block">search_off</span>
+                  <span>ไม่พบข้อมูลเกรดสภาพสินค้า</span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- ========================================== -->
+  <!-- TAB 5: CUSTOMERS TABLE                     -->
+  <!-- ========================================== -->
+  @if (activeTab() === 'customers') {
+    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-medium">
+            <tr>
+              <th class="py-3 px-4">ชื่อลูกค้า / ร้านค้า</th>
+              <th class="py-3 px-4">ประเภท</th>
+              <th class="py-3 px-4">เบอร์โทรศัพท์</th>
+              <th class="py-3 px-4">เลขบัตรประชาชน / เลขนิติบุคคล</th>
+              <th class="py-3 px-4">บัญชีธนาคาร (สำหรับโอนรับซื้อ)</th>
+              <th class="py-3 px-4 text-center">สินค้าที่เคยขายเข้า</th>
+              <th class="py-3 px-4 text-right">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 text-slate-700">
+            @for (cust of filteredCustomers(); track cust.id) {
+              <tr class="hover:bg-sky-50/40 transition-colors">
+                <td class="py-3 px-4">
+                  <div class="font-semibold text-slate-900">{{ cust.name }}</div>
+                  @if (cust.lineId) {
+                    <div class="text-[10px] text-emerald-600">Line: {{ cust.lineId }}</div>
+                  }
+                </td>
+                <td class="py-3 px-4">
+                  <span
+                    class="px-2 py-0.5 rounded-md text-[10px] font-semibold"
+                    [ngClass]="cust.customerType === 1 ? 'bg-sky-50 text-sky-700' : 'bg-purple-50 text-purple-700'"
+                  >
+                    {{ cust.customerTypeName }}
+                  </span>
+                </td>
+                <td class="py-3 px-4 font-mono text-slate-700">{{ cust.phone }}</td>
+                <td class="py-3 px-4 font-mono text-slate-500">{{ cust.idCardNumber || '-' }}</td>
+                <td class="py-3 px-4">
+                  @if (cust.bankAccountNumber) {
+                    <div class="font-mono text-slate-800">{{ cust.bankAccountNumber }}</div>
+                    <div class="text-[10px] text-slate-400">{{ cust.bankName }} ({{ cust.bankAccountName }})</div>
+                  } @else {
+                    <span class="text-slate-400">-</span>
+                  }
+                </td>
+                <td class="py-3 px-4 text-center">
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-700">
+                    {{ cust.sourcedItemCount }} รายการ
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-right">
+                  <div class="flex items-center justify-end gap-1">
+                    <button
+                      (click)="openEditModal(cust)"
+                      class="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors"
+                      title="แก้ไขข้อมูลลูกค้า"
+                    >
+                      <span class="material-icons-outlined text-base">edit</span>
+                    </button>
+                    <button
+                      (click)="confirmDelete('customers', cust.id, cust.name)"
+                      class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                      title="ลบข้อมูลลูกค้า"
+                    >
+                      <span class="material-icons-outlined text-base">delete</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="py-12 text-center text-slate-400">
+                  <span class="material-icons-outlined text-3xl mb-1 block">search_off</span>
+                  <span>ไม่พบข้อมูลลูกค้า</span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <!-- ========================================== -->
+  <!-- MODAL: CREATE / EDIT DIALOG                -->
+  <!-- ========================================== -->
+  @if (showModal()) {
+    <div class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden animate-fadeIn my-8">
+        <!-- Modal Header -->
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+            <span class="material-icons-outlined text-sky-600 text-lg">
+              {{ modalMode() === 'create' ? 'add_circle' : 'edit' }}
+            </span>
+            <span>
+              {{ modalMode() === 'create' ? 'เพิ่ม' : 'แก้ไข' }}
+              @switch (activeTab()) {
+                @case ('products') { รุ่นสินค้ามาสเตอร์ }
+                @case ('brands') { แบรนด์สินค้า }
+                @case ('categories') { หมวดหมู่สินค้า }
+                @case ('grades') { เกรดสภาพสินค้า }
+                @case ('customers') { ข้อมูลลูกค้า }
+              }
+            </span>
+          </h3>
+          <button (click)="closeModal()" class="text-slate-400 hover:text-slate-600">
+            <span class="material-icons-outlined text-base">close</span>
+          </button>
+        </div>
+
+        <!-- Modal Body (Dynamic Form) -->
+        <div class="p-6">
+          <!-- 1. BRAND FORM -->
+          @if (activeTab() === 'brands') {
+            <form [formGroup]="brandForm" class="space-y-4">
+              <app-textbox
+                label="ชื่อแบรนด์สินค้า *"
+                placeholder="เช่น Sony, Canon, Fujifilm, Nikon"
+                formControlName="name"
+              ></app-textbox>
+
+              <app-textarea
+                label="คำอธิบาย / รายละเอียดเพิ่มเติม"
+                placeholder="เช่น แบรนด์กล้องและเลนส์จากญี่ปุ่น..."
+                formControlName="description"
+                [rows]="3"
+              ></app-textarea>
+
+              <app-textbox
+                label="URL โลโก้แบรนด์ (ไม่บังคับ)"
+                placeholder="https://..."
+                formControlName="logoUrl"
+              ></app-textbox>
+
+              @if (modalMode() === 'edit') {
+                <app-checkbox
+                  label="เปิดใช้งานแบรนด์นี้ในระบบ"
+                  formControlName="isActive"
+                ></app-checkbox>
+              }
+            </form>
+          }
+
+          <!-- 2. CATEGORY FORM -->
+          @if (activeTab() === 'categories') {
+            <form [formGroup]="categoryForm" class="space-y-4">
+              <app-textbox
+                label="ชื่อหมวดหมู่สินค้า *"
+                placeholder="เช่น กล้อง Mirrorless, เลนส์ Prime, เลนส์ Zoom"
+                formControlName="name"
+              ></app-textbox>
+
+              <app-select
+                label="ประเภทอุปกรณ์ *"
+                [options]="categoryTypeOptions"
+                formControlName="type"
+              ></app-select>
+
+              <app-textarea
+                label="คำอธิบายหมวดหมู่"
+                placeholder="รายละเอียดอุปกรณ์ในหมวดหมู่นี้..."
+                formControlName="description"
+                [rows]="3"
+              ></app-textarea>
+
+              @if (modalMode() === 'edit') {
+                <app-checkbox
+                  label="เปิดใช้งานหมวดหมู่นี้ในระบบ"
+                  formControlName="isActive"
+                ></app-checkbox>
+              }
+            </form>
+          }
+
+          <!-- 3. GRADE FORM -->
+          @if (activeTab() === 'grades') {
+            <form [formGroup]="gradeForm" class="space-y-4">
+              <div class="grid grid-cols-2 gap-3">
+                <app-textbox
+                  label="รหัสเกรด (Grade Code) *"
+                  placeholder="เช่น S, A, B, C, D"
+                  formControlName="gradeCode"
+                ></app-textbox>
+
+                <app-number
+                  label="ลำดับการแสดงผล *"
+                  placeholder="1, 2, 3..."
+                  formControlName="sortOrder"
+                ></app-number>
+              </div>
+
+              <app-textbox
+                label="ชื่อเกรดสภาพ *"
+                placeholder="เช่น สภาพนางฟ้า 98-100%, สภาพดี 90-95%"
+                formControlName="gradeName"
+              ></app-textbox>
+
+              <app-textarea
+                label="เกณฑ์มาตรฐานการประเมินสภาพ"
+                placeholder="ไม่มีรอยตกหล่น, เลนส์ใสไม่มีราฝ้า, ชัตเตอร์น้อย..."
+                formControlName="description"
+                [rows]="3"
+              ></app-textarea>
+
+              @if (modalMode() === 'edit') {
+                <app-checkbox
+                  label="เปิดใช้งานเกรดนี้ในระบบ"
+                  formControlName="isActive"
+                ></app-checkbox>
+              }
+            </form>
+          }
+
+          <!-- 4. PRODUCT FORM -->
+          @if (activeTab() === 'products') {
+            <form [formGroup]="productForm" class="space-y-4">
+              <div class="grid grid-cols-2 gap-3">
+                <app-select
+                  label="แบรนด์สินค้า *"
+                  placeholder="เลือกแบรนด์"
+                  [options]="brandSelectOptions()"
+                  formControlName="brandId"
+                ></app-select>
+
+                <app-select
+                  label="หมวดหมู่สินค้า *"
+                  placeholder="เลือกหมวดหมู่"
+                  [options]="categorySelectOptions()"
+                  formControlName="categoryId"
+                ></app-select>
+              </div>
+
+              <app-textbox
+                label="ชื่อรุ่นสินค้า (Model Name) *"
+                placeholder="เช่น EOS R6 Mark II, A7 IV, Z6 II"
+                formControlName="modelName"
+              ></app-textbox>
+
+              <div class="grid grid-cols-2 gap-3">
+                <app-textbox
+                  label="รหัสสินค้ามาสเตอร์ (SKU / Code) *"
+                  placeholder="เช่น CAN-R6M2, SONY-A7M4"
+                  formControlName="productCode"
+                ></app-textbox>
+
+                <app-number
+                  currency
+                  label="ราคาขายตั้งต้น (Base Price)"
+                  placeholder="0.00"
+                  formControlName="defaultSellingPrice"
+                ></app-number>
+              </div>
+
+              <app-textarea
+                label="สเปก / รายละเอียดสินค้า"
+                placeholder="เซนเซอร์ Full-Frame 24.2MP, ระบบกันสั่น 8 Stops..."
+                formControlName="description"
+                [rows]="2"
+              ></app-textarea>
+
+              <!-- Product Image Uploader -->
+              <app-image-uploader
+                formControlName="imageUrl"
+                label="รูปภาพสินค้า (Product Image)"
+                hint="รองรับการอัปโหลดไฟล์รูปภาพจากเครื่อง หรือระบุ URL รูปสินค้า"
+              ></app-image-uploader>
+
+              @if (modalMode() === 'edit') {
+                <app-checkbox
+                  label="เปิดใช้งานรุ่นสินค้านี้ในระบบ"
+                  formControlName="isActive"
+                ></app-checkbox>
+              }
+            </form>
+          }
+
+          <!-- 5. CUSTOMER FORM -->
+          @if (activeTab() === 'customers') {
+            <form [formGroup]="customerForm" class="space-y-4">
+              <app-select
+                label="ประเภทลูกค้า / ผู้ขาย *"
+                [options]="customerTypeOptions"
+                formControlName="customerType"
+              ></app-select>
+
+              <div class="grid grid-cols-2 gap-3">
+                <app-textbox
+                  label="ชื่อ-นามสกุล / ชื่อร้านค้า *"
+                  placeholder="เช่น สมชาย ใจดี"
+                  formControlName="name"
+                ></app-textbox>
+
+                <app-textbox
+                  label="เบอร์โทรศัพท์ *"
+                  placeholder="เช่น 0812345678"
+                  formControlName="phone"
+                ></app-textbox>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <app-textbox
+                  label="เลขบัตรประชาชน / เลขประจำตัวผู้เสียภาษี"
+                  placeholder="13 หลัก"
+                  formControlName="idCardNumber"
+                ></app-textbox>
+
+                <app-textbox
+                  label="Line ID"
+                  placeholder="ไอดีไลน์..."
+                  formControlName="lineId"
+                ></app-textbox>
+              </div>
+
+              <div class="p-3 bg-sky-50/50 rounded-xl border border-sky-100 space-y-3">
+                <div class="text-[11px] font-semibold text-sky-800 flex items-center gap-1">
+                  <span class="material-icons-outlined text-sm">account_balance</span>
+                  <span>ข้อมูลบัญชีธนาคาร (สำหรับรับเงินโอนค่าสินค้าเข้า)</span>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <app-textbox
+                    label="ชื่อธนาคาร"
+                    placeholder="เช่น กสิกรไทย, ไทยพาณิชย์"
+                    formControlName="bankName"
+                  ></app-textbox>
+                  <app-textbox
+                    label="เลขที่บัญชี"
+                    placeholder="เช่น 123-4-56789-0"
+                    formControlName="bankAccountNumber"
+                  ></app-textbox>
+                </div>
+                <app-textbox
+                  label="ชื่อเจ้าของบัญชี"
+                  placeholder="ชื่อ-นามสกุลตรงกับสมุดบัญชี"
+                  formControlName="bankAccountName"
+                ></app-textbox>
+              </div>
+
+              <app-textarea
+                label="ที่อยู่"
+                placeholder="ที่อยู่ตามบัตรประชาชนหรือที่อยู่จัดส่ง..."
+                formControlName="address"
+                [rows]="2"
+              ></app-textarea>
+
+              @if (modalMode() === 'edit') {
+                <app-checkbox
+                  label="เปิดใช้งานลูกค้าคนนี้ในระบบ"
+                  formControlName="isActive"
+                ></app-checkbox>
+              }
+            </form>
+          }
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            (click)="closeModal()"
+            [disabled]="isSubmitting()"
+            class="px-4 py-2 rounded-xl text-xs text-slate-600 hover:bg-slate-200/60 font-medium transition-colors cursor-pointer"
+          >
+            ยกเลิก
+          </button>
+          <button
+            type="button"
+            (click)="submitForm()"
+            [disabled]="isSubmitting()"
+            class="px-4 py-2 rounded-xl text-xs bg-sky-600 hover:bg-sky-500 text-white font-medium shadow-md shadow-sky-600/20 transition-all cursor-pointer flex items-center gap-1.5"
+          >
+            @if (isSubmitting()) {
+              <span class="inline-block w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+            }
+            <span>บันทึกข้อมูล</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ========================================== -->
+  <!-- MODAL: DELETE CONFIRMATION DIALOG          -->
+  <!-- ========================================== -->
+  @if (showDeleteModal()) {
+    <div class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-sm w-full p-6 text-center animate-fadeIn">
+        <div class="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-4 border border-rose-100">
+          <span class="material-icons-outlined text-2xl">warning_amber</span>
+        </div>
+        <h3 class="font-bold text-slate-800 text-sm mb-1">ยืนยันการลบข้อมูล</h3>
+        <p class="text-xs text-slate-500 mb-6">
+          คุณแน่ใจหรือไม่ว่าต้องการลบ <strong class="text-slate-700">"{{ itemToDelete()?.name }}"</strong> ออกจากระบบ?
+          <br>
+          <span class="text-[11px] text-rose-500 font-medium">การกระทำนี้ไม่สามารถย้อนกลับได้</span>
+        </p>
+        <div class="flex items-center justify-center gap-2">
+          <button
+            (click)="closeDeleteModal()"
+            [disabled]="isSubmitting()"
+            class="px-4 py-2 rounded-xl text-xs text-slate-600 hover:bg-slate-100 font-medium transition-colors cursor-pointer"
+          >
+            ยกเลิก
+          </button>
+          <button
+            (click)="executeDelete()"
+            [disabled]="isSubmitting()"
+            class="px-4 py-2 rounded-xl text-xs bg-rose-600 hover:bg-rose-500 text-white font-medium shadow-md shadow-rose-600/20 transition-all cursor-pointer flex items-center gap-1.5"
+          >
+            @if (isSubmitting()) {
+              <span class="inline-block w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+            }
+            <span>ยืนยันลบ</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Image Lightbox Modal -->
+  @if (previewImageUrl()) {
+    <div
+      class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn"
+      (click)="closeImagePreview()"
+    >
+      <div
+        class="bg-white rounded-2xl overflow-hidden shadow-2xl max-w-xl w-full border border-slate-200"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="p-3 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+          <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5 truncate">
+            <span class="material-icons-outlined text-sky-600 text-base">image</span>
+            <span class="truncate">{{ previewImageTitle() }}</span>
+          </span>
+          <button
+            type="button"
+            (click)="closeImagePreview()"
+            class="p-1 rounded-lg hover:bg-slate-200 text-slate-500 cursor-pointer"
+          >
+            <span class="material-icons-outlined text-base">close</span>
+          </button>
+        </div>
+        <div class="p-4 bg-slate-100/50 flex items-center justify-center max-h-[70vh] overflow-hidden">
+          <img
+            [src]="previewImageUrl()!"
+            [alt]="previewImageTitle()"
+            class="max-w-full max-h-[60vh] object-contain rounded-xl shadow-xs"
+          />
+        </div>
+        <div class="p-3 bg-white border-t border-slate-100 flex justify-end">
+          <button
+            type="button"
+            (click)="closeImagePreview()"
+            class="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
+          >
+            ปิด
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

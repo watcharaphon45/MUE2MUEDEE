@@ -1,0 +1,167 @@
+<div class="h-screen overflow-hidden bg-sky-50 text-slate-800 flex selection:bg-sky-500 selection:text-white">
+  <!-- Sidebar -->
+  <aside class="layout-sidebar h-full bg-white/90 border-r border-slate-200 flex flex-col shrink-0" [class.is-collapsed]="isSidebarCollapsed()">
+    <!-- Brand / Store Info & Single Primary Collapse/Expand Toggle Point -->
+    <div class="h-16 border-b border-slate-200 flex items-center" [class.px-4]="!isSidebarCollapsed()" [class.px-2]="isSidebarCollapsed()">
+      @if (!isSidebarCollapsed()) {
+        <div class="w-full flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-500 to-amber-400 p-[2px] shadow-md shadow-sky-500/20 shrink-0">
+              <div class="w-full h-full bg-white rounded-[10px] flex items-center justify-center">
+                <span class="material-icons-outlined text-amber-600 text-lg">photo_camera</span>
+              </div>
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="font-bold text-sm text-slate-800 tracking-tight truncate" [title]="authService.currentStore()?.storeName ?? 'MUE2MUEDEE'">
+                {{ authService.currentStore()?.storeName ?? 'MUE2MUEDEE' }}
+              </div>
+              <div class="text-[10px] text-slate-500 flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
+                <span class="truncate">รหัสร้าน: {{ authService.currentStore()?.storeCode ?? 'N/A' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <button 
+            type="button" 
+            (click)="toggleSidebar()" 
+            class="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors shrink-0 cursor-pointer flex items-center justify-center" 
+            title="ย่อแถบเมนู (Collapse Sidebar)"
+            id="sidebar-toggle-btn"
+          >
+            <span class="material-icons-outlined text-lg">chevron_left</span>
+          </button>
+        </div>
+      } @else {
+        <div class="w-full flex items-center justify-between gap-1 px-0.5">
+          <div class="w-[30px] h-[30px] rounded-lg bg-gradient-to-tr from-sky-500 to-amber-400 p-[2px] shadow-sm shrink-0" [title]="authService.currentStore()?.storeName ?? 'MUE2MUEDEE'">
+            <div class="w-full h-full bg-white rounded-[6px] flex items-center justify-center">
+              <span class="material-icons-outlined text-amber-600 text-sm">photo_camera</span>
+            </div>
+          </div>
+          <button 
+            type="button" 
+            (click)="toggleSidebar()" 
+            class="w-6 h-6 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors shrink-0 cursor-pointer flex items-center justify-center" 
+            title="ขยายแถบเมนู (Expand Sidebar)"
+            id="sidebar-toggle-btn"
+          >
+            <span class="material-icons-outlined text-base">chevron_right</span>
+          </button>
+        </div>
+      }
+    </div>
+
+    <!-- Navigation Links -->
+    <nav class="flex-1 px-3 py-3 space-y-2 overflow-y-auto">
+      @for (group of menuGroups(); track group.title; let first = $first) {
+        <div class="space-y-1">
+          @if (!isSidebarCollapsed()) {
+            <div class="nav-section-title" [class.pt-2]="!first">
+              {{ group.title }}
+            </div>
+          } @else if (!first) {
+            <div class="nav-section-divider" [title]="group.title"></div>
+          }
+
+          @for (item of group.items; track item.route) {
+            <a
+              [routerLink]="item.route"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+              class="nav-item"
+              [title]="item.label"
+            >
+              <span class="material-icons-outlined nav-icon">{{ item.icon }}</span>
+              @if (!isSidebarCollapsed()) {
+                <span class="nav-label">{{ item.label }}</span>
+              }
+            </a>
+          }
+        </div>
+      }
+    </nav>
+
+    <!-- Current User Profile in Sidebar (Single dedicated profile display, no redundant logout) -->
+    <div class="p-2.5 border-t border-slate-200 bg-white/60">
+      @if (!isSidebarCollapsed()) {
+        <div class="flex items-center gap-3 px-2 py-1.5">
+          <div class="w-8 h-8 rounded-lg bg-sky-500/20 text-sky-700 flex items-center justify-center font-bold text-xs shrink-0">
+            {{ authService.currentUser()?.fullName?.charAt(0) ?? 'U' }}
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="text-xs font-semibold text-slate-800 truncate" [title]="authService.currentUser()?.fullName">
+              {{ authService.currentUser()?.fullName }}
+            </div>
+            <div class="text-[10px] text-slate-500 flex items-center gap-1 flex-wrap">
+              @if (authService.isSuperAdmin()) {
+                <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-purple-100 text-purple-700 border border-purple-200">
+                  Super Admin
+                </span>
+              }
+              <span class="px-1.5 py-0.2 rounded text-[9px] font-medium"
+                    [ngClass]="{
+                      'bg-amber-500/20 text-amber-700': authService.currentRole() === 'Owner',
+                      'bg-blue-500/20 text-blue-700': authService.currentRole() === 'Admin',
+                      'bg-slate-200 text-slate-600': authService.currentRole() === 'Staff'
+                    }">
+                {{ authService.currentRole() }}
+              </span>
+            </div>
+          </div>
+        </div>
+      } @else {
+        <div class="flex items-center justify-center py-1">
+          <div class="w-8 h-8 rounded-lg bg-sky-500/20 text-sky-700 flex items-center justify-center font-bold text-xs shrink-0 cursor-default" [title]="(authService.currentUser()?.fullName ?? '') + ' (' + (authService.currentRole() ?? '') + ')'">
+            {{ authService.currentUser()?.fullName?.charAt(0) ?? 'U' }}
+          </div>
+        </div>
+      }
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+    <!-- Header -->
+    <header class="h-16 border-b border-slate-200 bg-white/50 backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-40">
+      <!-- Store Info (No redundant collapse button) -->
+      <div class="flex items-center gap-2 text-xs text-slate-500">
+        <span class="material-icons-outlined text-base text-slate-500">store</span>
+        <span>ร้านปัจจุบัน:</span>
+        <span class="font-semibold text-slate-700">{{ authService.currentStore()?.storeName }}</span>
+      </div>
+
+      <!-- Store Switcher & Single Primary Logout Action Point -->
+      <div class="flex items-center gap-3">
+        @if (authService.availableStores().length > 1) {
+          <div class="w-56">
+            <app-select
+              icon="store"
+              [options]="storeOptions()"
+              [value]="authService.currentStore()?.storeId"
+              (valueChange)="onStoreSelect($event)"
+              placeholder="เลือกร้านค้า..."
+            ></app-select>
+          </div>
+        }
+
+        <div class="w-px h-6 bg-slate-200"></div>
+
+        <button 
+          (click)="authService.logout()" 
+          class="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-rose-700 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+          title="ออกจากระบบ"
+          id="header-logout-btn"
+        >
+          <span class="material-icons-outlined text-sm">power_settings_new</span>
+          <span>ออกจากระบบ</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Page Outlet Container -->
+    <main class="flex-1 p-6 lg:p-8">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

@@ -11,6 +11,7 @@ public class User : AuditableEntity<Guid>, ISoftDelete
     public string? PhoneNumber { get; set; }
     public string? AvatarUrl { get; set; }
     public bool IsActive { get; set; } = true;
+    public bool IsSuperAdmin { get; set; } = false;
 
     // Soft delete
     public bool IsDeleted { get; set; }

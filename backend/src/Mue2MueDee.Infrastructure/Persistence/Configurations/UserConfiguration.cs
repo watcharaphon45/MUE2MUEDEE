@@ -33,6 +33,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.AvatarUrl)
             .HasMaxLength(500);
 
+        builder.Property(u => u.IsSuperAdmin)
+            .HasDefaultValue(false);
+
         builder.HasIndex(u => u.Email).IsUnique();
         builder.HasIndex(u => u.Username).IsUnique();
 

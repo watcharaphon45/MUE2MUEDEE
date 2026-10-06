@@ -1,0 +1,426 @@
+<div class="space-y-6">
+  <!-- Toast Notification -->
+  @if (successMessage()) {
+    <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-between shadow-sm animate-fade-in">
+      <div class="flex items-center gap-3">
+        <span class="material-icons-outlined text-emerald-600 text-xl">check_circle</span>
+        <span class="text-sm font-medium">{{ successMessage() }}</span>
+      </div>
+      <button (click)="successMessage.set(null)" class="text-emerald-500 hover:text-emerald-700">
+        <span class="material-icons-outlined text-sm">close</span>
+      </button>
+    </div>
+  }
+
+  <!-- Page Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2">
+        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide uppercase bg-purple-100 text-purple-700 border border-purple-200">
+          Super Admin Management
+        </span>
+      </div>
+      <h1 class="text-2xl font-bold text-slate-800 tracking-tight mt-1 flex items-center gap-2">
+        <span class="material-icons-outlined text-purple-600 text-2xl">admin_panel_settings</span>
+        จัดการร้านค้า & เจ้าของร้าน
+      </h1>
+      <p class="text-xs text-slate-500 mt-0.5">
+        สร้างร้านค้าใหม่ในระบบ กำหนดบัญชีเจ้าของร้าน (Owner) และควบคุมสถานะการเปิด/ปิดให้บริการ
+      </p>
+    </div>
+
+    <div>
+      <button
+        type="button"
+        (click)="openCreateModal()"
+        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-medium text-sm shadow-md shadow-purple-500/20 transition-all hover:shadow-lg hover:shadow-purple-500/30 cursor-pointer"
+        id="btn-open-create-store-modal"
+      >
+        <span class="material-icons-outlined text-lg">add_business</span>
+        <span>+ สร้างร้านค้าและเจ้าของร้าน</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Stat Summary Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
+      <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+        <span class="material-icons-outlined text-2xl">storefront</span>
+      </div>
+      <div>
+        <div class="text-xs text-slate-500 font-medium">ร้านค้าทั้งหมด</div>
+        <div class="text-2xl font-bold text-slate-800">{{ adminService.stats()?.totalStores ?? adminService.stores().length }}</div>
+      </div>
+    </div>
+
+    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
+      <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+        <span class="material-icons-outlined text-2xl">check_circle</span>
+      </div>
+      <div>
+        <div class="text-xs text-slate-500 font-medium">เปิดใช้งานอยู่</div>
+        <div class="text-2xl font-bold text-emerald-600">{{ adminService.stats()?.activeStores ?? 0 }}</div>
+      </div>
+    </div>
+
+    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
+      <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+        <span class="material-icons-outlined text-2xl">person</span>
+      </div>
+      <div>
+        <div class="text-xs text-slate-500 font-medium">เจ้าของร้าน (Owners)</div>
+        <div class="text-2xl font-bold text-indigo-600">{{ adminService.stats()?.totalOwners ?? 0 }}</div>
+      </div>
+    </div>
+
+    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
+      <div class="w-12 h-12 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+        <span class="material-icons-outlined text-2xl">group</span>
+      </div>
+      <div>
+        <div class="text-xs text-slate-500 font-medium">ผู้ใช้งานทั้งหมดในระบบ</div>
+        <div class="text-2xl font-bold text-slate-800">{{ adminService.stats()?.totalUsers ?? 0 }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search & Filter Bar -->
+  <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row gap-3 items-center justify-between">
+    <div class="relative w-full sm:w-96">
+      <span class="material-icons-outlined absolute left-3 top-2.5 text-slate-400 text-lg">search</span>
+      <input
+        type="text"
+        [value]="searchQuery()"
+        (input)="onSearch($event)"
+        placeholder="ค้นหาชื่อร้าน, รหัสร้าน, ชื่อเจ้าของร้าน, อีเมล..."
+        class="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all text-slate-700"
+      />
+    </div>
+
+    <div class="text-xs text-slate-500 flex items-center gap-2">
+      <span>พบทั้งหมด:</span>
+      <span class="font-bold text-slate-700">{{ filteredStores().length }} ร้านค้า</span>
+    </div>
+  </div>
+
+  <!-- Stores Table -->
+  <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+    @if (adminService.isLoading()) {
+      <div class="p-12 text-center text-slate-400 flex flex-col items-center gap-2">
+        <span class="material-icons-outlined text-3xl animate-spin text-purple-600">sync</span>
+        <span class="text-xs">กำลังโหลดข้อมูลร้านค้าทั้งหมด...</span>
+      </div>
+    } @else if (filteredStores().length === 0) {
+      <div class="p-12 text-center text-slate-400 flex flex-col items-center gap-2">
+        <span class="material-icons-outlined text-4xl text-slate-300">store</span>
+        <span class="text-sm font-medium text-slate-600">ไม่พบข้อมูลร้านค้า</span>
+        <span class="text-xs text-slate-400">คลิกที่ปุ่ม "+ สร้างร้านค้าและเจ้าของร้าน" เพื่อสร้างร้านค้าใหม่</span>
+      </div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="border-b border-slate-200/80 bg-slate-50/70 text-slate-500 font-semibold uppercase text-[11px] tracking-wider">
+              <th class="py-3 px-4">ร้านค้า & รหัส</th>
+              <th class="py-3 px-4">เจ้าของร้าน (Owner)</th>
+              <th class="py-3 px-4">ข้อมูลติดต่อร้าน</th>
+              <th class="py-3 px-4 text-center">ผู้ใช้ในร้าน</th>
+              <th class="py-3 px-4">วันที่สร้าง</th>
+              <th class="py-3 px-4 text-center">สถานะ</th>
+              <th class="py-3 px-4 text-center">การจัดการ</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            @for (store of filteredStores(); track store.id) {
+              <tr class="hover:bg-slate-50/50 transition-colors">
+                <!-- Store Info -->
+                <td class="py-3 px-4">
+                  <div class="flex items-center gap-3">
+                    <div 
+                      class="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-xs shadow-sm shrink-0"
+                      [style.backgroundColor]="store.primaryColor || '#4f46e5'"
+                    >
+                      {{ store.name.charAt(0) }}
+                    </div>
+                    <div>
+                      <div class="font-bold text-slate-800 text-sm">{{ store.name }}</div>
+                      <div class="text-[11px] text-slate-500 font-mono flex items-center gap-1">
+                        <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-semibold">{{ store.code }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Owner Info -->
+                <td class="py-3 px-4">
+                  @if (store.ownerFullName) {
+                    <div class="space-y-0.5">
+                      <div class="font-semibold text-slate-800 flex items-center gap-1.5">
+                        <span class="material-icons-outlined text-xs text-indigo-500">verified_user</span>
+                        <span>{{ store.ownerFullName }}</span>
+                      </div>
+                      <div class="text-[11px] text-slate-500 flex items-center gap-1">
+                        <span class="text-indigo-600 font-medium">@{{ store.ownerUsername }}</span>
+                        <span>•</span>
+                        <span>{{ store.ownerEmail }}</span>
+                      </div>
+                      @if (store.ownerPhoneNumber) {
+                        <div class="text-[10px] text-slate-400">โทร: {{ store.ownerPhoneNumber }}</div>
+                      }
+                    </div>
+                  } @else {
+                    <span class="text-slate-400 italic">ไม่มีข้อมูลเจ้าของ</span>
+                  }
+                </td>
+
+                <!-- Store Contact -->
+                <td class="py-3 px-4">
+                  <div class="space-y-0.5 text-slate-600">
+                    @if (store.phone) {
+                      <div class="flex items-center gap-1">
+                        <span class="material-icons-outlined text-xs text-slate-400">call</span>
+                        <span>{{ store.phone }}</span>
+                      </div>
+                    }
+                    @if (store.email) {
+                      <div class="flex items-center gap-1">
+                        <span class="material-icons-outlined text-xs text-slate-400">email</span>
+                        <span>{{ store.email }}</span>
+                      </div>
+                    }
+                    @if (store.address) {
+                      <div class="text-[10px] text-slate-400 truncate max-w-xs" [title]="store.address">
+                        {{ store.address }}
+                      </div>
+                    }
+                    @if (!store.phone && !store.email && !store.address) {
+                      <span class="text-slate-400">-</span>
+                    }
+                  </div>
+                </td>
+
+                <!-- Total Users -->
+                <td class="py-3 px-4 text-center">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-medium text-[11px]">
+                    <span class="material-icons-outlined text-xs">group</span>
+                    <span>{{ store.totalUsersCount }}</span>
+                  </span>
+                </td>
+
+                <!-- Created Date -->
+                <td class="py-3 px-4 text-slate-500 whitespace-nowrap">
+                  {{ store.createdAt | date:'dd/MM/yyyy HH:mm' }}
+                </td>
+
+                <!-- Status -->
+                <td class="py-3 px-4 text-center">
+                  <span 
+                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold"
+                    [ngClass]="store.isActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'"
+                  >
+                    <span class="w-1.5 h-1.5 rounded-full" [ngClass]="store.isActive ? 'bg-emerald-500' : 'bg-rose-500'"></span>
+                    <span>{{ store.isActive ? 'เปิดใช้งาน' : 'ระงับบริการ' }}</span>
+                  </span>
+                </td>
+
+                <!-- Action Button -->
+                <td class="py-3 px-4 text-center">
+                  <button
+                    type="button"
+                    (click)="toggleStatus(store)"
+                    class="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer border"
+                    [ngClass]="store.isActive ? 'text-rose-600 hover:bg-rose-50 border-rose-200' : 'text-emerald-600 hover:bg-emerald-50 border-emerald-200'"
+                    [title]="store.isActive ? 'คลิกเพื่อระงับร้านค้านี้' : 'คลิกเพื่อเปิดใช้งานร้านค้านี้'"
+                  >
+                    {{ store.isActive ? 'ระงับร้าน' : 'เปิดใช้งาน' }}
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  <!-- Create Store & Owner Modal -->
+  @if (isModalOpen()) {
+    <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-2xl overflow-hidden animate-scale-up">
+        <!-- Modal Header -->
+        <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
+          <div class="flex items-center gap-2.5">
+            <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+              <span class="material-icons-outlined text-xl">add_business</span>
+            </div>
+            <div>
+              <h2 class="text-base font-bold text-slate-800">สร้างร้านค้าและบัญชีเจ้าของร้าน (Owner)</h2>
+              <p class="text-[11px] text-slate-500">กรอกข้อมูลร้านค้าและกำหนดสิทธิ์ผู้ดูแลร้านเริ่มต้นในระบบ</p>
+            </div>
+          </div>
+          <button (click)="closeModal()" class="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center">
+            <span class="material-icons-outlined text-base">close</span>
+          </button>
+        </div>
+
+        <!-- Form Body -->
+        <form [formGroup]="storeForm" (ngSubmit)="onSubmit()" class="p-6 space-y-6">
+          @if (formError()) {
+            <div class="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+              <span class="material-icons-outlined text-base text-rose-500">error_outline</span>
+              <span>{{ formError() }}</span>
+            </div>
+          }
+
+          <!-- Section 1: Store Information -->
+          <div class="bg-slate-50/60 p-4 rounded-2xl border border-slate-200/70 space-y-3.5">
+            <div class="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-wider">
+              <span class="material-icons-outlined text-sm text-purple-600">store</span>
+              <span>1. ข้อมูลร้านค้า (Store Information)</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div class="sm:col-span-2">
+                <app-textbox
+                  label="ชื่อร้านค้า *"
+                  placeholder="เช่น ABC Camera สาขา 2, เลนส์โปร สยาม"
+                  icon="storefront"
+                  formControlName="storeName"
+                ></app-textbox>
+              </div>
+
+              <div>
+                <app-textbox
+                  label="รหัสร้านค้า (Store Code)"
+                  placeholder="ปล่อยว่างเพื่อสร้างอัตโนมัติ (เช่น ABCCAM)"
+                  icon="tag"
+                  formControlName="storeCode"
+                ></app-textbox>
+              </div>
+
+              <div>
+                <app-textbox
+                  label="สีธีมประจำร้าน"
+                  placeholder="#0284c7"
+                  icon="palette"
+                  formControlName="primaryColor"
+                ></app-textbox>
+              </div>
+
+              <div>
+                <app-textbox
+                  label="เบอร์โทรศัพท์ร้าน"
+                  placeholder="เช่น 02-123-4567, 081-234-5678"
+                  icon="phone"
+                  formControlName="phone"
+                ></app-textbox>
+              </div>
+
+              <div>
+                <app-textbox
+                  label="อีเมลร้านค้า"
+                  placeholder="contact@store.com"
+                  icon="email"
+                  formControlName="email"
+                ></app-textbox>
+              </div>
+
+              <div class="sm:col-span-2">
+                <app-textbox
+                  label="ที่อยู่ร้านค้า"
+                  placeholder="เลขที่ อาคาร ถนน แขวง/ตำบล เขต/อำเภอ จังหวัด"
+                  icon="location_on"
+                  formControlName="address"
+                ></app-textbox>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Store Owner Account -->
+          <div class="bg-indigo-50/40 p-4 rounded-2xl border border-indigo-200/70 space-y-3.5">
+            <div class="flex items-center gap-2 text-xs font-bold text-indigo-900 uppercase tracking-wider">
+              <span class="material-icons-outlined text-sm text-indigo-600">person_add</span>
+              <span>2. ข้อมูลบัญชีเจ้าของร้าน (Owner Account)</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div class="sm:col-span-2">
+                <app-textbox
+                  label="ชื่อ-นามสกุล เจ้าของร้าน *"
+                  placeholder="เช่น คุณสมชาย กล้องสวย"
+                  icon="badge"
+                  formControlName="ownerFullName"
+                ></app-textbox>
+              </div>
+
+              <div>
+                <app-textbox
+                  label="ชื่อผู้ใช้สำหรับเข้าระบบ (Username) *"
+                  placeholder="เช่น somchai_owner"
+                  icon="account_circle"
+                  formControlName="ownerUsername"
+                ></app-textbox>
+              </div>
+
+              <div>
+                <app-textbox
+                  label="อีเมลสำหรับเข้าระบบ *"
+                  placeholder="owner@store.com"
+                  type="email"
+                  icon="alternate_email"
+                  formControlName="ownerEmail"
+                ></app-textbox>
+              </div>
+
+              <div>
+                <app-textbox
+                  label="รหัสผ่านเริ่มต้น *"
+                  type="password"
+                  placeholder="ความยาวอย่างน้อย 6 ตัวอักษร"
+                  icon="lock"
+                  formControlName="ownerPassword"
+                ></app-textbox>
+              </div>
+
+              <div>
+                <app-textbox
+                  label="เบอร์โทรศัพท์มือถือ"
+                  placeholder="08x-xxx-xxxx"
+                  icon="smartphone"
+                  formControlName="ownerPhoneNumber"
+                ></app-textbox>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modal Footer Actions -->
+          <div class="flex items-center justify-end gap-3 pt-2 border-t border-slate-200">
+            <button
+              type="button"
+              (click)="closeModal()"
+              class="px-4 py-2 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+            >
+              ยกเลิก
+            </button>
+
+            <button
+              type="submit"
+              [disabled]="isSubmitting()"
+              class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-medium text-xs shadow-md shadow-purple-500/20 transition-all disabled:opacity-50 cursor-pointer"
+              id="btn-submit-create-store"
+            >
+              @if (isSubmitting()) {
+                <span class="material-icons-outlined text-sm animate-spin">sync</span>
+                <span>กำลังสร้างร้านและบัญชี...</span>
+              } @else {
+                <span class="material-icons-outlined text-sm">check_circle</span>
+                <span>ยืนยันสร้างร้านค้าและเจ้าของร้าน</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</div>

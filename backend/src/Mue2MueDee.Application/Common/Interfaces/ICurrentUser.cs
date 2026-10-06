@@ -8,6 +8,7 @@ public interface ICurrentUser
     string? Username { get; }
     string? Email { get; }
     bool IsAuthenticated { get; }
+    bool IsSuperAdmin { get; }
 }
 
 public interface ICurrentStore

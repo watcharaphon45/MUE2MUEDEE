@@ -205,7 +205,7 @@ public class AuthService : IAuthService
         var user = await _context.Users.FindAsync(new object[] { _currentUser.UserId.Value }, ct);
         if (user == null) return null;
 
-        return new AuthUserDto(user.Id, user.Username, user.Email, user.FullName, user.AvatarUrl);
+        return new AuthUserDto(user.Id, user.Username, user.Email, user.FullName, user.AvatarUrl, user.IsSuperAdmin);
     }
 
     private async Task<LoginResponse> GenerateAuthResponseAsync(
@@ -241,7 +241,7 @@ public class AuthService : IAuthService
             us.Store.PrimaryColor
         )).ToList();
 
-        var authUser = new AuthUserDto(user.Id, user.Username, user.Email, user.FullName, user.AvatarUrl);
+        var authUser = new AuthUserDto(user.Id, user.Username, user.Email, user.FullName, user.AvatarUrl, user.IsSuperAdmin);
 
         return new LoginResponse(
             accessToken,

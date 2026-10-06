@@ -1,0 +1,198 @@
+<div class="form-container">
+  <!-- Breadcrumb & Title -->
+  <div class="header-section">
+    <div class="breadcrumb">
+      <a routerLink="/inventory" class="breadcrumb-link">คลังสินค้า</a>
+      <span class="breadcrumb-sep">/</span>
+      <span class="breadcrumb-current">รับสินค้าเข้าคลังใหม่</span>
+    </div>
+    <h1 class="page-title">รับสินค้ามือสองเข้าสต็อก (Intake Gear)</h1>
+    <p class="page-subtitle">บันทึกข้อมูลกล้อง/เลนส์ พร้อมหมายเลข Serial Number ตรวจสอบอุปกรณ์ และบันทึกต้นทุน</p>
+  </div>
+
+  <!-- Error Alert -->
+  <div *ngIf="errorMessage()" class="alert-error">
+    <svg class="alert-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <span>{{ errorMessage() }}</span>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="form-layout">
+    <!-- Left Column: Form Fields -->
+    <div class="form-main-card">
+      <div class="section-block">
+        <h2 class="section-title">1. ข้อมูลรุ่นสินค้า & หมายเลขประจำตัว</h2>
+        <div class="form-grid">
+          <div class="col-span-2">
+            <app-select
+              label="เลือกรุ่นสินค้ามาสเตอร์ *"
+              placeholder="-- ค้นหาและเลือกรุ่นกล้อง/เลนส์ --"
+              [options]="productOptions()"
+              formControlName="productId"
+              [errorMessage]="form.controls.productId.touched && form.controls.productId.errors?.['required'] ? 'กรุณาเลือกรุ่นสินค้า' : ''"
+            ></app-select>
+
+            <!-- Selected Product Preview with Image -->
+            <div *ngIf="selectedProduct() as prod" class="mt-2.5 p-3 rounded-2xl bg-sky-50/70 border border-sky-100 flex items-center gap-3">
+              <div class="w-14 h-14 rounded-xl overflow-hidden bg-white border border-sky-200 shrink-0 flex items-center justify-center">
+                <img *ngIf="prod.imageUrl" [src]="prod.imageUrl" [alt]="prod.modelName" class="w-full h-full object-cover" />
+                <span *ngIf="!prod.imageUrl" class="material-icons-outlined text-sky-400 text-xl">photo_camera</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="text-xs font-bold text-slate-800 truncate">{{ prod.brandName }} {{ prod.modelName }}</div>
+                <div class="text-[11px] text-slate-500 font-mono">{{ prod.productCode }} • {{ prod.categoryName }}</div>
+                <div *ngIf="prod.defaultSellingPrice" class="text-[11px] text-sky-700 font-semibold mt-0.5">
+                  ราคาขายตั้งต้น: ฿{{ prod.defaultSellingPrice | number:'1.2-2' }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <app-textbox
+            label="Serial Number ประจำตัวเครื่อง *"
+            placeholder="เช่น 3859201"
+            formControlName="serialNumber"
+            [errorMessage]="form.controls.serialNumber.touched && form.controls.serialNumber.errors?.['required'] ? 'กรุณาระบุ Serial Number' : ''"
+          ></app-textbox>
+
+          <app-select
+            label="เกรดสภาพสินค้า *"
+            placeholder="-- เลือกเกรดสภาพ --"
+            [options]="gradeOptions()"
+            formControlName="conditionGradeId"
+            [errorMessage]="form.controls.conditionGradeId.touched && form.controls.conditionGradeId.errors?.['required'] ? 'กรุณาเลือกเกรดสภาพ' : ''"
+          ></app-select>
+
+          <app-number
+            label="จำนวนชัตเตอร์ (Shutter Count)"
+            placeholder="เช่น 8500 (เฉพาะกล้องถ่ายภาพ)"
+            formControlName="shutterCount"
+          ></app-number>
+
+          <app-select
+            label="ลูกค้า / ผู้ขายสินค้าเข้า"
+            placeholder="เลือกลูกค้า"
+            [options]="customerOptions()"
+            formControlName="customerId"
+          ></app-select>
+        </div>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <div class="section-block">
+        <h2 class="section-title">2. ข้อมูลอุปกรณ์และสภาพตำหนิ</h2>
+        <div class="form-grid">
+          <div class="col-span-2">
+            <app-textarea
+              label="อุปกรณ์ที่มาด้วย (Accessories)"
+              placeholder="เช่น กล่องแท้ตรงรุ่น, แบตเตอรี่แท้ 2 ก้อน, สายคล้องคอ, แท่นชาร์จ, ฮูดเลนส์"
+              formControlName="accessories"
+              [rows]="3"
+            ></app-textarea>
+          </div>
+
+          <div class="col-span-2">
+            <app-textarea
+              label="อาการตำหนิ / ริ้วรอย (Defects)"
+              placeholder="เช่น มีรอยขนแมวบางๆ ใต้ฐานกล้อง, ฝุ่นในเลนส์ 1 เม็ดไม่มีผลต่อภาพ, ยางกริปไม่บวม"
+              formControlName="defects"
+              [rows]="3"
+            ></app-textarea>
+          </div>
+
+          <div class="col-span-2">
+            <app-textarea
+              label="หมายเหตุภายในร้าน (Internal Notes)"
+              placeholder="บันทึกข้อความภายใน เช่น รับซื้อผ่านหน้าร้านสาขาหลัก, ตรวจสอบแล้วใช้งานปกติ 100%"
+              formControlName="notes"
+              [rows]="2"
+            ></app-textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <div class="section-block">
+        <h2 class="section-title">3. ราคารับซื้อ & ราคาตั้งขาย</h2>
+        <div class="form-grid">
+          <app-number
+            currency
+            label="ราคารับซื้อเข้า (Purchase Cost) *"
+            placeholder="0.00"
+            formControlName="purchaseCost"
+            [errorMessage]="form.controls.purchaseCost.touched && form.controls.purchaseCost.errors?.['required'] ? 'กรุณาระบุราคารับซื้อ' : ''"
+          ></app-number>
+
+          <app-number
+            currency
+            label="ต้นทุนเริ่มต้น (Initial Actual Cost)"
+            placeholder="เท่ากับราคารับซื้อ"
+            formControlName="actualCost"
+          ></app-number>
+
+          <div class="col-span-2">
+            <app-number
+              currency
+              label="ราคาตั้งขายหน้าร้าน (Selling Price) *"
+              placeholder="0.00"
+              formControlName="sellingPrice"
+              [errorMessage]="form.controls.sellingPrice.touched && form.controls.sellingPrice.errors?.['required'] ? 'กรุณาระบุราคาตั้งขาย' : ''"
+            ></app-number>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Footer -->
+      <div class="form-actions">
+        <a routerLink="/inventory" class="btn-secondary">ยกเลิก</a>
+        <button type="submit" class="btn-primary" [disabled]="isSubmitting()">
+          <span *ngIf="isSubmitting()">กำลังบันทึก...</span>
+          <span *ngIf="!isSubmitting()">บันทึกรับสินค้าเข้าสต็อก</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Column: Real-time Profit Preview Card -->
+    <div class="preview-sidebar">
+      <div class="preview-card">
+        <h3 class="preview-title">สรุปกำไรคาดการณ์ (Live Preview)</h3>
+
+        <div class="preview-metric">
+          <span class="preview-metric-label">ต้นทุนสินค้า (Cost)</span>
+          <span class="preview-metric-val">฿{{ (form.value.actualCost || form.value.purchaseCost || 0) | number:'1.2-2' }}</span>
+        </div>
+
+        <div class="preview-metric">
+          <span class="preview-metric-label">ราคาตั้งขาย (Price)</span>
+          <span class="preview-metric-val font-semibold">฿{{ (form.value.sellingPrice || 0) | number:'1.2-2' }}</span>
+        </div>
+
+        <div class="preview-divider"></div>
+
+        <div class="preview-metric highlight">
+          <span class="preview-metric-label font-bold text-gray-900">กำไรคาดการณ์ (Profit)</span>
+          <span class="preview-metric-val font-bold text-emerald-600">
+            +฿{{ expectedProfit | number:'1.2-2' }}
+          </span>
+        </div>
+
+        <div class="preview-metric">
+          <span class="preview-metric-label">อัตรากำไร (Margin)</span>
+          <span class="preview-metric-val text-emerald-600 font-semibold">
+            {{ expectedMargin }}%
+          </span>
+        </div>
+
+        <div class="preview-tips">
+          <svg class="tip-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>เมื่อบันทึกรับเข้า ระบบจะสร้างรหัส SKU และประวัติ Stock Movement บันทึกต้นทุนให้อัตโนมัติ</span>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>

@@ -10,6 +10,7 @@ public record InventoryItemDto(
     string ProductCode,
     string BrandName,
     string CategoryName,
+    string? ProductImageUrl,
     string SerialNumber,
     Guid ConditionGradeId,
     string ConditionGradeCode,

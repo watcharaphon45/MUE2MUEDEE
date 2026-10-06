@@ -22,7 +22,8 @@ public record AuthUserDto(
     string Username,
     string Email,
     string FullName,
-    string? AvatarUrl
+    string? AvatarUrl,
+    bool IsSuperAdmin
 );
 
 public record LoginResponse(

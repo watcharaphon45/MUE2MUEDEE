@@ -1,0 +1,154 @@
+<div class="space-y-1.5 relative select-component-root w-full min-w-0 max-w-full" [class.z-40]="isOpen">
+  <!-- Label -->
+  @if (label) {
+    <label class="block text-xs font-medium text-slate-600 truncate max-w-full">
+      {{ label }}
+      @if (required) {
+        <span class="text-rose-600 font-bold ml-0.5">*</span>
+      }
+    </label>
+  }
+
+  <!-- Select Trigger Container -->
+  <div class="relative w-full min-w-0 max-w-full">
+    <div
+      #triggerContainer
+      (click)="onContainerClick($event)"
+      [ngClass]="{
+        'border-rose-500 ring-2 ring-rose-500/20': !!errorMessage,
+        'border-sky-500 ring-2 ring-sky-500/20': isOpen && !errorMessage,
+        'border-slate-300/80 hover:border-slate-400': !isOpen && !errorMessage && !disabled,
+        'opacity-60 cursor-not-allowed bg-sky-50/40 border-slate-200': disabled,
+        'bg-white cursor-pointer': !disabled,
+        'pl-10': !!icon,
+        'pl-4': !icon
+      }"
+      class="select-trigger-container w-full h-[38px] min-w-0 max-w-full flex items-center justify-between border rounded-xl pr-2.5 text-xs text-slate-800 transition-all select-none outline-none shadow-xs group focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/20 box-border"
+    >
+      <!-- Leading Icon -->
+      @if (icon) {
+        <span class="material-icons-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg pointer-events-none select-none flex-shrink-0">
+          {{ icon }}
+        </span>
+      }
+
+      <!-- Main Input (Single Input for both Display and Search) -->
+      <div class="select-input-wrapper flex items-center min-w-0 flex-1 pr-1.5 overflow-hidden h-full">
+        <input
+          #mainInput
+          type="text"
+          role="combobox"
+          [attr.aria-expanded]="isOpen"
+          [attr.aria-haspopup]="'listbox'"
+          [attr.aria-disabled]="disabled"
+          [disabled]="disabled"
+          [placeholder]="inputPlaceholder"
+          [value]="displayInputText"
+          (focus)="onInputFocus()"
+          (input)="onInputChange($event)"
+          (keydown)="onKeyDown($event)"
+          (blur)="onBlur()"
+          class="select-main-input w-full h-full min-w-0 max-w-full bg-transparent border-none p-0 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-0 truncate cursor-pointer font-normal box-border leading-normal"
+          [class.cursor-text]="isOpen"
+          [class.cursor-not-allowed]="disabled"
+          autocomplete="off"
+          spellcheck="false"
+        />
+      </div>
+
+      <!-- Action Icon: EXACTLY ONE ICON on the right -->
+      <div class="flex items-center justify-center flex-shrink-0 h-full">
+        @if (showClearIcon) {
+          <!-- Case 3 & Case 4: Clear Icon Only (×) -->
+          <button
+            type="button"
+            (click)="onClearClick($event)"
+            class="p-0.5 rounded-full hover:bg-rose-50 hover:text-rose-500 text-slate-400 transition-colors focus:outline-none focus:ring-1 focus:ring-rose-400 cursor-pointer flex-shrink-0 flex items-center justify-center"
+            title="ล้างค่าที่เลือก (Clear selection)"
+            tabindex="-1"
+            aria-label="Clear selection"
+          >
+            <span class="material-icons-outlined text-sm block leading-none">close</span>
+          </button>
+        } @else {
+          <!-- Case 1 & Case 2: Dropdown Arrow Only (▼ / ▲) -->
+          <button
+            type="button"
+            (click)="onArrowClick($event)"
+            class="p-0.5 rounded-full text-slate-400 group-hover:text-slate-600 transition-colors focus:outline-none cursor-pointer flex-shrink-0 flex items-center justify-center"
+            tabindex="-1"
+            aria-label="Toggle dropdown"
+          >
+            <span
+              class="material-icons-outlined text-base block leading-none transition-transform duration-200"
+              [class.rotate-180]="isOpen"
+              [class.text-sky-600]="isOpen"
+            >
+              expand_more
+            </span>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Custom Floating Dropdown Panel -->
+    @if (isOpen) {
+      <div
+        #dropdownPanel
+        role="listbox"
+        [class.bottom-full]="openUpwards"
+        [class.mb-1.5]="openUpwards"
+        [class.top-full]="!openUpwards"
+        [class.mt-1.5]="!openUpwards"
+        [ngClass]="panelClass"
+        class="select-panel absolute left-0 right-0 w-full min-w-0 max-w-full z-50 bg-white border border-slate-200/90 rounded-xl shadow-xl shadow-slate-200/70 p-1.5 max-h-64 overflow-y-auto space-y-0.5 animate-fadeIn box-border"
+        (mousedown)="$event.preventDefault()"
+      >
+        <!-- Options List -->
+        @for (opt of filteredOptions; track opt.value; let idx = $index) {
+          <div
+            role="option"
+            [attr.aria-selected]="isSelected(opt)"
+            [attr.aria-disabled]="opt.disabled"
+            (click)="selectOption(opt, $event)"
+            (mouseenter)="setHighlightedIndex(idx)"
+            [title]="opt.label"
+            [ngClass]="{
+              'bg-sky-50 text-sky-700 font-medium': isSelected(opt),
+              'bg-slate-100/80 text-slate-900': idx === highlightedIndex && !isSelected(opt),
+              'text-slate-700 hover:bg-sky-50/60 hover:text-sky-700': !isSelected(opt) && idx !== highlightedIndex,
+              'opacity-40 cursor-not-allowed pointer-events-none': opt.disabled,
+              'cursor-pointer': !opt.disabled
+            }"
+            class="select-option-item w-full min-w-0 max-w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-colors group select-none box-border"
+          >
+            <span class="select-option-label truncate min-w-0 flex-1 mr-2">{{ opt.label }}</span>
+            @if (isSelected(opt)) {
+              <span class="material-icons-outlined text-sm text-sky-600 flex-shrink-0">check</span>
+            }
+          </div>
+        } @empty {
+          <!-- Empty State -->
+          <div class="py-5 px-3 text-center space-y-1 select-none">
+            <div class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-400 mb-0.5">
+              <span class="material-icons-outlined text-base">search_off</span>
+            </div>
+            <p class="text-xs font-medium text-slate-600">
+              ไม่พบข้อมูล
+            </p>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Error Message or Hint -->
+  @if (errorMessage) {
+    <p class="text-[11px] text-rose-600 flex items-center gap-1 min-w-0 truncate">
+      <span class="material-icons-outlined text-xs flex-shrink-0">error</span>
+      <span class="truncate">{{ errorMessage }}</span>
+    </p>
+  } @else if (hint) {
+    <p class="text-[11px] text-slate-500 min-w-0 truncate">{{ hint }}</p>
+  }
+</div>

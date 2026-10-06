@@ -42,7 +42,8 @@ public class DbInitializer
                     FullName = "คุณเจ้าของร้าน มือสองมือดี",
                     PhoneNumber = "081-234-5678",
                     PasswordHash = passwordHasher.HashPassword("Admin1234!"),
-                    IsActive = true
+                    IsActive = true,
+                    IsSuperAdmin = true
                 };
 
                 var defaultStaff = new User
@@ -52,7 +53,19 @@ public class DbInitializer
                     FullName = "พนักงานหน้าร้าน",
                     PhoneNumber = "089-876-5432",
                     PasswordHash = passwordHasher.HashPassword("Staff1234!"),
-                    IsActive = true
+                    IsActive = true,
+                    IsSuperAdmin = false
+                };
+
+                var defaultSuperAdmin = new User
+                {
+                    Email = "superadmin@mue2muedee.com",
+                    Username = "superadmin",
+                    FullName = "ผู้ดูแลระบบสูงสุด (Super Admin)",
+                    PhoneNumber = "080-000-0000",
+                    PasswordHash = passwordHasher.HashPassword("Admin1234!"),
+                    IsActive = true,
+                    IsSuperAdmin = true
                 };
 
                 var ownerUserStore = new UserStore
@@ -71,12 +84,58 @@ public class DbInitializer
                     IsActive = true
                 };
 
+                var superAdminUserStore = new UserStore
+                {
+                    User = defaultSuperAdmin,
+                    Store = defaultStore,
+                    Role = StoreRole.Owner,
+                    IsActive = true
+                };
+
                 context.Stores.Add(defaultStore);
-                context.Users.AddRange(defaultOwner, defaultStaff);
-                context.UserStores.AddRange(ownerUserStore, staffUserStore);
+                context.Users.AddRange(defaultOwner, defaultStaff, defaultSuperAdmin);
+                context.UserStores.AddRange(ownerUserStore, staffUserStore, superAdminUserStore);
 
                 await context.SaveChangesAsync();
                 logger.LogInformation("Default store and users seeded successfully.");
+            }
+            else
+            {
+                // Ensure existing owner or superadmin is marked as SuperAdmin
+                var ownerUser = await context.Users.FirstOrDefaultAsync(u => u.Username == "owner");
+                if (ownerUser != null && !ownerUser.IsSuperAdmin)
+                {
+                    ownerUser.IsSuperAdmin = true;
+                }
+
+                if (!await context.Users.AnyAsync(u => u.Username == "superadmin"))
+                {
+                    var firstStore = await context.Stores.FirstOrDefaultAsync();
+                    var superAdminUser = new User
+                    {
+                        Email = "superadmin@mue2muedee.com",
+                        Username = "superadmin",
+                        FullName = "ผู้ดูแลระบบสูงสุด (Super Admin)",
+                        PhoneNumber = "080-000-0000",
+                        PasswordHash = passwordHasher.HashPassword("Admin1234!"),
+                        IsActive = true,
+                        IsSuperAdmin = true
+                    };
+                    context.Users.Add(superAdminUser);
+
+                    if (firstStore != null)
+                    {
+                        context.UserStores.Add(new UserStore
+                        {
+                            User = superAdminUser,
+                            Store = firstStore,
+                            Role = StoreRole.Owner,
+                            IsActive = true
+                        });
+                    }
+                }
+
+                await context.SaveChangesAsync();
             }
         }
         catch (Exception ex)

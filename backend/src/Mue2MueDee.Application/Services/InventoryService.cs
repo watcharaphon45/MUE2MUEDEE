@@ -431,6 +431,7 @@ public class InventoryService : IInventoryService
             i.Product?.ProductCode ?? "",
             i.Product?.Brand?.Name ?? "",
             i.Product?.Category?.Name ?? "",
+            i.Product?.ImageUrl,
             i.SerialNumber,
             i.ConditionGradeId,
             i.ConditionGrade?.GradeCode ?? "",

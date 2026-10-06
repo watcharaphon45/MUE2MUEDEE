@@ -26,6 +26,8 @@ public class CurrentUser : ICurrentUser
     public string? Username => _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Name)?.Value;
     public string? Email => _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Email)?.Value;
     public bool IsAuthenticated => _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
+    public bool IsSuperAdmin => _httpContextAccessor.HttpContext?.User?.FindFirst("is_super_admin")?.Value == "true" 
+                             || _httpContextAccessor.HttpContext?.User?.IsInRole("SUPERADMIN") == true;
 }
 
 public class CurrentStore : ICurrentStore
