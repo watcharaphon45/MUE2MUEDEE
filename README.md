@@ -19,17 +19,17 @@
 
 ```text
 MUE2MUEDEE/
-├── backend/
-│   ├── Mue2MueDee.sln
+├── mue2muedee/
+│   ├── Mue2MueDee.slnx
 │   ├── src/
 │   │   ├── Mue2MueDee.Domain/          # Entities, Enums, ValueObjects, Domain Rules
 │   │   ├── Mue2MueDee.Application/     # Use Cases, DTOs, Commands, Queries, Interfaces
 │   │   ├── Mue2MueDee.Infrastructure/  # EF Core, PostgreSQL Persistence, External Services
 │   │   └── Mue2MueDee.Web/             # Controllers / Endpoints, Middlewares, DI Setup
+│   │       └── spa/                    # Angular Standalone SPA (Tailwind CSS)
 │   └── tests/
 │       ├── Mue2MueDee.Domain.Tests/
 │       └── Mue2MueDee.Application.Tests/
-├── frontend/                           # Angular Workspace (Tailwind CSS + Angular Material)
 ├── docs/                               # Project requirements & specifications
 │   └── project_plan.md
 └── README.md
@@ -42,23 +42,23 @@ MUE2MUEDEE/
 ### 1. Backend (ASP.NET Core 10)
 
 ```bash
-cd backend
+cd mue2muedee
 dotnet restore
 dotnet build
 dotnet test
-dotnet run --project src/Mue2MueDee.Web/Mue2MueDee.Web.csproj
+dotnet run --project src/Mue2MueDee.Web/Mue2MueDee.Web.csproj --urls "http://localhost:5101"
 ```
 
-- API Base URL: `https://localhost:7001` หรือ `http://localhost:5000`
-- Health Check: `http://localhost:5000/api/health` หรือ `http://localhost:5000/health`
-- OpenAPI Documentation: `http://localhost:5000/openapi/v1.json`
+- API Base URL: `http://localhost:5101`
+- Health Check: `http://localhost:5101/health`
+- OpenAPI Documentation: `http://localhost:5101/openapi/v1.json`
 
-### 2. Frontend (Angular 22)
+### 2. Frontend (Angular Standalone SPA)
 
 ```bash
-cd frontend
-npm install
-npm start
+cd mue2muedee/src/Mue2MueDee.Web/spa
+npm.cmd install
+npm.cmd start
 ```
 
 - Web UI: `http://localhost:4200`

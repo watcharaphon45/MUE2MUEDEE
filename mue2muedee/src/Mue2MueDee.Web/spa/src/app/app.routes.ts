@@ -11,6 +11,10 @@ export const routes: Routes = [
     component: LoginComponent
   },
   {
+    path: 'shop/:storeCode',
+    loadComponent: () => import('./features/catalog/storefront/storefront.component').then(m => m.StorefrontComponent)
+  },
+  {
     path: '',
     component: MainLayoutComponent,
     canActivate: [authGuard],

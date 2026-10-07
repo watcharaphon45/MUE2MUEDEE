@@ -124,11 +124,28 @@
   <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
     <!-- Header -->
     <header class="h-16 border-b border-slate-200 bg-white/50 backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-40">
-      <!-- Store Info (No redundant collapse button) -->
-      <div class="flex items-center gap-2 text-xs text-slate-500">
-        <span class="material-icons-outlined text-base text-slate-500">store</span>
-        <span>ร้านปัจจุบัน:</span>
-        <span class="font-semibold text-slate-700">{{ authService.currentStore()?.storeName }}</span>
+      <!-- Store Info -->
+      <div class="flex items-center gap-3 text-xs text-slate-500">
+        <div class="flex items-center gap-1.5">
+          <span class="material-icons-outlined text-base text-slate-500">store</span>
+          <span>ร้านปัจจุบัน:</span>
+          <span class="font-semibold text-slate-700">{{ authService.currentStore()?.storeName }}</span>
+        </div>
+
+        @if (authService.currentStore()?.storeCode) {
+          <a
+            [href]="'/shop/' + authService.currentStore()?.storeCode"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 text-[11px] font-medium transition-colors"
+            title="เปิดดูหน้าร้านสำหรับลูกค้าในแท็บใหม่"
+            id="header-view-storefront-btn"
+          >
+            <span class="material-icons-outlined text-xs">storefront</span>
+            <span>ดูหน้าร้านออนไลน์</span>
+            <span class="material-icons-outlined text-[10px]">open_in_new</span>
+          </a>
+        }
       </div>
 
       <!-- Store Switcher & Single Primary Logout Action Point -->

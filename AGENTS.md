@@ -12,7 +12,7 @@
    - **Infrastructure**: EF Core, Database Configurations, External Services, Persistence, Migrations
    - **Web (API)**: Thin Controllers, Middlewares, Dependency Injection registration
 2. **Angular Standalone + Reactive Forms (Frontend / SPA)**:
-   - ที่ตั้งโปรเจกต์ SPA: `backend/src/Mue2MueDee.Web/spa/` (รันแยกแบบอิสระบนพอร์ต 4200 ด้วยคำสั่ง `npm.cmd start` ในโฟลเดอร์นี้)
+   - ที่ตั้งโปรเจกต์ SPA: `mue2muedee/src/Mue2MueDee.Web/spa/` (รันแยกแบบอิสระบนพอร์ต 4200 ด้วยคำสั่ง `npm.cmd start` ในโฟลเดอร์นี้)
    - Angular 22+, Standalone Components 100%
    - Signal-based state management ใน Services
    - Strict Reactive Forms (`FormGroup`, `FormControl`, `ControlValueAccessor`)

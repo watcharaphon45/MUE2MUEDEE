@@ -22,6 +22,7 @@ public class TestCurrentUser : ICurrentUser
     public string? Username { get; set; } = "tester";
     public string? Email { get; set; } = "tester@mue2muedee.com";
     public bool IsAuthenticated => true;
+    public bool IsSuperAdmin { get; set; } = false;
 }
 
 public class InventoryServiceTests

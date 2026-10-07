@@ -42,6 +42,44 @@
         </div>
       }
 
+      <!-- Public Storefront Link Banner -->
+      <div class="p-5 rounded-2xl bg-gradient-to-r from-sky-50 via-slate-50 to-indigo-50 border border-sky-200/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="space-y-1.5">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="text-xs font-bold text-sky-900 uppercase tracking-wide">หน้าร้านออนไลน์สำหรับลูกค้า (Public Storefront)</span>
+          </div>
+          <p class="text-xs text-slate-600">
+            ลิงก์เฉพาะร้านของคุณ สำหรับส่งให้ลูกค้าดูสต็อกสินค้าพร้อมขาย (ซ่อนต้นทุนและกำไร) พร้อมปุ่มทักคุยผ่าน LINE / Facebook
+          </p>
+          <div class="font-mono text-xs text-sky-700 bg-white/80 px-3 py-1.5 rounded-xl border border-sky-200 select-all inline-block max-w-full truncate">
+            {{ getStorefrontUrl() }}
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            (click)="copyStorefrontLink()"
+            class="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold shadow-xs flex items-center gap-1.5 cursor-pointer transition-all"
+            id="btn-copy-storefront"
+          >
+            <span class="material-icons-outlined text-sm text-sky-600">{{ copiedStoreLink() ? 'check' : 'content_copy' }}</span>
+            <span>{{ copiedStoreLink() ? 'คัดลอกแล้ว!' : 'คัดลอกลิงก์' }}</span>
+          </button>
+
+          <button
+            type="button"
+            (click)="openStorefront()"
+            class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold shadow-md shadow-sky-600/20 flex items-center gap-1.5 cursor-pointer transition-all"
+            id="btn-open-storefront"
+          >
+            <span class="material-icons-outlined text-sm">open_in_new</span>
+            <span>เปิดดูหน้าร้าน</span>
+          </button>
+        </div>
+      </div>
+
       <form [formGroup]="storeForm" (ngSubmit)="onSaveStore()" class="space-y-6">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <app-textbox
@@ -73,6 +111,20 @@
             placeholder="contact@example.com"
             icon="mail"
             [errorMessage]="getStoreErrorMessage('email')"
+          ></app-textbox>
+
+          <app-textbox
+            formControlName="line"
+            label="LINE ID ร้านค้า (สำหรับลูกค้าทักถาม)"
+            placeholder="เช่น abccamera หรือ @abccam"
+            icon="chat"
+          ></app-textbox>
+
+          <app-textbox
+            formControlName="facebook"
+            label="Facebook ลิงก์เพจ / บัญชีร้านค้า"
+            placeholder="เช่น https://facebook.com/abccamera"
+            icon="public"
           ></app-textbox>
 
           <div class="md:col-span-2">

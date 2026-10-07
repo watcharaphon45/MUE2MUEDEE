@@ -1,0 +1,660 @@
+<div class="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-sky-500 selection:text-white">
+  <!-- Top Store Navbar -->
+  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <!-- Store Branding -->
+      <div class="flex items-center gap-3 min-w-0">
+        <div 
+          class="w-10 h-10 rounded-2xl flex items-center justify-center text-white font-bold text-base shadow-sm shrink-0"
+          [style.backgroundColor]="store()?.primaryColor || '#0284c7'"
+        >
+          {{ store()?.name?.charAt(0) ?? 'M' }}
+        </div>
+        <div class="min-w-0">
+          <div class="font-bold text-sm sm:text-base text-slate-900 truncate flex items-center gap-2">
+            <span>{{ store()?.name ?? 'ร้านค้า' }}</span>
+            <span class="hidden sm:inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+              {{ store()?.code }}
+            </span>
+          </div>
+          <div class="text-[11px] text-slate-500 flex items-center gap-1.5 truncate">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+            <span>หน้าร้านออนไลน์ • สินค้าพร้อมส่ง/รับหน้าร้าน</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Contact Actions in Header -->
+      <div class="flex items-center gap-2">
+        @if (store()?.phone) {
+          <a
+            [href]="'tel:' + store()?.phone"
+            class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+            title="โทรติดต่อร้านค้า"
+          >
+            <span class="material-icons-outlined text-sm text-emerald-600">call</span>
+            <span>{{ store()?.phone }}</span>
+          </a>
+        }
+
+        <button
+          type="button"
+          (click)="openContactStoreModal()"
+          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium shadow-sm transition-all cursor-pointer"
+          id="btn-contact-store"
+        >
+          <span class="material-icons-outlined text-sm">chat</span>
+          <span>ติดต่อร้านค้า</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Error State / Store Not Found -->
+  @if (errorMessage()) {
+    <div class="max-w-xl mx-auto my-16 p-8 bg-white rounded-3xl border border-rose-200 shadow-sm text-center space-y-4">
+      <div class="w-16 h-16 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+        <span class="material-icons-outlined text-3xl">store</span>
+      </div>
+      <h2 class="text-xl font-bold text-slate-800">ไม่พบร้านค้า</h2>
+      <p class="text-xs text-slate-500">{{ errorMessage() }}</p>
+      <a routerLink="/" class="inline-block px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-medium">
+        กลับสู่หน้าหลัก
+      </a>
+    </div>
+  } @else {
+    <!-- Hero / Store Banner -->
+    <section class="bg-gradient-to-b from-white to-slate-100/60 border-b border-slate-200/80 py-8 px-4 sm:px-6 lg:px-8">
+      <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <div class="space-y-2 max-w-2xl">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+            <span class="material-icons-outlined text-sm">verified</span>
+            <span>สินค้ามือสองสภาพคัดเกรด ตรวจเช็กระบบ 100%</span>
+          </div>
+          <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            {{ store()?.name }}
+          </h1>
+          @if (store()?.address) {
+            <p class="text-xs text-slate-500 flex items-center gap-1.5">
+              <span class="material-icons-outlined text-sm text-slate-400">location_on</span>
+              <span>{{ store()?.address }}</span>
+            </p>
+          }
+        </div>
+
+        <!-- Contact Pill Buttons -->
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          @if (store()?.line) {
+            <div class="px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center gap-2">
+              <span class="font-bold text-emerald-600">LINE:</span>
+              <span class="font-semibold">{{ store()?.line }}</span>
+            </div>
+          }
+          @if (store()?.facebook) {
+            <a 
+              [href]="store()?.facebook" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              class="px-3 py-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 flex items-center gap-1.5 hover:bg-blue-100 transition-colors"
+            >
+              <span class="material-icons-outlined text-sm text-blue-600">public</span>
+              <span class="font-semibold">Facebook ร้าน</span>
+            </a>
+          }
+          @if (store()?.phone) {
+            <a 
+              [href]="'tel:' + store()?.phone" 
+              class="px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-800 flex items-center gap-1.5 hover:bg-slate-200 transition-colors"
+            >
+              <span class="material-icons-outlined text-sm text-slate-600">call</span>
+              <span class="font-semibold">{{ store()?.phone }}</span>
+            </a>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Content Area: Search, Filters & Product Grid -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-6">
+      <!-- Search & Filters Container -->
+      <div class="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-xs space-y-3.5">
+        <div class="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+          <!-- Search Box -->
+          <div class="relative flex-1">
+            <span class="material-icons-outlined absolute left-3.5 top-2.5 text-slate-400 text-lg">search</span>
+            <input
+              type="text"
+              [(ngModel)]="searchQuery"
+              (keyup.enter)="onSearchSubmit()"
+              placeholder="ค้นหาชื่อรุ่นกล้อง เลนส์ หรือแบรนด์ (เช่น Sony A7 IV, 24-70mm GM)..."
+              class="w-full pl-10 pr-20 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 text-slate-800 transition-all"
+            />
+            <button
+              type="button"
+              (click)="onSearchSubmit()"
+              class="absolute right-1.5 top-1.5 px-3 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-medium hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              ค้นหา
+            </button>
+          </div>
+
+          <!-- Sort Dropdown -->
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="text-xs text-slate-400 whitespace-nowrap">เรียงลำดับ:</span>
+            <select
+              [(ngModel)]="sortBy"
+              (change)="onFilterChange()"
+              class="py-2.5 px-3 text-xs bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-sky-500 text-slate-700 font-medium"
+            >
+              <option value="newest">เข้าใหม่ล่าสุด</option>
+              <option value="price_asc">ราคา: ต่ำ ➔ สูง</option>
+              <option value="price_desc">ราคา: สูง ➔ ต่ำ</option>
+              <option value="model">ชื่อรุ่น A-Z</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Filter Pills Bar -->
+        <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 text-xs">
+          <!-- Category Filter -->
+          @if (filterMeta()?.categories?.length) {
+            <div class="flex items-center gap-1.5">
+              <span class="text-slate-400 font-medium text-[11px]">หมวด:</span>
+              <select
+                [(ngModel)]="selectedCategoryId"
+                (change)="onFilterChange()"
+                class="py-1 px-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none text-slate-700"
+              >
+                <option value="">ทั้งหมด</option>
+                @for (c of filterMeta()?.categories; track c.id) {
+                  <option [value]="c.id">{{ c.name }}</option>
+                }
+              </select>
+            </div>
+          }
+
+          <!-- Brand Filter -->
+          @if (filterMeta()?.brands?.length) {
+            <div class="flex items-center gap-1.5">
+              <span class="text-slate-400 font-medium text-[11px]">แบรนด์:</span>
+              <select
+                [(ngModel)]="selectedBrandId"
+                (change)="onFilterChange()"
+                class="py-1 px-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none text-slate-700"
+              >
+                <option value="">ทั้งหมด</option>
+                @for (b of filterMeta()?.brands; track b.id) {
+                  <option [value]="b.id">{{ b.name }}</option>
+                }
+              </select>
+            </div>
+          }
+
+          <!-- Grade Filter -->
+          @if (filterMeta()?.conditionGrades?.length) {
+            <div class="flex items-center gap-1.5">
+              <span class="text-slate-400 font-medium text-[11px]">เกรดสภาพ:</span>
+              <select
+                [(ngModel)]="selectedGradeId"
+                (change)="onFilterChange()"
+                class="py-1 px-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none text-slate-700"
+              >
+                <option value="">ทุกเกรดสภาพ</option>
+                @for (g of filterMeta()?.conditionGrades; track g.id) {
+                  <option [value]="g.id">{{ g.name }} ({{ g.code }})</option>
+                }
+              </select>
+            </div>
+          }
+
+          @if (searchQuery() || selectedBrandId() || selectedCategoryId() || selectedGradeId()) {
+            <button
+              type="button"
+              (click)="clearFilters()"
+              class="ml-auto inline-flex items-center gap-1 text-slate-400 hover:text-rose-600 text-xs transition-colors cursor-pointer"
+            >
+              <span class="material-icons-outlined text-sm">clear_all</span>
+              <span>ล้างตัวกรอง</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Result Counter -->
+      <div class="flex items-center justify-between text-xs text-slate-500 px-1">
+        <div>
+          <span>สินค้าพร้อมจำหน่าย: </span>
+          <span class="font-bold text-slate-800">{{ catalogService.totalCount() }} รายการ</span>
+        </div>
+      </div>
+
+      <!-- Products Grid -->
+      @if (isLoading()) {
+        <div class="py-24 text-center text-slate-400 flex flex-col items-center justify-center gap-3">
+          <span class="material-icons-outlined text-4xl animate-spin text-sky-600">sync</span>
+          <span class="text-xs">กำลังโหลดแคตตาล็อกสินค้า...</span>
+        </div>
+      } @else if (items().length === 0) {
+        <div class="py-24 bg-white rounded-3xl border border-slate-200/80 shadow-xs text-center p-8 space-y-3">
+          <div class="w-16 h-16 rounded-2xl bg-slate-50 text-slate-300 flex items-center justify-center mx-auto">
+            <span class="material-icons-outlined text-3xl">inventory_2</span>
+          </div>
+          <h3 class="text-base font-bold text-slate-700">ไม่พบสินค้าที่ตรงตามเงื่อนไข</h3>
+          <p class="text-xs text-slate-400">ลองเปลี่ยนคำค้นหา หรือกดล้างตัวกรองเพื่อดูสินค้าทั้งหมด</p>
+          <button
+            type="button"
+            (click)="clearFilters()"
+            class="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-medium cursor-pointer"
+          >
+            ดูสินค้าทั้งหมด
+          </button>
+        </div>
+      } @else {
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+          @for (item of items(); track item.id) {
+            <div 
+              class="bg-white rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-lg hover:border-slate-300 transition-all duration-200 flex flex-col overflow-hidden group"
+            >
+              <!-- Card Image Header -->
+              <div 
+                class="relative h-52 bg-slate-100 overflow-hidden cursor-pointer flex items-center justify-center"
+                (click)="openItemDetail(item)"
+              >
+                @if (item.imageUrl) {
+                  <img
+                    [src]="item.imageUrl"
+                    [alt]="item.modelName"
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                } @else {
+                  <div class="text-slate-300 flex flex-col items-center gap-1">
+                    <span class="material-icons-outlined text-5xl">photo_camera</span>
+                    <span class="text-[10px] text-slate-400">ไม่มีรูปภาพ</span>
+                  </div>
+                }
+
+                <!-- Grade Badge Overlay -->
+                <div class="absolute top-3 left-3">
+                  <span 
+                    class="px-2.5 py-1 rounded-xl text-[11px] font-bold border backdrop-blur-md shadow-xs"
+                    [ngClass]="getGradeBadgeClass(item.gradeCode)"
+                  >
+                    เกรด {{ item.gradeCode }}
+                  </span>
+                </div>
+
+                <!-- Brand Pill Overlay -->
+                <div class="absolute top-3 right-3">
+                  <span class="px-2 py-0.5 rounded-lg text-[10px] font-semibold bg-white/90 text-slate-700 shadow-xs">
+                    {{ item.brandName }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Card Body Content -->
+              <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+                <div class="space-y-1">
+                  <div class="text-[11px] text-slate-400 font-medium">{{ item.categoryName }}</div>
+                  <h3 
+                    class="text-sm font-bold text-slate-900 group-hover:text-sky-600 transition-colors line-clamp-2 cursor-pointer leading-snug"
+                    (click)="openItemDetail(item)"
+                    [title]="item.modelName"
+                  >
+                    {{ item.modelName }}
+                  </h3>
+
+                  <!-- Metadata Tags (Shutter, etc.) -->
+                  <div class="flex flex-wrap items-center gap-1.5 pt-1 text-[11px]">
+                    @if (item.shutterCount) {
+                      <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200/60 font-mono">
+                        <span class="material-icons-outlined text-[12px]">camera</span>
+                        <span>{{ item.shutterCount.toLocaleString() }} ชัตเตอร์</span>
+                      </span>
+                    }
+                    @if (item.accessories) {
+                      <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] truncate max-w-[180px]" [title]="item.accessories">
+                        <span class="material-icons-outlined text-[12px]">inventory_2</span>
+                        <span>{{ item.accessories }}</span>
+                      </span>
+                    }
+                  </div>
+                </div>
+
+                <!-- Card Footer: Price & Inquire Action -->
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                  <div>
+                    <div class="text-[10px] text-slate-400">ราคาขาย</div>
+                    <div class="text-base sm:text-lg font-black text-slate-900 tracking-tight text-sky-700">
+                      ฿{{ item.sellingPrice.toLocaleString() }}
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-1">
+                    <button
+                      type="button"
+                      (click)="openItemDetail(item)"
+                      class="p-2 rounded-xl border border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors cursor-pointer"
+                      title="ดูรายละเอียด"
+                    >
+                      <span class="material-icons-outlined text-base">visibility</span>
+                    </button>
+                    <button
+                      type="button"
+                      (click)="openInquireModal(item)"
+                      class="px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer flex items-center gap-1"
+                      title="ทักคุยสอบถามสินค้าชิ้นนี้"
+                    >
+                      <span class="material-icons-outlined text-xs">chat</span>
+                      <span>ทักถาม</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200/80 py-8 px-4 sm:px-6 lg:px-8 mt-12 text-center text-xs text-slate-400 space-y-2">
+      <div class="font-semibold text-slate-600">{{ store()?.name }}</div>
+      @if (store()?.address) {
+        <div>{{ store()?.address }}</div>
+      }
+      <div class="text-[11px] text-slate-400 pt-2">
+        Powered by <span class="font-bold text-slate-600">MUE2MUEDEE</span> — ระบบบริหารร้านสินค้ามือสอง
+      </div>
+    </footer>
+  }
+
+  <!-- Modal 1: Product Detail Modal -->
+  @if (selectedItem(); as item) {
+    <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-3xl overflow-hidden animate-scale-up">
+        <!-- Modal Header -->
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded-lg text-xs font-bold" [ngClass]="getGradeBadgeClass(item.gradeCode)">
+              เกรด {{ item.gradeCode }}
+            </span>
+            <span class="text-xs font-semibold text-slate-500">{{ item.brandName }} • {{ item.categoryName }}</span>
+          </div>
+          <button (click)="closeItemDetail()" class="w-8 h-8 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center cursor-pointer">
+            <span class="material-icons-outlined text-lg">close</span>
+          </button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Left: Big Image -->
+          <div class="bg-slate-100 rounded-2xl overflow-hidden flex items-center justify-center aspect-square border border-slate-200/70">
+            @if (item.imageUrl) {
+              <img [src]="item.imageUrl" [alt]="item.modelName" class="w-full h-full object-cover" />
+            } @else {
+              <div class="text-slate-300 flex flex-col items-center gap-2">
+                <span class="material-icons-outlined text-6xl">photo_camera</span>
+                <span class="text-xs text-slate-400">ไม่มีรูปภาพสินค้า</span>
+              </div>
+            }
+          </div>
+
+          <!-- Right: Details & Specs -->
+          <div class="space-y-4 flex flex-col justify-between">
+            <div class="space-y-3">
+              <div>
+                <div class="text-[11px] text-slate-400 font-mono">รหัสสินค้า: {{ item.sku }}</div>
+                <h2 class="text-xl font-bold text-slate-900 leading-tight">{{ item.modelName }}</h2>
+              </div>
+
+              <div class="p-4 rounded-2xl bg-sky-50/60 border border-sky-100 flex items-baseline justify-between">
+                <span class="text-xs text-sky-800 font-medium">ราคาพิเศษ</span>
+                <span class="text-2xl font-black text-sky-700">฿{{ item.sellingPrice.toLocaleString() }}</span>
+              </div>
+
+              <!-- Specs Table -->
+              <div class="space-y-2 text-xs divide-y divide-slate-100">
+                <div class="pt-2 flex justify-between">
+                  <span class="text-slate-400">เกรดสภาพสินค้า:</span>
+                  <span class="font-bold text-slate-800">{{ item.gradeName }} ({{ item.gradeCode }})</span>
+                </div>
+
+                @if (item.shutterCount) {
+                  <div class="pt-2 flex justify-between">
+                    <span class="text-slate-400">จำนวนชัตเตอร์:</span>
+                    <span class="font-bold text-slate-800 font-mono">{{ item.shutterCount.toLocaleString() }} ครั้ง</span>
+                  </div>
+                }
+
+                @if (item.accessories) {
+                  <div class="pt-2 space-y-1">
+                    <span class="text-slate-400">อุปกรณ์ที่ได้รับ:</span>
+                    <div class="p-2.5 rounded-xl bg-slate-50 text-slate-700 text-xs border border-slate-100">
+                      {{ item.accessories }}
+                    </div>
+                  </div>
+                }
+
+                @if (item.defects) {
+                  <div class="pt-2 space-y-1">
+                    <span class="text-amber-700 font-medium flex items-center gap-1">
+                      <span class="material-icons-outlined text-sm">info</span>
+                      <span>ตำหนิ / สภาพตัวเครื่อง:</span>
+                    </span>
+                    <div class="p-2.5 rounded-xl bg-amber-50/70 text-amber-900 text-xs border border-amber-200/60">
+                      {{ item.defects }}
+                    </div>
+                  </div>
+                }
+
+                @if (item.notes) {
+                  <div class="pt-2 space-y-1">
+                    <span class="text-slate-400">หมายเหตุเพิ่มเติม:</span>
+                    <div class="p-2.5 rounded-xl bg-slate-50 text-slate-600 text-xs">
+                      {{ item.notes }}
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <!-- Inquire Button in Modal -->
+            <div class="pt-4 border-t border-slate-100">
+              <button
+                type="button"
+                (click)="openInquireModal(item)"
+                class="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-sm shadow-md shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span class="material-icons-outlined text-base">chat</span>
+                <span>สนใจสินค้านี้ / ทักคุยกับร้านค้า</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal 2: Inquire & Contact Modal -->
+  @if (isInquireModalOpen()) {
+    <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden animate-scale-up">
+        <!-- Modal Header -->
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+          <div class="flex items-center gap-2">
+            <span class="material-icons-outlined text-emerald-600 text-xl">contact_support</span>
+            <h3 class="text-base font-bold text-slate-800">ติดต่อสอบถามร้านค้า</h3>
+          </div>
+          <button (click)="closeInquireModal()" class="w-8 h-8 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center cursor-pointer">
+            <span class="material-icons-outlined text-base">close</span>
+          </button>
+        </div>
+
+        <div class="p-6 space-y-5">
+          <!-- Pre-composed Message Box -->
+          <div class="space-y-2">
+            <label class="text-xs font-semibold text-slate-700 flex items-center justify-between">
+              <span>ข้อความทักถาม (คัดลอกไปแปะในแชทได้ทันที):</span>
+              @if (copiedMessage()) {
+                <span class="text-emerald-600 font-bold text-[11px] flex items-center gap-1">
+                  <span class="material-icons-outlined text-xs">check</span>
+                  คัดลอกข้อความแล้ว!
+                </span>
+              }
+            </label>
+            <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-700 leading-relaxed font-mono relative">
+              {{ getInquiryText() }}
+            </div>
+            <button
+              type="button"
+              (click)="copyInquiryText()"
+              class="w-full py-2.5 rounded-xl border border-slate-300 hover:border-slate-400 bg-white text-slate-800 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <span class="material-icons-outlined text-sm text-slate-500">content_copy</span>
+              <span>{{ copiedMessage() ? 'คัดลอกเรียบร้อยแล้ว' : 'คัดลอกข้อความทักสอบถาม' }}</span>
+            </button>
+          </div>
+
+          <!-- Store Owner Contact Options -->
+          <div class="space-y-2.5 pt-2 border-t border-slate-100">
+            <div class="text-xs font-bold text-slate-700 uppercase tracking-wide">
+              ช่องทางติดต่อ {{ store()?.name }}:
+            </div>
+
+            <div class="space-y-2 text-xs">
+              <!-- LINE ID -->
+              @if (store()?.line) {
+                <div class="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-600 text-white font-bold flex items-center justify-center text-xs">
+                      LINE
+                    </div>
+                    <div>
+                      <div class="text-[10px] text-emerald-800">LINE ID ร้านค้า</div>
+                      <div class="font-bold text-emerald-950">{{ store()?.line }}</div>
+                    </div>
+                  </div>
+                  <a
+                    [href]="'https://line.me/R/ti/p/~' + store()?.line"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors"
+                  >
+                    เปิด LINE
+                  </a>
+                </div>
+              }
+
+              <!-- Facebook -->
+              @if (store()?.facebook) {
+                <div class="p-3 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-between">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center text-xs">
+                      <span class="material-icons-outlined text-base">public</span>
+                    </div>
+                    <div>
+                      <div class="text-[10px] text-blue-800">Facebook ร้านค้า</div>
+                      <div class="font-bold text-blue-950 truncate max-w-[180px]">{{ store()?.facebook }}</div>
+                    </div>
+                  </div>
+                  <a
+                    [href]="store()?.facebook"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors"
+                  >
+                    เปิด Facebook
+                  </a>
+                </div>
+              }
+
+              <!-- Phone Call -->
+              @if (store()?.phone) {
+                <div class="p-3 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-between">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-slate-700 text-white flex items-center justify-center text-xs">
+                      <span class="material-icons-outlined text-base">call</span>
+                    </div>
+                    <div>
+                      <div class="text-[10px] text-slate-500">เบอร์โทรศัพท์</div>
+                      <div class="font-bold text-slate-900">{{ store()?.phone }}</div>
+                    </div>
+                  </div>
+                  <a
+                    [href]="'tel:' + store()?.phone"
+                    class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors"
+                  >
+                    โทรเลย
+                  </a>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal 3: Contact Store Modal (General) -->
+  @if (isContactStoreModalOpen()) {
+    <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden animate-scale-up">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+          <div class="flex items-center gap-2">
+            <span class="material-icons-outlined text-slate-700 text-xl">store</span>
+            <h3 class="text-base font-bold text-slate-800">ข้อมูลติดต่อร้าน {{ store()?.name }}</h3>
+          </div>
+          <button (click)="closeContactStoreModal()" class="w-8 h-8 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center cursor-pointer">
+            <span class="material-icons-outlined text-base">close</span>
+          </button>
+        </div>
+
+        <div class="p-6 space-y-4 text-xs">
+          @if (store()?.address) {
+            <div class="space-y-1">
+              <span class="text-slate-400">ที่อยู่หน้าร้าน:</span>
+              <div class="font-medium text-slate-800 leading-relaxed">{{ store()?.address }}</div>
+            </div>
+          }
+
+          @if (store()?.phone) {
+            <div class="space-y-1">
+              <span class="text-slate-400">เบอร์โทรศัพท์:</span>
+              <div>
+                <a [href]="'tel:' + store()?.phone" class="font-bold text-sky-600 hover:underline text-sm">
+                  {{ store()?.phone }}
+                </a>
+              </div>
+            </div>
+          }
+
+          @if (store()?.line) {
+            <div class="space-y-1">
+              <span class="text-slate-400">LINE ID:</span>
+              <div class="font-bold text-emerald-600 text-sm">{{ store()?.line }}</div>
+            </div>
+          }
+
+          @if (store()?.facebook) {
+            <div class="space-y-1">
+              <span class="text-slate-400">Facebook:</span>
+              <div>
+                <a [href]="store()?.facebook" target="_blank" rel="noopener noreferrer" class="font-bold text-blue-600 hover:underline">
+                  {{ store()?.facebook }}
+                </a>
+              </div>
+            </div>
+          }
+
+          @if (store()?.email) {
+            <div class="space-y-1">
+              <span class="text-slate-400">อีเมล:</span>
+              <div class="text-slate-800">{{ store()?.email }}</div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

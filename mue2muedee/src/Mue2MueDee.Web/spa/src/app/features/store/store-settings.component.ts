@@ -54,10 +54,15 @@ export class StoreSettingsComponent implements OnInit {
     { value: 'Owner', label: 'Owner (เจ้าของร้าน — ควบคุมทุกส่วนและการเงิน)' }
   ];
 
+  readonly copiedStoreLink = signal(false);
+
   readonly storeForm: FormGroup = this.fb.group({
     name: ['', [Validators.required]],
     phone: [''],
     email: ['', [Validators.email]],
+    line: [''],
+    facebook: [''],
+    website: [''],
     address: [''],
     taxId: [''],
     primaryColor: ['#4f46e5']
@@ -108,6 +113,9 @@ export class StoreSettingsComponent implements OnInit {
           name: data.name,
           phone: data.phone || '',
           email: data.email || '',
+          line: data.line || '',
+          facebook: data.facebook || '',
+          website: data.website || '',
           address: data.address || '',
           taxId: data.taxId || '',
           primaryColor: data.primaryColor || '#4f46e5'
@@ -119,6 +127,40 @@ export class StoreSettingsComponent implements OnInit {
       },
       error: () => {}
     });
+  }
+
+  getStorefrontUrl(): string {
+    const code = this.storeCode();
+    if (!code) return '';
+    return `${window.location.origin}/shop/${code}`;
+  }
+
+  copyStorefrontLink(): void {
+    const url = this.getStorefrontUrl();
+    if (!url) return;
+
+    if (navigator?.clipboard) {
+      navigator.clipboard.writeText(url).then(() => {
+        this.copiedStoreLink.set(true);
+        setTimeout(() => this.copiedStoreLink.set(false), 3000);
+      });
+    } else {
+      const textarea = document.createElement('textarea');
+      textarea.value = url;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      this.copiedStoreLink.set(true);
+      setTimeout(() => this.copiedStoreLink.set(false), 3000);
+    }
+  }
+
+  openStorefront(): void {
+    const url = this.getStorefrontUrl();
+    if (url) {
+      window.open(url, '_blank');
+    }
   }
 
   loadUsers(): void {
