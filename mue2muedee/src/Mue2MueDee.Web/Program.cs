@@ -29,10 +29,22 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:4200")
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
+        var frontendUrl = builder.Configuration["FrontendUrl"];
+        if (string.IsNullOrEmpty(frontendUrl))
+        {
+            policy.WithOrigins("http://localhost:4200")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        }
+        else
+        {
+            // รองรับทั้งแบบ Localhost และ Frontend ที่ Deploy แล้ว
+            policy.WithOrigins("http://localhost:4200", frontendUrl)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        }
     });
 });
 
