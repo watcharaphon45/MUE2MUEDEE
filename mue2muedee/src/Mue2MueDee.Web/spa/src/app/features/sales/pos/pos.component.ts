@@ -15,6 +15,7 @@ import { BrowserMultiFormatReader, IScannerControls } from '@zxing/browser';
 import { SaleService } from '../sale.service';
 import { PaymentMethod } from '../sale.models';
 import { InventoryItem } from '../../inventory/inventory.models';
+import { StickerDesignerModalComponent } from '../../inventory/sticker-designer-modal/sticker-designer-modal.component';
 import {
   TextboxComponent,
   NumberComponent,
@@ -50,7 +51,8 @@ interface PaymentEntry {
     ReactiveFormsModule,
     TextboxComponent,
     NumberComponent,
-    SelectComponent
+    SelectComponent,
+    StickerDesignerModalComponent
   ],
   templateUrl: './pos.component.html',
   styleUrl: './pos.component.css'
@@ -106,6 +108,10 @@ export class PosComponent implements OnInit, OnDestroy {
   errorMessage = signal<string | null>(null);
   successSaleNumber = signal<string | null>(null);
   createdSaleId = signal<string | null>(null);
+
+  // Sticker Print Modal
+  stickerItem = signal<InventoryItem | null>(null);
+  isStickerModalOpen = signal<boolean>(false);
 
   readonly paymentMethodOptions = [
     { value: PaymentMethod.PromptPay.toString(), label: 'พร้อมเพย์ QR (PromptPay)' },
@@ -561,6 +567,17 @@ export class PosComponent implements OnInit, OnDestroy {
     } catch {
       // Torch not supported
     }
+  }
+
+  openStickerModal(item: InventoryItem, event?: MouseEvent): void {
+    if (event) event.stopPropagation();
+    this.stickerItem.set(item);
+    this.isStickerModalOpen.set(true);
+  }
+
+  closeStickerModal(): void {
+    this.isStickerModalOpen.set(false);
+    this.stickerItem.set(null);
   }
 
   ngOnDestroy(): void {

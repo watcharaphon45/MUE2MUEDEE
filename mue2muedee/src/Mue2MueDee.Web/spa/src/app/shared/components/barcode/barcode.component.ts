@@ -84,6 +84,15 @@ export class BarcodeComponent {
         }
       });
       this.hasError = false;
+
+      // Ensure SVG has viewBox for responsive scaling without clipping
+      const svg = this.barcodeSvgRef.nativeElement;
+      const widthAttr = svg.getAttribute('width');
+      const heightAttr = svg.getAttribute('height');
+      if (widthAttr && heightAttr) {
+        svg.setAttribute('viewBox', `0 0 ${widthAttr} ${heightAttr}`);
+        svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+      }
     } catch {
       this.hasError = true;
     }

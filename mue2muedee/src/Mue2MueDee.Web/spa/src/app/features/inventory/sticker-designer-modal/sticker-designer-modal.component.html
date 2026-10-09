@@ -32,10 +32,20 @@
               <span class="chip-title">40 × 30 mm</span>
               <span class="chip-desc">กะทัดรัด สำหรับเลนส์</span>
             </label>
+            <label class="size-radio-chip" [class.active]="labelSize() === '40x20'">
+              <input type="radio" name="labelSize" value="40x20" [ngModel]="labelSize()" (ngModelChange)="labelSize.set($event)" />
+              <span class="chip-title">40 × 20 mm</span>
+              <span class="chip-desc">ขนาดเล็ก / อุปกรณ์</span>
+            </label>
             <label class="size-radio-chip" [class.active]="labelSize() === '60x40'">
               <input type="radio" name="labelSize" value="60x40" [ngModel]="labelSize()" (ngModelChange)="labelSize.set($event)" />
               <span class="chip-title">60 × 40 mm</span>
               <span class="chip-desc">ขนาดกลาง / หน้ากล่อง</span>
+            </label>
+            <label class="size-radio-chip" [class.active]="labelSize() === '70x50'">
+              <input type="radio" name="labelSize" value="70x50" [ngModel]="labelSize()" (ngModelChange)="labelSize.set($event)" />
+              <span class="chip-title">70 × 50 mm</span>
+              <span class="chip-desc">ขนาดใหญ่ ชัดเจนพิเศษ</span>
             </label>
             <label class="size-radio-chip" [class.active]="labelSize() === 'custom'">
               <input type="radio" name="labelSize" value="custom" [ngModel]="labelSize()" (ngModelChange)="labelSize.set($event)" />
@@ -178,6 +188,62 @@
                 <span>SKU สินค้า</span>
               </label>
             </div>
+
+            <!-- Detailed Barcode / QR Sizing Controls -->
+            <div class="p-2.5 bg-slate-50 rounded-lg border border-slate-200 mt-2 space-y-2.5 text-xs">
+              <div *ngIf="codeStyle() !== 'qr_only'" class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-700 font-medium">ความสูงบาร์โค้ด:</span>
+                  <div class="flex items-center gap-2">
+                    <input
+                      type="range"
+                      min="15"
+                      max="60"
+                      [ngModel]="barcodeHeight()"
+                      (ngModelChange)="barcodeHeight.set($event)"
+                      class="w-24 accent-sky-600 cursor-pointer"
+                    />
+                    <span class="font-mono text-[11px] w-8 text-right">{{ barcodeHeight() }}px</span>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-700 font-medium">ความหนาแท่งบาร์โค้ด:</span>
+                  <div class="flex items-center gap-2">
+                    <input
+                      type="range"
+                      min="1.0"
+                      max="2.5"
+                      step="0.1"
+                      [ngModel]="barcodeWidth()"
+                      (ngModelChange)="barcodeWidth.set($event)"
+                      class="w-24 accent-sky-600 cursor-pointer"
+                    />
+                    <span class="font-mono text-[11px] w-8 text-right">{{ barcodeWidth() }}x</span>
+                  </div>
+                </div>
+
+                <label class="toggle-checkbox text-[11px] text-slate-600">
+                  <input type="checkbox" [ngModel]="showBarcodeText()" (ngModelChange)="showBarcodeText.set($event)" />
+                  <span>แสดงข้อความใต้บาร์โค้ด (Human-readable text)</span>
+                </label>
+              </div>
+
+              <div *ngIf="codeStyle() !== 'barcode_only'" class="flex items-center justify-between pt-1 border-t border-slate-200">
+                <span class="text-slate-700 font-medium">ขนาด QR Code:</span>
+                <div class="flex items-center gap-2">
+                  <input
+                    type="range"
+                    min="24"
+                    max="70"
+                    [ngModel]="qrSize()"
+                    (ngModelChange)="qrSize.set($event)"
+                    class="w-24 accent-sky-600 cursor-pointer"
+                  />
+                  <span class="font-mono text-[11px] w-8 text-right">{{ qrSize() }}px</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -273,8 +339,8 @@
                 <app-barcode
                   [value]="encodedString()"
                   [height]="barcodeHeight()"
-                  [width]="1.4"
-                  [displayValue]="false"
+                  [width]="barcodeWidth()"
+                  [displayValue]="showBarcodeText()"
                   [margin]="0"
                 ></app-barcode>
                 <div class="code-meta-text">
@@ -389,8 +455,8 @@
         <app-barcode
           [value]="encodedString()"
           [height]="barcodeHeight()"
-          [width]="1.4"
-          [displayValue]="false"
+          [width]="barcodeWidth()"
+          [displayValue]="showBarcodeText()"
           [margin]="0"
         ></app-barcode>
         <div class="code-meta-text">

@@ -16,7 +16,7 @@ import { BarcodeComponent } from '../../../shared/components/barcode/barcode.com
 import { QrcodeComponent } from '../../../shared/components/qrcode/qrcode.component';
 
 export interface LabelTemplateSettings {
-  labelSize: '50x30' | '40x30' | '60x40' | 'custom';
+  labelSize: '50x30' | '40x30' | '40x20' | '60x40' | '70x50' | 'custom';
   customWidthMm: number;
   customHeightMm: number;
   showStoreLogo: boolean;
@@ -35,7 +35,9 @@ export interface LabelTemplateSettings {
   encodeValue: 'serial' | 'sku';
   monochromeLogo: boolean;
   barcodeHeight: number;
+  barcodeWidth: number;
   qrSize: number;
+  showBarcodeText: boolean;
 }
 
 const STORAGE_KEY = 'mue2muedee_label_template';
@@ -56,7 +58,7 @@ export class StickerDesignerModalComponent implements OnInit {
   closeModal = output<void>();
 
   // Settings Signals
-  labelSize = signal<'50x30' | '40x30' | '60x40' | 'custom'>('50x30');
+  labelSize = signal<'50x30' | '40x30' | '40x20' | '60x40' | '70x50' | 'custom'>('50x30');
   customWidthMm = signal<number>(50);
   customHeightMm = signal<number>(30);
 
@@ -78,8 +80,10 @@ export class StickerDesignerModalComponent implements OnInit {
   encodeValue = signal<'serial' | 'sku'>('serial');
   monochromeLogo = signal<boolean>(true);
 
-  barcodeHeight = signal<number>(32);
-  qrSize = signal<number>(48);
+  barcodeHeight = signal<number>(30);
+  barcodeWidth = signal<number>(1.4);
+  qrSize = signal<number>(44);
+  showBarcodeText = signal<boolean>(false);
 
   printCopies = signal<number>(1);
   saveSuccessMessage = signal<string | null>(null);
@@ -88,8 +92,10 @@ export class StickerDesignerModalComponent implements OnInit {
   actualWidthMm = computed(() => {
     switch (this.labelSize()) {
       case '40x30': return 40;
+      case '40x20': return 40;
       case '60x40': return 60;
-      case 'custom': return Math.max(25, this.customWidthMm());
+      case '70x50': return 70;
+      case 'custom': return Math.max(20, this.customWidthMm());
       default: return 50;
     }
   });
@@ -97,8 +103,10 @@ export class StickerDesignerModalComponent implements OnInit {
   actualHeightMm = computed(() => {
     switch (this.labelSize()) {
       case '40x30': return 30;
+      case '40x20': return 20;
       case '60x40': return 40;
-      case 'custom': return Math.max(20, this.customHeightMm());
+      case '70x50': return 50;
+      case 'custom': return Math.max(15, this.customHeightMm());
       default: return 30;
     }
   });
@@ -145,8 +153,10 @@ export class StickerDesignerModalComponent implements OnInit {
         this.codeStyle.set(parsed.codeStyle ?? 'barcode_qr');
         this.encodeValue.set(parsed.encodeValue ?? 'serial');
         this.monochromeLogo.set(parsed.monochromeLogo ?? true);
-        this.barcodeHeight.set(parsed.barcodeHeight ?? 32);
-        this.qrSize.set(parsed.qrSize ?? 48);
+        this.barcodeHeight.set(parsed.barcodeHeight ?? 30);
+        this.barcodeWidth.set(parsed.barcodeWidth ?? 1.4);
+        this.qrSize.set(parsed.qrSize ?? 44);
+        this.showBarcodeText.set(parsed.showBarcodeText ?? false);
         return;
       }
     } catch {
@@ -178,7 +188,9 @@ export class StickerDesignerModalComponent implements OnInit {
       encodeValue: this.encodeValue(),
       monochromeLogo: this.monochromeLogo(),
       barcodeHeight: this.barcodeHeight(),
-      qrSize: this.qrSize()
+      barcodeWidth: this.barcodeWidth(),
+      qrSize: this.qrSize(),
+      showBarcodeText: this.showBarcodeText()
     };
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
@@ -189,6 +201,8 @@ export class StickerDesignerModalComponent implements OnInit {
   resetToDefaults(): void {
     localStorage.removeItem(STORAGE_KEY);
     this.labelSize.set('50x30');
+    this.customWidthMm.set(50);
+    this.customHeightMm.set(30);
     this.showStoreLogo.set(true);
     this.showStoreName.set(true);
     this.showProductTitle.set(true);
@@ -202,6 +216,10 @@ export class StickerDesignerModalComponent implements OnInit {
     this.codeStyle.set('barcode_qr');
     this.encodeValue.set('serial');
     this.monochromeLogo.set(true);
+    this.barcodeHeight.set(30);
+    this.barcodeWidth.set(1.4);
+    this.qrSize.set(44);
+    this.showBarcodeText.set(false);
 
     const currentStore = this.authService.currentStore();
     this.storeName.set(currentStore?.storeName ?? 'MUE2MUEDEE');

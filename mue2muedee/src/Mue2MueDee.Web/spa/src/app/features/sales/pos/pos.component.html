@@ -81,7 +81,17 @@
             </div>
             <div class="result-price-box">
               <span class="result-price">฿{{ item.sellingPrice | number:'1.0-0' }}</span>
-              <span class="btn-add-chip">+ เพิ่มลงบิล</span>
+              <div class="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  (click)="openStickerModal(item, $event)"
+                  class="btn-sticker-chip"
+                  title="พิมพ์ป้ายสติ๊กเกอร์บาร์โค้ดสำหรับสินค้านี้"
+                >
+                  <span class="material-icons-outlined text-xs">local_offer</span>
+                </button>
+                <span class="btn-add-chip">+ เพิ่มลงบิล</span>
+              </div>
             </div>
           </div>
         </div>
@@ -158,7 +168,17 @@
                   </span>
                 </td>
                 <td class="text-center">
-                  <button type="button" class="btn-remove-item" (click)="removeFromCart(i)">&times;</button>
+                  <div class="flex items-center justify-center gap-1">
+                    <button
+                      type="button"
+                      class="btn-barcode-icon"
+                      (click)="openStickerModal(c.inventoryItem, $event)"
+                      title="พิมพ์ป้ายสติ๊กเกอร์บาร์โค้ด"
+                    >
+                      <span class="material-icons-outlined text-sm">local_offer</span>
+                    </button>
+                    <button type="button" class="btn-remove-item" (click)="removeFromCart(i)" title="ลบ">&times;</button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -185,9 +205,19 @@
                   <span *ngIf="c.inventoryItem.shutterCount" class="text-slate-500">• {{ c.inventoryItem.shutterCount | number }} sc</span>
                 </div>
               </div>
-              <button type="button" class="btn-remove-item-mobile" (click)="removeFromCart(i)" title="ลบออกจากบิล">
-                <span class="material-icons-outlined text-lg">delete_outline</span>
-              </button>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  class="btn-barcode-icon-mobile"
+                  (click)="openStickerModal(c.inventoryItem, $event)"
+                  title="พิมพ์ป้ายบาร์โค้ด"
+                >
+                  <span class="material-icons-outlined text-base">local_offer</span>
+                </button>
+                <button type="button" class="btn-remove-item-mobile" (click)="removeFromCart(i)" title="ลบออกจากบิล">
+                  <span class="material-icons-outlined text-lg">delete_outline</span>
+                </button>
+              </div>
             </div>
 
             <!-- Price & Discount Row -->
@@ -450,3 +480,10 @@
     </div>
   </div>
 </div>
+
+<!-- Sticker Designer Modal for POS -->
+<app-sticker-designer-modal
+  [isOpen]="isStickerModalOpen()"
+  [item]="stickerItem()"
+  (closeModal)="closeStickerModal()"
+></app-sticker-designer-modal>
