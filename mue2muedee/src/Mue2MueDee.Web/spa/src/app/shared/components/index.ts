@@ -7,3 +7,5 @@ export * from './status-badge/status-badge.component';
 export * from './datepicker/datepicker.component';
 export * from './image-uploader/image-uploader.component';
 export * from './multi-image-uploader/multi-image-uploader.component';
+export * from './barcode/barcode.component';
+export * from './qrcode/qrcode.component';

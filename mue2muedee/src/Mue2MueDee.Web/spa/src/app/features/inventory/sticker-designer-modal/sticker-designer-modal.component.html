@@ -1,0 +1,429 @@
+<div *ngIf="isOpen()" class="modal-backdrop print:hidden" (click)="closeModal.emit()">
+  <div class="modal-dialog" (click)="$event.stopPropagation()">
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <div class="flex items-center gap-2">
+        <span class="material-icons-outlined text-sky-600 text-xl">qr_code_2</span>
+        <h3 class="modal-title">ออกแบบสติ๊กเกอร์บาร์โค้ด & แท็กสินค้า (Sticker Label Designer)</h3>
+      </div>
+      <button type="button" class="modal-close" (click)="closeModal.emit()">&times;</button>
+    </div>
+
+    <!-- Feedback Message -->
+    <div *ngIf="saveSuccessMessage()" class="alert-success-banner">
+      {{ saveSuccessMessage() }}
+    </div>
+
+    <!-- Modal Body: Split Layout -->
+    <div class="designer-body">
+      <!-- LEFT: Controls & Customization -->
+      <div class="controls-panel">
+        <!-- 1. Dimension Section -->
+        <div class="control-group">
+          <label class="control-heading">1. ขนาดสติ๊กเกอร์ (Label Size)</label>
+          <div class="size-options-grid">
+            <label class="size-radio-chip" [class.active]="labelSize() === '50x30'">
+              <input type="radio" name="labelSize" value="50x30" [ngModel]="labelSize()" (ngModelChange)="labelSize.set($event)" />
+              <span class="chip-title">50 × 30 mm</span>
+              <span class="chip-desc">มาตรฐาน Thermal พกพา</span>
+            </label>
+            <label class="size-radio-chip" [class.active]="labelSize() === '40x30'">
+              <input type="radio" name="labelSize" value="40x30" [ngModel]="labelSize()" (ngModelChange)="labelSize.set($event)" />
+              <span class="chip-title">40 × 30 mm</span>
+              <span class="chip-desc">กะทัดรัด สำหรับเลนส์</span>
+            </label>
+            <label class="size-radio-chip" [class.active]="labelSize() === '60x40'">
+              <input type="radio" name="labelSize" value="60x40" [ngModel]="labelSize()" (ngModelChange)="labelSize.set($event)" />
+              <span class="chip-title">60 × 40 mm</span>
+              <span class="chip-desc">ขนาดกลาง / หน้ากล่อง</span>
+            </label>
+            <label class="size-radio-chip" [class.active]="labelSize() === 'custom'">
+              <input type="radio" name="labelSize" value="custom" [ngModel]="labelSize()" (ngModelChange)="labelSize.set($event)" />
+              <span class="chip-title">กำหนดเอง</span>
+              <span class="chip-desc">ระบุ กว้าง × สูง (mm)</span>
+            </label>
+          </div>
+
+          <div *ngIf="labelSize() === 'custom'" class="custom-dim-row mt-2">
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-slate-500 font-medium">กว้าง:</span>
+              <input
+                type="number"
+                min="20"
+                max="120"
+                [ngModel]="customWidthMm()"
+                (ngModelChange)="customWidthMm.set($event)"
+                class="dim-input"
+              />
+              <span class="text-xs text-slate-400">mm</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-slate-500 font-medium">สูง:</span>
+              <input
+                type="number"
+                min="15"
+                max="100"
+                [ngModel]="customHeightMm()"
+                (ngModelChange)="customHeightMm.set($event)"
+                class="dim-input"
+              />
+              <span class="text-xs text-slate-400">mm</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Store Logo & Branding Section -->
+        <div class="control-group">
+          <label class="control-heading">2. แบรนด์ & โลโก้ร้านค้า (Store Branding)</label>
+          <div class="space-y-2">
+            <label class="toggle-checkbox">
+              <input type="checkbox" [ngModel]="showStoreLogo()" (ngModelChange)="showStoreLogo.set($event)" />
+              <span>แสดงโลโก้ร้านค้า (Store Logo)</span>
+            </label>
+
+            <div *ngIf="showStoreLogo()" class="pl-6 space-y-2">
+              <div class="flex items-center gap-2">
+                <input
+                  type="text"
+                  [ngModel]="storeLogoUrl()"
+                  (ngModelChange)="storeLogoUrl.set($event)"
+                  placeholder="URL รูปโลโก้ร้าน (เช่น https://...)"
+                  class="setting-textbox flex-1"
+                />
+              </div>
+              <label class="toggle-checkbox text-xs text-slate-500">
+                <input type="checkbox" [ngModel]="monochromeLogo()" (ngModelChange)="monochromeLogo.set($event)" />
+                <span>ปรับภาพขาว-ดำความคมชัดสูง (สำหรับเครื่องพิมพ์ความร้อน Thermal)</span>
+              </label>
+            </div>
+
+            <label class="toggle-checkbox">
+              <input type="checkbox" [ngModel]="showStoreName()" (ngModelChange)="showStoreName.set($event)" />
+              <span>แสดงชื่อร้านค้า (Store Name)</span>
+            </label>
+
+            <div *ngIf="showStoreName()" class="pl-6">
+              <input
+                type="text"
+                [ngModel]="storeName()"
+                (ngModelChange)="storeName.set($event)"
+                placeholder="ชื่อร้านบนสติ๊กเกอร์"
+                class="setting-textbox w-full"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Product Fields Toggles -->
+        <div class="control-group">
+          <label class="control-heading">3. ข้อมูลสินค้าบนป้าย (Product Fields)</label>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <label class="toggle-checkbox">
+              <input type="checkbox" [ngModel]="showProductTitle()" (ngModelChange)="showProductTitle.set($event)" />
+              <span>ยี่ห้อ & ชื่อรุ่น</span>
+            </label>
+            <label class="toggle-checkbox">
+              <input type="checkbox" [ngModel]="showConditionGrade()" (ngModelChange)="showConditionGrade.set($event)" />
+              <span>เกรดสภาพ (Grade)</span>
+            </label>
+            <label class="toggle-checkbox">
+              <input type="checkbox" [ngModel]="showSerialNumber()" (ngModelChange)="showSerialNumber.set($event)" />
+              <span>Serial Number</span>
+            </label>
+            <label class="toggle-checkbox">
+              <input type="checkbox" [ngModel]="showSku()" (ngModelChange)="showSku.set($event)" />
+              <span>รหัส SKU</span>
+            </label>
+            <label class="toggle-checkbox">
+              <input type="checkbox" [ngModel]="showPrice()" (ngModelChange)="showPrice.set($event)" />
+              <span>ราคาขาย (ตัวหนา)</span>
+            </label>
+            <label class="toggle-checkbox">
+              <input type="checkbox" [ngModel]="showShutterCount()" (ngModelChange)="showShutterCount.set($event)" />
+              <span>จำนวนชัตเตอร์</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 4. Barcode & QR Code Format -->
+        <div class="control-group">
+          <label class="control-heading">4. รูปแบบโค้ดสแกน (Barcode / QR Code)</label>
+          <div class="space-y-2">
+            <div class="code-style-row">
+              <label class="code-radio-option" [class.selected]="codeStyle() === 'barcode_qr'">
+                <input type="radio" name="codeStyle" value="barcode_qr" [ngModel]="codeStyle()" (ngModelChange)="codeStyle.set($event)" />
+                <span class="font-semibold text-xs">Barcode + QR คู่กัน</span>
+                <span class="text-[10px] text-slate-500">สแกนได้ทั้งเครื่องยิง & กล้องมือถือ</span>
+              </label>
+              <label class="code-radio-option" [class.selected]="codeStyle() === 'barcode_only'">
+                <input type="radio" name="codeStyle" value="barcode_only" [ngModel]="codeStyle()" (ngModelChange)="codeStyle.set($event)" />
+                <span class="font-semibold text-xs">เฉพาะ Barcode 1D</span>
+                <span class="text-[10px] text-slate-500">แนวนอนเต็ม สแกนง่ายสุด</span>
+              </label>
+              <label class="code-radio-option" [class.selected]="codeStyle() === 'qr_only'">
+                <input type="radio" name="codeStyle" value="qr_only" [ngModel]="codeStyle()" (ngModelChange)="codeStyle.set($event)" />
+                <span class="font-semibold text-xs">เฉพาะ QR Code</span>
+                <span class="text-[10px] text-slate-500">มินิมอล ประหยัดพื้นที่</span>
+              </label>
+            </div>
+
+            <div class="flex items-center gap-3 pt-1 text-xs">
+              <span class="text-slate-600 font-medium">ค่าที่เข้ารหัส:</span>
+              <label class="inline-flex items-center gap-1 cursor-pointer">
+                <input type="radio" name="encodeValue" value="serial" [ngModel]="encodeValue()" (ngModelChange)="encodeValue.set($event)" />
+                <span>Serial Number</span>
+              </label>
+              <label class="inline-flex items-center gap-1 cursor-pointer">
+                <input type="radio" name="encodeValue" value="sku" [ngModel]="encodeValue()" (ngModelChange)="encodeValue.set($event)" />
+                <span>SKU สินค้า</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Footer Text -->
+        <div class="control-group">
+          <label class="control-heading">5. ข้อความท้ายป้าย (Footer / Warranty)</label>
+          <div class="space-y-1.5">
+            <label class="toggle-checkbox">
+              <input type="checkbox" [ngModel]="showFooterText()" (ngModelChange)="showFooterText.set($event)" />
+              <span>แสดงข้อความท้ายป้าย</span>
+            </label>
+            <div *ngIf="showFooterText()" class="pl-6">
+              <input
+                type="text"
+                [ngModel]="footerText()"
+                (ngModelChange)="footerText.set($event)"
+                placeholder="เช่น ประกันร้าน 30 วัน, LINE: @shop"
+                class="setting-textbox w-full text-xs"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Row for Template -->
+        <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+          <button type="button" (click)="saveAsDefaultTemplate()" class="btn-save-template">
+            <span class="material-icons-outlined text-sm">bookmark</span>
+            <span>บันทึกเป็นเทมเพลตเริ่มต้น</span>
+          </button>
+          <button type="button" (click)="resetToDefaults()" class="btn-reset-template">
+            คืนค่าเริ่มต้น
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Interactive Live Preview -->
+      <div class="preview-panel">
+        <div class="preview-header">
+          <div>
+            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">ตัวอย่างป้ายสติ๊กเกอร์ (Live Preview)</h4>
+            <p class="text-[11px] text-slate-400 mt-0.5">
+              ขนาดจริง: {{ actualWidthMm() }} × {{ actualHeightMm() }} mm • ความละเอียด SVG Vector คมกริบ
+            </p>
+          </div>
+        </div>
+
+        <!-- The Physical Sticker Canvas Container -->
+        <div class="preview-stage">
+          <div
+            id="sticker-label-preview"
+            class="sticker-canvas"
+            [style.width.mm]="actualWidthMm()"
+            [style.height.mm]="actualHeightMm()"
+          >
+            <!-- Label Header -->
+            <div class="sticker-top-row">
+              <div class="store-branding-box">
+                <img
+                  *ngIf="showStoreLogo() && storeLogoUrl()"
+                  [src]="storeLogoUrl()"
+                  alt="Store Logo"
+                  class="store-logo-img"
+                  [class.monochrome-logo]="monochromeLogo()"
+                />
+                <span *ngIf="showStoreLogo() && !storeLogoUrl()" class="store-logo-placeholder">
+                  📷
+                </span>
+                <span *ngIf="showStoreName()" class="store-name-text">
+                  {{ storeName() || 'MUE2MUEDEE' }}
+                </span>
+              </div>
+              <span *ngIf="showConditionGrade() && item()?.conditionGradeCode" class="grade-badge-tag">
+                เกรด {{ item()?.conditionGradeCode }}
+              </span>
+            </div>
+
+            <!-- Product Model Title -->
+            <div *ngIf="showProductTitle() && item()" class="product-title-row">
+              <span class="font-bold text-slate-900 leading-tight">
+                {{ item()?.brandName }} {{ item()?.productModelName }}
+              </span>
+            </div>
+
+            <!-- Shutter Count if enabled -->
+            <div *ngIf="showShutterCount() && item()?.shutterCount" class="shutter-row">
+              ชัตเตอร์: {{ item()?.shutterCount | number }} sc
+            </div>
+
+            <!-- Codes Area (Barcode and/or QR) -->
+            <div class="codes-area" [ngClass]="codeStyle()">
+              <!-- Barcode -->
+              <div *ngIf="codeStyle() !== 'qr_only'" class="barcode-box">
+                <app-barcode
+                  [value]="encodedString()"
+                  [height]="barcodeHeight()"
+                  [width]="1.4"
+                  [displayValue]="false"
+                  [margin]="0"
+                ></app-barcode>
+                <div class="code-meta-text">
+                  <span *ngIf="showSerialNumber() && item()?.serialNumber">
+                    SN: <strong class="font-mono">{{ item()?.serialNumber }}</strong>
+                  </span>
+                  <span *ngIf="showSku() && item()?.sku">
+                    SKU: <strong class="font-mono">{{ item()?.sku }}</strong>
+                  </span>
+                </div>
+              </div>
+
+              <!-- QR Code -->
+              <div *ngIf="codeStyle() !== 'barcode_only'" class="qr-box">
+                <app-qrcode
+                  [value]="encodedString()"
+                  [size]="qrSize()"
+                  [margin]="0"
+                ></app-qrcode>
+                <span *ngIf="codeStyle() === 'qr_only'" class="qr-label-text font-mono">
+                  {{ encodedString() }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Bottom Price & Footer Row -->
+            <div class="sticker-bottom-row">
+              <div *ngIf="showPrice() && item()?.sellingPrice" class="price-tag-text">
+                ฿{{ item()?.sellingPrice | number:'1.0-0' }}
+              </div>
+              <div *ngIf="showFooterText() && footerText()" class="footer-warranty-text">
+                {{ footerText() }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Print Action Footer in Preview -->
+        <div class="print-bar-box">
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-slate-600 font-semibold">จำนวนดวง:</span>
+            <input
+              type="number"
+              min="1"
+              max="50"
+              [ngModel]="printCopies()"
+              (ngModelChange)="printCopies.set($event)"
+              class="copies-input"
+            />
+            <span class="text-xs text-slate-400">ดวง</span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button type="button" (click)="closeModal.emit()" class="btn-cancel">
+              ปิด
+            </button>
+            <button type="button" (click)="print()" class="btn-print-primary">
+              <span class="material-icons-outlined text-base">print</span>
+              <span>สั่งพิมพ์สติ๊กเกอร์ ({{ printCopies() }} ดวง)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRINT CONTAINER (Hidden on screen, Active on window.print) -->
+<div class="hidden print:block print-sheet">
+  <div
+    *ngFor="let copy of copiesList()"
+    class="print-label-item"
+    [style.width.mm]="actualWidthMm()"
+    [style.height.mm]="actualHeightMm()"
+  >
+    <!-- Label Header -->
+    <div class="sticker-top-row">
+      <div class="store-branding-box">
+        <img
+          *ngIf="showStoreLogo() && storeLogoUrl()"
+          [src]="storeLogoUrl()"
+          alt="Logo"
+          class="store-logo-img"
+          [class.monochrome-logo]="monochromeLogo()"
+        />
+        <span *ngIf="showStoreLogo() && !storeLogoUrl()" class="store-logo-placeholder">📷</span>
+        <span *ngIf="showStoreName()" class="store-name-text">
+          {{ storeName() || 'MUE2MUEDEE' }}
+        </span>
+      </div>
+      <span *ngIf="showConditionGrade() && item()?.conditionGradeCode" class="grade-badge-tag">
+        เกรด {{ item()?.conditionGradeCode }}
+      </span>
+    </div>
+
+    <!-- Product Model Title -->
+    <div *ngIf="showProductTitle() && item()" class="product-title-row">
+      <span class="font-bold text-black leading-tight">
+        {{ item()?.brandName }} {{ item()?.productModelName }}
+      </span>
+    </div>
+
+    <!-- Shutter Count if enabled -->
+    <div *ngIf="showShutterCount() && item()?.shutterCount" class="shutter-row">
+      ชัตเตอร์: {{ item()?.shutterCount | number }} sc
+    </div>
+
+    <!-- Codes Area -->
+    <div class="codes-area" [ngClass]="codeStyle()">
+      <!-- Barcode -->
+      <div *ngIf="codeStyle() !== 'qr_only'" class="barcode-box">
+        <app-barcode
+          [value]="encodedString()"
+          [height]="barcodeHeight()"
+          [width]="1.4"
+          [displayValue]="false"
+          [margin]="0"
+        ></app-barcode>
+        <div class="code-meta-text">
+          <span *ngIf="showSerialNumber() && item()?.serialNumber">
+            SN: <strong class="font-mono">{{ item()?.serialNumber }}</strong>
+          </span>
+          <span *ngIf="showSku() && item()?.sku">
+            SKU: <strong class="font-mono">{{ item()?.sku }}</strong>
+          </span>
+        </div>
+      </div>
+
+      <!-- QR Code -->
+      <div *ngIf="codeStyle() !== 'barcode_only'" class="qr-box">
+        <app-qrcode
+          [value]="encodedString()"
+          [size]="qrSize()"
+          [margin]="0"
+        ></app-qrcode>
+        <span *ngIf="codeStyle() === 'qr_only'" class="qr-label-text font-mono">
+          {{ encodedString() }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Bottom Price & Footer Row -->
+    <div class="sticker-bottom-row">
+      <div *ngIf="showPrice() && item()?.sellingPrice" class="price-tag-text">
+        ฿{{ item()?.sellingPrice | number:'1.0-0' }}
+      </div>
+      <div *ngIf="showFooterText() && footerText()" class="footer-warranty-text">
+        {{ footerText() }}
+      </div>
+    </div>
+  </div>
+</div>

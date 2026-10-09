@@ -1,7 +1,17 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  inject,
+  signal,
+  computed,
+  ViewChild,
+  ElementRef
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { BrowserMultiFormatReader, IScannerControls } from '@zxing/browser';
 import { SaleService } from '../sale.service';
 import { PaymentMethod } from '../sale.models';
 import { InventoryItem } from '../../inventory/inventory.models';
@@ -36,6 +46,7 @@ interface PaymentEntry {
   imports: [
     CommonModule,
     RouterLink,
+    FormsModule,
     ReactiveFormsModule,
     TextboxComponent,
     NumberComponent,
@@ -44,14 +55,32 @@ interface PaymentEntry {
   templateUrl: './pos.component.html',
   styleUrl: './pos.component.css'
 })
-export class PosComponent implements OnInit {
+export class PosComponent implements OnInit, OnDestroy {
   protected readonly saleService = inject(SaleService);
   private readonly router = inject(Router);
+
+  @ViewChild('scanVideo') scanVideoRef?: ElementRef<HTMLVideoElement>;
+  @ViewChild('searchInputRef') searchInputRef?: ElementRef<HTMLInputElement>;
 
   // Search & Results
   searchQuery = new FormControl('');
   searchResults = signal<InventoryItem[]>([]);
   isSearching = signal<boolean>(false);
+
+  // Scanning Feedback & State
+  scanFeedback = signal<{ type: 'success' | 'error'; text: string } | null>(null);
+  showCameraScanner = signal<boolean>(false);
+  cameraError = signal<string | null>(null);
+  availableCameras = signal<MediaDeviceInfo[]>([]);
+  currentCameraIndex = signal<number>(0);
+  isTorchOn = signal<boolean>(false);
+  supportsTorch = signal<boolean>(false);
+  continuousScan = signal<boolean>(false);
+
+  private codeReader: BrowserMultiFormatReader | null = null;
+  private scannerControls: IScannerControls | null = null;
+  private lastScannedCode = '';
+  private lastScannedTime = 0;
 
   // Cart
   cartItems = signal<CartItem[]>([]);
@@ -299,5 +328,242 @@ export class PosComponent implements OnInit {
     if (this.createdSaleId()) {
       this.router.navigate(['/sales', this.createdSaleId()]);
     }
+  }
+
+  // AUDIO & VIBRATION FEEDBACK
+  playBeepSound(type: 'success' | 'error' = 'success'): void {
+    try {
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      if (type === 'success') {
+        osc.frequency.value = 1450;
+        gain.gain.setValueAtTime(0.18, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.12);
+      } else {
+        osc.frequency.value = 320;
+        gain.gain.setValueAtTime(0.25, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.28);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.28);
+      }
+    } catch {
+      // AudioContext policy
+    }
+  }
+
+  vibrateDevice(): void {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      try {
+        navigator.vibrate([80]);
+      } catch {
+        // Ignored
+      }
+    }
+  }
+
+  // HARDWARE BARCODE SCANNER (Auto-enter support)
+  onSearchEnter(event?: Event): void {
+    if (event) event.preventDefault();
+    const query = this.searchQuery.value?.trim();
+    if (!query) return;
+
+    this.isSearching.set(true);
+    this.saleService.searchAvailableItems(query).subscribe({
+      next: items => {
+        const inCartIds = new Set(this.cartItems().map(c => c.inventoryItem.id));
+        const available = items.filter(i => !inCartIds.has(i.id));
+
+        const exactMatch = available.find(
+          i => i.serialNumber.toLowerCase() === query.toLowerCase() ||
+               i.sku.toLowerCase() === query.toLowerCase()
+        );
+
+        if (exactMatch || available.length === 1) {
+          const target = exactMatch || available[0];
+          this.addToCart(target);
+          this.playBeepSound('success');
+          this.vibrateDevice();
+          this.scanFeedback.set({
+            type: 'success',
+            text: `ยิงบาร์โค้ดสำเร็จ: ${target.brandName} ${target.productModelName} [SN: ${target.serialNumber}]`
+          });
+          setTimeout(() => this.scanFeedback.set(null), 3000);
+        } else if (available.length > 1) {
+          this.searchResults.set(available);
+          this.scanFeedback.set({
+            type: 'success',
+            text: `พบสินค้า ${available.length} รายการ กรุณาเลือกรายการที่ต้องการ`
+          });
+          setTimeout(() => this.scanFeedback.set(null), 3000);
+        } else {
+          this.playBeepSound('error');
+          this.scanFeedback.set({
+            type: 'error',
+            text: `ไม่พบสินค้าพร้อมขายสำหรับรหัส "${query}" หรือสินค้านี้อยู่ในตะกร้าแล้ว`
+          });
+          setTimeout(() => this.scanFeedback.set(null), 4000);
+        }
+        this.isSearching.set(false);
+      },
+      error: () => {
+        this.isSearching.set(false);
+        this.playBeepSound('error');
+      }
+    });
+  }
+
+  // CAMERA SCANNER (Mobile / Tablet / Webcam)
+  async openCameraScanner(): Promise<void> {
+    this.showCameraScanner.set(true);
+    this.cameraError.set(null);
+    this.lastScannedCode = '';
+
+    try {
+      this.codeReader = new BrowserMultiFormatReader();
+      const videoInputDevices = await BrowserMultiFormatReader.listVideoInputDevices();
+      this.availableCameras.set(videoInputDevices);
+
+      // Prefer back camera (environment) if available
+      let selectedIndex = 0;
+      const backIndex = videoInputDevices.findIndex(d =>
+        d.label.toLowerCase().includes('back') ||
+        d.label.toLowerCase().includes('rear') ||
+        d.label.toLowerCase().includes('environment')
+      );
+      if (backIndex !== -1) {
+        selectedIndex = backIndex;
+      }
+      this.currentCameraIndex.set(selectedIndex);
+
+      // Allow DOM to render video element before binding
+      setTimeout(() => this.startScanning(), 100);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'ไม่สามารถเข้าถึงกล้องได้';
+      this.cameraError.set(`ข้อผิดพลาดกล้อง: ${msg} (โปรดตรวจสอบสิทธิ์การอนุญาตใช้กล้อง)`);
+    }
+  }
+
+  async startScanning(): Promise<void> {
+    const videoEl = this.scanVideoRef?.nativeElement;
+    if (!videoEl || !this.codeReader) return;
+
+    const devices = this.availableCameras();
+    const deviceId = devices.length > 0 ? devices[this.currentCameraIndex()].deviceId : undefined;
+
+    try {
+      this.stopScanning();
+      this.scannerControls = await this.codeReader.decodeFromVideoDevice(
+        deviceId,
+        videoEl,
+        (result, error) => {
+          if (result) {
+            this.handleScannedCode(result.getText().trim());
+          }
+        }
+      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการเปิดกล้อง';
+      this.cameraError.set(msg);
+    }
+  }
+
+  handleScannedCode(code: string): void {
+    if (!code) return;
+    const now = Date.now();
+    // Debounce duplicate scans within 1.8 seconds
+    if (code === this.lastScannedCode && (now - this.lastScannedTime) < 1800) {
+      return;
+    }
+    this.lastScannedCode = code;
+    this.lastScannedTime = now;
+
+    this.saleService.searchAvailableItems(code).subscribe({
+      next: items => {
+        const inCartIds = new Set(this.cartItems().map(c => c.inventoryItem.id));
+        const available = items.filter(i => !inCartIds.has(i.id));
+
+        const exactMatch = available.find(
+          i => i.serialNumber.toLowerCase() === code.toLowerCase() ||
+               i.sku.toLowerCase() === code.toLowerCase()
+        );
+
+        if (exactMatch || available.length === 1) {
+          const target = exactMatch || available[0];
+          this.addToCart(target);
+          this.playBeepSound('success');
+          this.vibrateDevice();
+
+          this.scanFeedback.set({
+            type: 'success',
+            text: `สแกนสำเร็จ: ${target.brandName} ${target.productModelName} [SN: ${target.serialNumber}]`
+          });
+          setTimeout(() => this.scanFeedback.set(null), 3000);
+
+          if (!this.continuousScan()) {
+            this.closeCameraScanner();
+          }
+        } else {
+          this.playBeepSound('error');
+          this.scanFeedback.set({
+            type: 'error',
+            text: `ไม่พบสินค้าพร้อมขายสำหรับรหัส "${code}"`
+          });
+          setTimeout(() => this.scanFeedback.set(null), 3500);
+        }
+      },
+      error: () => this.playBeepSound('error')
+    });
+  }
+
+  stopScanning(): void {
+    if (this.scannerControls) {
+      this.scannerControls.stop();
+      this.scannerControls = null;
+    }
+  }
+
+  closeCameraScanner(): void {
+    this.stopScanning();
+    this.showCameraScanner.set(false);
+    this.isTorchOn.set(false);
+  }
+
+  switchCamera(): void {
+    const devices = this.availableCameras();
+    if (devices.length <= 1) return;
+    const nextIdx = (this.currentCameraIndex() + 1) % devices.length;
+    this.currentCameraIndex.set(nextIdx);
+    this.startScanning();
+  }
+
+  toggleTorch(): void {
+    // Torch toggle via track constraints if supported
+    try {
+      const stream = this.scanVideoRef?.nativeElement?.srcObject as MediaStream;
+      const track = stream?.getVideoTracks()[0];
+      if (track && 'applyConstraints' in track) {
+        const nextState = !this.isTorchOn();
+        track.applyConstraints({
+          advanced: [{ torch: nextState } as unknown as MediaTrackConstraintSet]
+        }).then(() => {
+          this.isTorchOn.set(nextState);
+        }).catch(() => {
+          // Unsupported torch
+        });
+      }
+    } catch {
+      // Torch not supported
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.closeCameraScanner();
   }
 }

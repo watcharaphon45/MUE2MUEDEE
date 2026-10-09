@@ -1,0 +1,26 @@
+.barcode-wrapper {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.barcode-svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.barcode-error,
+.barcode-empty {
+  font-size: 0.6875rem;
+  color: #94a3b8;
+  padding: 0.25rem 0.5rem;
+  font-family: monospace;
+}
+
+.barcode-error {
+  color: #ef4444;
+}

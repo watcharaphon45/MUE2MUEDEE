@@ -1,0 +1,9 @@
+<div class="qrcode-wrapper" [class.has-error]="hasError">
+  <div *ngIf="svgHtml && !hasError" [innerHTML]="svgHtml" class="qrcode-svg-container"></div>
+  <div *ngIf="hasError" class="qrcode-error">
+    QR Code ไม่ถูกต้อง
+  </div>
+  <div *ngIf="!value() && !hasError" class="qrcode-empty">
+    ไม่มีข้อมูล QR
+  </div>
+</div>

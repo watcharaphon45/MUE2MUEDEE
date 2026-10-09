@@ -227,6 +227,14 @@
           </td>
           <td class="text-center">
             <div class="actions-group">
+              <button
+                type="button"
+                class="action-btn text-sky-600 hover:text-sky-800"
+                (click)="openStickerModal(item, $event)"
+                title="พิมพ์ป้ายสติ๊กเกอร์บาร์โค้ด"
+              >
+                <span class="material-icons-outlined text-base">qr_code_2</span>
+              </button>
               <a [routerLink]="['/inventory', item.id]" class="action-btn" title="ดูรายละเอียดและประวัติ">
                 <svg class="action-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -316,4 +324,11 @@
       </div>
     </div>
   </div>
+
+  <!-- Sticker Designer Modal -->
+  <app-sticker-designer-modal
+    [item]="selectedStickerItem()"
+    [isOpen]="showStickerModal()"
+    (closeModal)="closeStickerModal()"
+  ></app-sticker-designer-modal>
 </div>

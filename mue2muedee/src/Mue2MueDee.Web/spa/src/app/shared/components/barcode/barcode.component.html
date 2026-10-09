@@ -1,0 +1,9 @@
+<div class="barcode-wrapper" [class.has-error]="hasError">
+  <svg #barcodeSvg class="barcode-svg" [style.display]="hasError || !value() ? 'none' : 'block'"></svg>
+  <div *ngIf="hasError" class="barcode-error">
+    บาร์โค้ดไม่รองรับตัวอักษรนี้
+  </div>
+  <div *ngIf="!value() && !hasError" class="barcode-empty">
+    ไม่มีข้อมูลบาร์โค้ด
+  </div>
+</div>

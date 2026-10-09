@@ -20,6 +20,7 @@ import {
   StatusBadgeComponent,
   MultiImageUploaderComponent
 } from '../../../shared/components';
+import { StickerDesignerModalComponent } from '../sticker-designer-modal/sticker-designer-modal.component';
 
 @Component({
   selector: 'app-inventory-detail',
@@ -33,7 +34,8 @@ import {
     TextareaComponent,
     SelectComponent,
     StatusBadgeComponent,
-    MultiImageUploaderComponent
+    MultiImageUploaderComponent,
+    StickerDesignerModalComponent
   ],
   templateUrl: './inventory-detail.component.html',
   styleUrl: './inventory-detail.component.css'
@@ -49,6 +51,7 @@ export class InventoryDetailComponent implements OnInit {
   showChangeStatusModal = signal<boolean>(false);
   showManageImagesModal = signal<boolean>(false);
   showImagePreview = signal<boolean>(false);
+  showStickerModal = signal<boolean>(false);
   activeImageIndex = signal<number>(0);
   isSubmitting = signal<boolean>(false);
   feedbackMessage = signal<{ type: 'success' | 'error'; text: string } | null>(null);

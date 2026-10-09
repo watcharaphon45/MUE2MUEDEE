@@ -26,16 +26,35 @@
     <div class="cart-column">
       <!-- Search Box -->
       <div class="search-card">
-        <label class="search-label">สแกนบาร์โค้ด หรือค้นหา SKU / Serial Number / ชื่อรุ่นกล้อง:</label>
+        <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+          <label class="search-label mb-0">สแกนบาร์โค้ด หรือค้นหา SKU / Serial Number / ชื่อรุ่นกล้อง:</label>
+          <button
+            type="button"
+            (click)="openCameraScanner()"
+            class="btn-camera-scan"
+            title="เปิดกล้องมือถือ/แท็บเล็ตเพื่อสแกนบาร์โค้ด"
+          >
+            <span class="material-icons-outlined text-base">photo_camera</span>
+            <span>สแกนด้วยกล้อง</span>
+          </button>
+        </div>
         <div class="search-input-wrapper">
           <input
             type="text"
             [formControl]="searchQuery"
-            placeholder="พิมพ์ SKU เช่น CAM-2610-0001 หรือ Serial No. หรือ Sony A7..."
+            (keydown.enter)="onSearchEnter($event)"
+            placeholder="ยิงบาร์โค้ด (Auto-Enter) หรือพิมพ์ SKU, Serial No., Sony A7..."
             class="pos-search-input"
             autofocus
+            #searchInputRef
           />
           <span *ngIf="isSearching()" class="search-spinner"></span>
+        </div>
+
+        <!-- Scan Feedback Banner -->
+        <div *ngIf="scanFeedback()" class="scan-feedback-banner" [class.success]="scanFeedback()?.type === 'success'" [class.error]="scanFeedback()?.type === 'error'">
+          <span class="material-icons-outlined text-sm">{{ scanFeedback()?.type === 'success' ? 'check_circle' : 'error' }}</span>
+          <span>{{ scanFeedback()?.text }}</span>
         </div>
 
         <!-- Search Results Dropdown -->
@@ -299,6 +318,76 @@
             + เริ่มทำรายการขายใหม่
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Camera Scanner Modal -->
+  <div *ngIf="showCameraScanner()" class="modal-backdrop" (click)="closeCameraScanner()">
+    <div class="camera-modal-dialog" (click)="$event.stopPropagation()">
+      <div class="camera-modal-header">
+        <div class="flex items-center gap-2">
+          <span class="material-icons-outlined text-sky-400 text-xl">qr_code_scanner</span>
+          <h3 class="text-sm font-bold text-white">สแกนสินค้าด้วยกล้อง (Camera Scanner)</h3>
+        </div>
+        <button type="button" class="text-slate-400 hover:text-white p-1 cursor-pointer" (click)="closeCameraScanner()">&times;</button>
+      </div>
+
+      <!-- Video Feed Container with Laser Reticle -->
+      <div class="scanner-viewport">
+        <video #scanVideo class="scanner-video" autoplay playsinline muted></video>
+
+        <!-- Laser Reticle Frame -->
+        <div class="scanner-reticle">
+          <div class="laser-line"></div>
+          <div class="corner-border top-left"></div>
+          <div class="corner-border top-right"></div>
+          <div class="corner-border bottom-left"></div>
+          <div class="corner-border bottom-right"></div>
+        </div>
+
+        <div *ngIf="cameraError()" class="scanner-error-overlay">
+          <span class="material-icons-outlined text-3xl text-rose-400 mb-2">videocam_off</span>
+          <p class="text-xs text-white text-center">{{ cameraError() }}</p>
+        </div>
+      </div>
+
+      <!-- Camera Controls Footer -->
+      <div class="camera-modal-footer">
+        <div class="flex items-center gap-3">
+          <!-- Torch Toggle -->
+          <button
+            *ngIf="supportsTorch()"
+            type="button"
+            (click)="toggleTorch()"
+            class="cam-tool-btn"
+            [class.active]="isTorchOn()"
+            title="เปิด/ปิดไฟฉาย"
+          >
+            <span class="material-icons-outlined text-lg">{{ isTorchOn() ? 'flashlight_on' : 'flashlight_off' }}</span>
+          </button>
+
+          <!-- Camera Switch -->
+          <button
+            *ngIf="availableCameras().length > 1"
+            type="button"
+            (click)="switchCamera()"
+            class="cam-tool-btn"
+            title="สลับกล้องหน้า/หลัง"
+          >
+            <span class="material-icons-outlined text-lg">flip_camera_ios</span>
+          </button>
+
+          <!-- Continuous scan checkbox -->
+          <label class="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer">
+            <input type="checkbox" [(ngModel)]="continuousScan" />
+            <span>สแกนต่อเนื่อง</span>
+          </label>
+        </div>
+
+        <button type="button" (click)="closeCameraScanner()" class="px-4 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold cursor-pointer">
+          เสร็จสิ้น
+        </button>
       </div>
     </div>
   </div>

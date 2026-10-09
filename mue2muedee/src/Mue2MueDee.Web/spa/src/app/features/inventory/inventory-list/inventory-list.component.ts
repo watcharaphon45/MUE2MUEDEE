@@ -11,6 +11,7 @@ import {
   SelectComponent,
   StatusBadgeComponent
 } from '../../../shared/components';
+import { StickerDesignerModalComponent } from '../sticker-designer-modal/sticker-designer-modal.component';
 
 @Component({
   selector: 'app-inventory-list',
@@ -22,7 +23,8 @@ import {
     TextboxComponent,
     NumberComponent,
     SelectComponent,
-    StatusBadgeComponent
+    StatusBadgeComponent,
+    StickerDesignerModalComponent
   ],
   templateUrl: './inventory-list.component.html',
   styleUrl: './inventory-list.component.css'
@@ -31,6 +33,21 @@ export class InventoryListComponent implements OnInit {
   protected readonly inventoryService = inject(InventoryService);
   protected readonly masterDataService = inject(MasterDataService);
   protected readonly Math = Math;
+
+  // Sticker Designer Modal
+  selectedStickerItem = signal<InventoryItem | null>(null);
+  showStickerModal = signal<boolean>(false);
+
+  openStickerModal(item: InventoryItem, event?: Event): void {
+    if (event) event.stopPropagation();
+    this.selectedStickerItem.set(item);
+    this.showStickerModal.set(true);
+  }
+
+  closeStickerModal(): void {
+    this.showStickerModal.set(false);
+    this.selectedStickerItem.set(null);
+  }
 
   readonly statusOptions = [
     { value: '', label: 'ทุกสถานะ' },

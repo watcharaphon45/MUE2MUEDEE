@@ -7,6 +7,9 @@
       <span class="breadcrumb-current">{{ inventoryService.selectedItem()?.sku || 'กำลังโหลด...' }}</span>
     </div>
     <div class="action-buttons">
+      <button type="button" class="btn-secondary" (click)="showStickerModal.set(true)" title="ออกแบบและพิมพ์ป้ายสติ๊กเกอร์บาร์โค้ด">
+        🏷️ พิมพ์ป้ายบาร์โค้ด
+      </button>
       <button type="button" class="btn-secondary" (click)="openChangeStatus()">
         เปลี่ยนสถานะสต็อก
       </button>
@@ -787,4 +790,11 @@
       </div>
     </div>
   </div>
+
+  <!-- Sticker Designer Modal -->
+  <app-sticker-designer-modal
+    [item]="inventoryService.selectedItem()"
+    [isOpen]="showStickerModal()"
+    (closeModal)="showStickerModal.set(false)"
+  ></app-sticker-designer-modal>
 </div>
