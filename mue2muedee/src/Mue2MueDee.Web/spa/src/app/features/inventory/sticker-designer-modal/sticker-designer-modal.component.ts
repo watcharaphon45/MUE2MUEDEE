@@ -227,33 +227,231 @@ export class StickerDesignerModalComponent implements OnInit {
   }
 
   print(): void {
-    // Inject dynamic print style for exact label dimensions
     const width = this.actualWidthMm();
     const height = this.actualHeightMm();
+    const copies = Math.max(1, Math.min(50, this.printCopies()));
 
-    let styleEl = document.getElementById('sticker-print-style') as HTMLStyleElement;
-    if (!styleEl) {
-      styleEl = document.createElement('style');
-      styleEl.id = 'sticker-print-style';
-      document.head.appendChild(styleEl);
+    const previewEl = document.getElementById('sticker-label-preview');
+    if (!previewEl) return;
+
+    const stickerHtml = previewEl.innerHTML;
+
+    let labelsHtml = '';
+    for (let i = 0; i < copies; i++) {
+      labelsHtml += `<div class="sticker-page">${stickerHtml}</div>`;
     }
 
-    styleEl.innerHTML = `
-      @page {
-        size: ${width}mm ${height}mm;
-        margin: 0;
-      }
-      @media print {
-        html, body {
-          width: ${width}mm !important;
-          height: auto !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          background: #ffffff !important;
-        }
-      }
-    `;
+    let iframe = document.getElementById('sticker-print-iframe') as HTMLIFrameElement;
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.id = 'sticker-print-iframe';
+      iframe.style.position = 'fixed';
+      iframe.style.top = '-9999px';
+      iframe.style.left = '-9999px';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = 'none';
+      document.body.appendChild(iframe);
+    }
 
-    window.print();
+    const iframeDoc = iframe.contentWindow?.document;
+    if (!iframeDoc) return;
+
+    iframeDoc.open();
+    iframeDoc.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Print Label - ${this.item()?.serialNumber || this.item()?.sku || 'Sticker'}</title>
+        <style>
+          @page {
+            size: ${width}mm ${height}mm;
+            margin: 0;
+          }
+          * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+          }
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .sticker-page {
+            width: ${width}mm;
+            height: ${height}mm;
+            padding: 1.5mm 2mm;
+            page-break-after: always;
+            break-after: page;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #ffffff;
+            color: #000000;
+            overflow: hidden;
+            box-sizing: border-box;
+          }
+          .sticker-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 2mm;
+            line-height: 1.1;
+          }
+          .store-branding-box {
+            display: flex;
+            align-items: center;
+            gap: 1.5mm;
+            min-width: 0;
+            flex: 1;
+          }
+          .store-logo-img {
+            width: 7mm;
+            height: 7mm;
+            object-fit: contain;
+            flex-shrink: 0;
+          }
+          .monochrome-logo {
+            filter: grayscale(100%) contrast(200%);
+          }
+          .store-logo-placeholder {
+            font-size: 7pt;
+            line-height: 1;
+          }
+          .store-name-text {
+            font-size: 6.5pt;
+            font-weight: 700;
+            color: #000000;
+            text-transform: uppercase;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+          .grade-badge-tag {
+            font-size: 5.5pt;
+            font-weight: 800;
+            background-color: #000000;
+            color: #ffffff;
+            padding: 0.5mm 1.5mm;
+            border-radius: 1.5px;
+            text-transform: uppercase;
+            flex-shrink: 0;
+          }
+          .product-title-row {
+            font-size: 7pt;
+            font-weight: 800;
+            color: #000000;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            line-height: 1.15;
+            margin: 0.5mm 0;
+          }
+          .shutter-row {
+            font-size: 5pt;
+            color: #334155;
+            font-family: monospace;
+          }
+          .codes-area {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.5mm;
+            margin: 0.5mm 0;
+            flex: 1;
+            min-height: 0;
+          }
+          .codes-area.barcode_only .barcode-box {
+            width: 100%;
+          }
+          .codes-area.qr_only .qr-box {
+            width: 100%;
+            justify-content: center;
+          }
+          .barcode-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+          }
+          .barcode-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+          }
+          .barcode-svg {
+            display: block;
+            max-width: 100%;
+            height: auto;
+          }
+          .qr-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+          }
+          .qr-box svg {
+            display: block;
+            max-width: 100%;
+            height: auto;
+          }
+          .code-meta-text {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-size: 5pt;
+            color: #000000;
+            font-family: monospace;
+            line-height: 1;
+            margin-top: 0.5mm;
+          }
+          .qr-label-text {
+            font-size: 4.5pt;
+            margin-top: 0.5mm;
+            color: #000000;
+          }
+          .sticker-bottom-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-top: 0.5px solid #000000;
+            padding-top: 0.5mm;
+            line-height: 1;
+          }
+          .price-tag-text {
+            font-size: 8.5pt;
+            font-weight: 900;
+            color: #000000;
+            letter-spacing: -0.02em;
+          }
+          .footer-warranty-text {
+            font-size: 5pt;
+            color: #334155;
+            font-weight: 500;
+            white-space: nowrap;
+          }
+        </style>
+      </head>
+      <body>
+        ${labelsHtml}
+      </body>
+      </html>
+    `);
+    iframeDoc.close();
+
+    setTimeout(() => {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+    }, 250);
   }
 }
