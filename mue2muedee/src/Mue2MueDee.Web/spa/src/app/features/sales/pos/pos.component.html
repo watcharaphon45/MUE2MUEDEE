@@ -102,8 +102,8 @@
           <p class="empty-desc">ค้นหา SKU หรือ Serial Number ด้านบนเพื่อเพิ่มสินค้าเข้าสู่บิลขาย</p>
         </div>
 
-        <!-- Items Table -->
-        <div *ngIf="cartItems().length > 0" class="cart-table-wrapper">
+        <!-- Items Table (Desktop >= 769px) -->
+        <div *ngIf="cartItems().length > 0" class="cart-table-wrapper desktop-only">
           <table class="cart-table">
             <thead>
               <tr>
@@ -163,6 +163,64 @@
               </tr>
             </tbody>
           </table>
+        </div>
+
+        <!-- Mobile Cart Items Cards (< 769px) -->
+        <div *ngIf="cartItems().length > 0" class="cart-mobile-list mobile-only">
+          <div *ngFor="let c of cartItems(); let i = index" class="cart-mobile-item">
+            <!-- Top Row: Thumbnail + Product Info + Delete Button -->
+            <div class="cart-mobile-item-top">
+              <div class="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center">
+                <img *ngIf="c.inventoryItem.productImageUrl" [src]="c.inventoryItem.productImageUrl" [alt]="c.inventoryItem.productModelName" class="w-full h-full object-cover" />
+                <span *ngIf="!c.inventoryItem.productImageUrl" class="material-icons-outlined text-slate-400 text-lg">photo_camera</span>
+              </div>
+              <div class="cart-mobile-info">
+                <div class="cart-mobile-title">{{ c.inventoryItem.brandName }} {{ c.inventoryItem.productModelName }}</div>
+                <div class="cart-mobile-badges">
+                  <span class="grade-tag">{{ c.inventoryItem.conditionGradeCode }}</span>
+                  <span class="font-mono text-blue-700 font-semibold">{{ c.inventoryItem.sku }}</span>
+                </div>
+                <div class="cart-mobile-sn">
+                  <span>S/N: <strong class="font-mono text-slate-800">{{ c.inventoryItem.serialNumber }}</strong></span>
+                  <span *ngIf="c.inventoryItem.shutterCount" class="text-slate-500">• {{ c.inventoryItem.shutterCount | number }} sc</span>
+                </div>
+              </div>
+              <button type="button" class="btn-remove-item-mobile" (click)="removeFromCart(i)" title="ลบออกจากบิล">
+                <span class="material-icons-outlined text-lg">delete_outline</span>
+              </button>
+            </div>
+
+            <!-- Price & Discount Row -->
+            <div class="cart-mobile-item-pricing">
+              <div class="cart-mobile-price-group">
+                <span class="cart-mobile-label">ราคาขาย:</span>
+                <span class="cart-mobile-val font-mono">฿{{ c.unitPrice | number:'1.0-0' }}</span>
+              </div>
+              <div class="cart-mobile-discount-group">
+                <label [for]="'mobile-disc-' + i" class="cart-mobile-label">ส่วนลด (฿):</label>
+                <input
+                  [id]="'mobile-disc-' + i"
+                  type="number"
+                  [value]="c.discount"
+                  (input)="updateItemDiscount(i, +$any($event.target).value)"
+                  min="0"
+                  class="discount-input-mobile"
+                />
+              </div>
+            </div>
+
+            <!-- Subtotal & Profit Row -->
+            <div class="cart-mobile-item-footer">
+              <div class="cart-mobile-subtotal">
+                <span class="cart-mobile-label">ยอดสุทธิ:</span>
+                <span class="cart-mobile-subtotal-val font-mono">฿{{ c.subTotal | number:'1.0-0' }}</span>
+              </div>
+              <span class="profit-chip" [class.profit-positive]="c.grossProfit > 0" [class.profit-negative]="c.grossProfit < 0">
+                +฿{{ c.grossProfit | number:'1.0-0' }}
+                <small>({{ c.marginPercentage }}%)</small>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

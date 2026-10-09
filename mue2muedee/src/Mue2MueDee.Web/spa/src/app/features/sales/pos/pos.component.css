@@ -1,7 +1,10 @@
 .pos-container {
-  padding: 1.5rem 2rem;
-  max-width: 1400px;
+  padding: 1.5rem 1.5rem;
+  max-width: 1440px;
   margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .top-bar {
@@ -73,14 +76,16 @@
 
 .pos-grid {
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: minmax(0, 1fr) 380px;
   gap: 1.5rem;
   align-items: start;
+  width: 100%;
+  min-width: 0;
 }
 
 @media (max-width: 1024px) {
   .pos-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -88,6 +93,9 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .card {
@@ -96,6 +104,10 @@
   border-radius: 0.75rem;
   padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* Search Card */
@@ -106,6 +118,10 @@
   padding: 1.25rem;
   position: relative;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .search-label {
@@ -114,10 +130,13 @@
   font-weight: 600;
   color: #334155;
   margin-bottom: 0.5rem;
+  word-break: break-word;
 }
 
 .search-input-wrapper {
   position: relative;
+  width: 100%;
+  min-width: 0;
 }
 
 .pos-search-input {
@@ -128,6 +147,7 @@
   border-radius: 0.5rem;
   outline: none;
   box-sizing: border-box;
+  min-width: 0;
 }
 
 .pos-search-input:focus {
@@ -256,13 +276,16 @@
 }
 
 .cart-table-wrapper {
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  min-width: 0;
 }
 
 .cart-table {
   width: 100%;
-  min-width: 540px;
+  min-width: 580px;
   border-collapse: collapse;
   font-size: 0.875rem;
 }
@@ -349,6 +372,10 @@
   gap: 1.25rem;
   position: sticky;
   top: 1.5rem;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .card-subtitle-bold {
@@ -801,34 +828,238 @@
   border-color: #38bdf8;
 }
 
+/* Responsive Layout Classes */
+.desktop-only {
+  display: block;
+}
+
+.mobile-only {
+  display: none !important;
+}
+
+/* Mobile Cart Items Card Styles */
+.cart-mobile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.cart-mobile-item {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  min-width: 0;
+}
+
+.cart-mobile-item-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  position: relative;
+  min-width: 0;
+}
+
+.cart-mobile-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cart-mobile-title {
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: #0f172a;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.cart-mobile-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.cart-mobile-sn {
+  font-size: 0.6875rem;
+  color: #64748b;
+  margin-top: 0.125rem;
+  word-break: break-all;
+}
+
+.btn-remove-item-mobile {
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: #ef4444;
+  width: 32px;
+  height: 32px;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.btn-remove-item-mobile:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.cart-mobile-item-pricing {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: #ffffff;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+}
+
+.cart-mobile-price-group,
+.cart-mobile-discount-group {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.cart-mobile-label {
+  font-size: 0.6875rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.cart-mobile-val {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.discount-input-mobile {
+  width: 72px;
+  padding: 0.25rem 0.375rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.375rem;
+  text-align: right;
+  font-family: monospace;
+  font-size: 0.8125rem;
+  background: #ffffff;
+}
+
+.discount-input-mobile:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.cart-mobile-item-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.25rem;
+}
+
+.cart-mobile-subtotal {
+  display: flex;
+  align-items: baseline;
+  gap: 0.375rem;
+}
+
+.cart-mobile-subtotal-val {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
 /* Responsive Media Queries */
+@media (max-width: 1024px) {
+  .pos-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .checkout-column {
+    position: static;
+  }
+}
+
 @media (max-width: 768px) {
+  .desktop-only {
+    display: none !important;
+  }
+  .mobile-only {
+    display: flex !important;
+  }
+
   .pos-container {
-    padding: 1rem 0.75rem;
+    padding: 0.25rem 0;
   }
 
   .top-bar {
     flex-direction: column;
     align-items: stretch;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .pos-title {
+    font-size: 1.25rem;
+  }
+
+  .pos-subtitle {
+    font-size: 0.75rem;
   }
 
   .top-actions {
     width: 100%;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
   }
 
   .top-actions a {
     width: 100%;
     justify-content: center;
+    padding: 0.5rem 0.5rem;
+    font-size: 0.75rem;
   }
 
   .pos-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) !important;
     gap: 1rem;
   }
 
   .card {
     padding: 1rem;
+    border-radius: 0.625rem;
+  }
+
+  .search-card {
+    padding: 0.875rem;
+    border-radius: 0.625rem;
+  }
+
+  .search-label {
+    font-size: 0.75rem;
+    line-height: 1.3;
+  }
+
+  .btn-camera-scan {
+    padding: 0.3125rem 0.5rem;
+    font-size: 0.6875rem;
+  }
+
+  .pos-search-input {
+    padding: 0.75rem 0.875rem;
+    font-size: 0.9375rem;
   }
 
   .modal-dialog {
@@ -839,6 +1070,18 @@
 
 @media (max-width: 480px) {
   .pos-container {
-    padding: 0.75rem 0.5rem;
+    padding: 0;
+  }
+
+  .top-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    padding: 0.875rem;
+  }
+
+  .search-card {
+    padding: 0.75rem;
   }
 }
