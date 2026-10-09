@@ -1,26 +1,26 @@
-<div *ngIf="isOpen()" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-fade-in">
-  <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-6xl max-h-[92vh] flex flex-col overflow-hidden">
+<div *ngIf="isOpen()" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-1 sm:p-4 animate-fade-in">
+  <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-6xl h-[94vh] sm:max-h-[92vh] flex flex-col overflow-hidden">
     
     <!-- Modal Header -->
-    <div class="px-5 py-3.5 border-b border-slate-200 bg-slate-50/80 flex items-center justify-between shrink-0">
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center">
-          <span class="material-icons-outlined text-xl">label</span>
+    <div class="px-3.5 sm:px-5 py-2.5 sm:py-3.5 border-b border-slate-200 bg-slate-50/80 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+        <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center shrink-0">
+          <span class="material-icons-outlined text-lg sm:text-xl">label</span>
         </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <h2 class="text-base font-bold text-slate-800">ออกแบบและพิมพ์ป้ายบาร์โค้ดสินค้า (Flexible Sticker Printing)</h2>
-            <span *ngIf="allItems().length > 1" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
-              🏷️ พิมพ์เป็นชุด ({{ allItems().length }} รายการ)
+        <div class="min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <h2 class="text-sm sm:text-base font-bold text-slate-800 truncate">ออกแบบและพิมพ์ป้ายบาร์โค้ด</h2>
+            <span *ngIf="allItems().length > 1" class="px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200 whitespace-nowrap">
+              🏷️ ชุด {{ allItems().length }} รายการ
             </span>
           </div>
-          <p class="text-xs text-slate-500">รองรับ 1, 2, 3 คอลัมน์ ทั้งเครื่องพิมพ์ความร้อนแบบม้วน (Thermal Roll) และกระดาษแผ่น (A4)</p>
+          <p class="hidden sm:block text-xs text-slate-500">รองรับ 1, 2, 3 คอลัมน์ ทั้งเครื่องพิมพ์ความร้อนแบบม้วน (Thermal Roll) และกระดาษแผ่น (A4)</p>
         </div>
       </div>
       <button
         type="button"
         (click)="closeModal.emit()"
-        class="w-8 h-8 rounded-lg hover:bg-slate-200/80 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+        class="w-8 h-8 rounded-lg hover:bg-slate-200/80 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors cursor-pointer shrink-0 ml-2"
         title="ปิดหน้าต่าง"
       >
         <span class="material-icons-outlined text-lg">close</span>
@@ -28,16 +28,16 @@
     </div>
 
     <!-- Template Management Bar -->
-    <div class="px-5 py-2.5 bg-sky-50/50 border-b border-sky-100 flex flex-wrap items-center justify-between gap-2.5 shrink-0">
-      <div class="flex items-center gap-2 flex-wrap min-w-0">
-        <span class="text-xs font-semibold text-slate-700 whitespace-nowrap">รูปแบบสติ๊กเกอร์ (Template):</span>
+    <div class="px-3 sm:px-5 py-2 bg-sky-50/50 border-b border-sky-100 flex items-center justify-between gap-2 shrink-0">
+      <div class="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0 relative">
+        <span class="hidden md:inline text-xs font-semibold text-slate-700 whitespace-nowrap">รูปแบบ:</span>
         <select
           [ngModel]="currentTemplateId()"
           (change)="onSelectTemplate($event)"
-          class="text-xs font-medium bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-sky-500 outline-hidden max-w-xs truncate"
+          class="text-xs font-medium bg-white border border-slate-300 rounded-lg px-2 sm:px-2.5 py-1.5 focus:ring-2 focus:ring-sky-500 outline-hidden flex-1 sm:flex-initial sm:max-w-xs truncate"
         >
           <option *ngFor="let t of templateService.templates()" [value]="t.id">
-            {{ t.name }} ({{ t.columnsCount }} คอลัมน์ - {{ t.labelWidthMm }}x{{ t.labelHeightMm }}mm){{ t.isDefault ? ' ⭐ [เริ่มต้น]' : '' }}
+            {{ t.name }} ({{ t.columnsCount }} คอลัมน์ - {{ t.labelWidthMm }}x{{ t.labelHeightMm }}mm){{ t.isDefault ? ' ⭐' : '' }}
           </option>
         </select>
 
@@ -48,7 +48,7 @@
           title="บันทึกการตั้งค่าลงเทมเพลตปัจจุบัน"
         >
           <span class="material-icons-outlined text-xs">save</span>
-          <span>บันทึก</span>
+          <span class="hidden sm:inline">บันทึก</span>
         </button>
 
         <button
@@ -58,74 +58,168 @@
           title="สร้างเป็นเทมเพลตรูปแบบใหม่"
         >
           <span class="material-icons-outlined text-xs">add</span>
-          <span>สร้างใหม่</span>
+          <span class="hidden sm:inline">สร้างใหม่</span>
         </button>
 
-        <button
-          type="button"
-          *ngIf="currentTemplateId()"
-          (click)="duplicateTemplate()"
-          class="btn-sm-action bg-white hover:bg-slate-100 text-slate-700 border border-slate-300"
-          title="คัดลอกเป็นเทมเพลตใหม่"
-        >
-          <span class="material-icons-outlined text-xs">content_copy</span>
-          <span>คัดลอก</span>
-        </button>
+        <!-- Desktop Action Buttons -->
+        <div class="hidden sm:flex items-center gap-1.5">
+          <button
+            type="button"
+            *ngIf="currentTemplateId()"
+            (click)="duplicateTemplate()"
+            class="btn-sm-action bg-white hover:bg-slate-100 text-slate-700 border border-slate-300"
+            title="คัดลอกเป็นเทมเพลตใหม่"
+          >
+            <span class="material-icons-outlined text-xs">content_copy</span>
+            <span>คัดลอก</span>
+          </button>
 
-        <button
-          type="button"
-          *ngIf="currentTemplateId() && !isDefault()"
-          (click)="setAsDefaultTemplate()"
-          class="btn-sm-action bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300"
-          title="ตั้งรูปแบบนี้เป็นค่าเริ่มต้นของร้าน"
-        >
-          <span class="material-icons-outlined text-xs">star</span>
-          <span>ตั้งเป็นค่าเริ่มต้น</span>
-        </button>
+          <button
+            type="button"
+            *ngIf="currentTemplateId() && !isDefault()"
+            (click)="setAsDefaultTemplate()"
+            class="btn-sm-action bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300"
+            title="ตั้งรูปแบบนี้เป็นค่าเริ่มต้นของร้าน"
+          >
+            <span class="material-icons-outlined text-xs">star</span>
+            <span>ตั้งเป็นค่าเริ่มต้น</span>
+          </button>
 
-        <button
-          type="button"
-          *ngIf="currentTemplateId()"
-          (click)="deleteTemplate()"
-          class="btn-sm-action bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300"
-          title="ลบเทมเพลตนี้"
-        >
-          <span class="material-icons-outlined text-xs">delete</span>
-          <span>ลบ</span>
-        </button>
+          <button
+            type="button"
+            *ngIf="currentTemplateId()"
+            (click)="deleteTemplate()"
+            class="btn-sm-action bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300"
+            title="ลบเทมเพลตนี้"
+          >
+            <span class="material-icons-outlined text-xs">delete</span>
+            <span>ลบ</span>
+          </button>
 
-        <button
-          type="button"
-          (click)="resetToSystemDefaults()"
-          class="btn-sm-action bg-white hover:bg-slate-100 text-slate-500 border border-slate-200"
-          title="รีเซ็ตกลับเป็น 4 รูปแบบมาตรฐานของระบบ"
-        >
-          <span class="material-icons-outlined text-xs">restart_alt</span>
-          <span>คืนค่าระบบ</span>
-        </button>
+          <button
+            type="button"
+            (click)="resetToSystemDefaults()"
+            class="btn-sm-action bg-white hover:bg-slate-100 text-slate-500 border border-slate-200"
+            title="รีเซ็ตกลับเป็น 4 รูปแบบมาตรฐานของระบบ"
+          >
+            <span class="material-icons-outlined text-xs">restart_alt</span>
+            <span>คืนค่าระบบ</span>
+          </button>
+        </div>
+
+        <!-- Mobile More Menu -->
+        <div class="relative sm:hidden">
+          <button
+            type="button"
+            (click)="toggleMobileTemplateMenu()"
+            class="btn-sm-action bg-white text-slate-700 border border-slate-300 px-2"
+            title="ตัวเลือกเพิ่มเติม"
+          >
+            <span class="material-icons-outlined text-sm">more_vert</span>
+          </button>
+
+          <div
+            *ngIf="showMobileTemplateMenu()"
+            class="absolute right-0 top-full mt-1.5 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-40 flex flex-col text-xs"
+          >
+            <button
+              *ngIf="currentTemplateId()"
+              (click)="duplicateTemplate(); showMobileTemplateMenu.set(false)"
+              class="px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700"
+            >
+              <span class="material-icons-outlined text-sm text-slate-500">content_copy</span>
+              <span>คัดลอกเทมเพลต</span>
+            </button>
+            <button
+              *ngIf="currentTemplateId() && !isDefault()"
+              (click)="setAsDefaultTemplate(); showMobileTemplateMenu.set(false)"
+              class="px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-amber-700"
+            >
+              <span class="material-icons-outlined text-sm text-amber-500">star</span>
+              <span>ตั้งเป็นค่าเริ่มต้น</span>
+            </button>
+            <button
+              *ngIf="currentTemplateId()"
+              (click)="deleteTemplate(); showMobileTemplateMenu.set(false)"
+              class="px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-rose-600"
+            >
+              <span class="material-icons-outlined text-sm text-rose-500">delete</span>
+              <span>ลบเทมเพลต</span>
+            </button>
+            <button
+              (click)="resetToSystemDefaults(); showMobileTemplateMenu.set(false)"
+              class="px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-600 border-t border-slate-100"
+            >
+              <span class="material-icons-outlined text-sm text-slate-500">restart_alt</span>
+              <span>คืนค่ารูปแบบระบบ</span>
+            </button>
+          </div>
+        </div>
       </div>
 
-      <!-- Quick status/error notifications -->
-      <div *ngIf="statusMessage()" class="text-xs text-emerald-700 font-medium bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200 animate-fade-in">
+      <!-- Quick status/error notifications (visible on desktop or small badge) -->
+      <div *ngIf="statusMessage()" class="hidden md:block text-xs text-emerald-700 font-medium bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200 animate-fade-in shrink-0">
         ✓ {{ statusMessage() }}
       </div>
-      <div *ngIf="errorMessage()" class="text-xs text-rose-700 font-medium bg-rose-50 px-2.5 py-1 rounded-md border border-rose-200 animate-fade-in">
+      <div *ngIf="errorMessage()" class="hidden md:block text-xs text-rose-700 font-medium bg-rose-50 px-2.5 py-1 rounded-md border border-rose-200 animate-fade-in shrink-0">
         ⚠️ {{ errorMessage() }}
       </div>
     </div>
 
+    <!-- Mobile Notifications (If any) -->
+    <div *ngIf="statusMessage() || errorMessage()" class="md:hidden px-3 py-1.5 bg-slate-50 border-b border-slate-200 shrink-0">
+      <div *ngIf="statusMessage()" class="text-xs text-emerald-700 font-medium bg-emerald-50 px-2 py-1 rounded-md border border-emerald-200">
+        ✓ {{ statusMessage() }}
+      </div>
+      <div *ngIf="errorMessage()" class="text-xs text-rose-700 font-medium bg-rose-50 px-2 py-1 rounded-md border border-rose-200">
+        ⚠️ {{ errorMessage() }}
+      </div>
+    </div>
+
+    <!-- Mobile Segmented View Switcher (Preview vs Settings) -->
+    <div class="lg:hidden flex items-center bg-slate-100 p-1 border-b border-slate-200 shrink-0">
+      <button
+        type="button"
+        (click)="mobileActiveView.set('preview')"
+        class="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer"
+        [class.bg-white]="mobileActiveView() === 'preview'"
+        [class.text-sky-700]="mobileActiveView() === 'preview'"
+        [class.shadow-xs]="mobileActiveView() === 'preview'"
+        [class.text-slate-600]="mobileActiveView() !== 'preview'"
+      >
+        <span class="material-icons-outlined text-base">visibility</span>
+        <span>ตัวอย่างสติ๊กเกอร์ (Live Preview)</span>
+      </button>
+      <button
+        type="button"
+        (click)="mobileActiveView.set('settings')"
+        class="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer"
+        [class.bg-white]="mobileActiveView() === 'settings'"
+        [class.text-sky-700]="mobileActiveView() === 'settings'"
+        [class.shadow-xs]="mobileActiveView() === 'settings'"
+        [class.text-slate-600]="mobileActiveView() !== 'settings'"
+      >
+        <span class="material-icons-outlined text-base">tune</span>
+        <span>ปรับแต่งป้าย (Settings)</span>
+      </button>
+    </div>
+
     <!-- Main Content Grid -->
-    <div class="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-0">
+    <div class="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-0 relative">
       
       <!-- Left Panel: Controls & Tabs (7 cols) -->
-      <div class="lg:col-span-7 border-r border-slate-200 flex flex-col min-h-0 bg-white">
+      <div
+        class="lg:col-span-7 border-r border-slate-200 flex flex-col min-h-0 bg-white"
+        [class.hidden]="mobileActiveView() !== 'settings'"
+        [class.flex]="mobileActiveView() === 'settings'"
+      >
         
         <!-- Tab Navigation -->
-        <div class="flex border-b border-slate-200 bg-slate-50/50 px-4 gap-1 shrink-0">
+        <div class="flex border-b border-slate-200 bg-slate-50/50 px-2 sm:px-4 gap-1 shrink-0 overflow-x-auto scrollbar-none">
           <button
             type="button"
             (click)="activeTab.set('layout')"
-            class="tab-btn"
+            class="tab-btn shrink-0"
             [class.active]="activeTab() === 'layout'"
           >
             <span class="material-icons-outlined text-base">view_column</span>
@@ -134,7 +228,7 @@
           <button
             type="button"
             (click)="activeTab.set('content')"
-            class="tab-btn"
+            class="tab-btn shrink-0"
             [class.active]="activeTab() === 'content'"
           >
             <span class="material-icons-outlined text-base">format_shapes</span>
@@ -143,7 +237,7 @@
           <button
             type="button"
             (click)="activeTab.set('codes')"
-            class="tab-btn"
+            class="tab-btn shrink-0"
             [class.active]="activeTab() === 'codes'"
           >
             <span class="material-icons-outlined text-base">qr_code</span>
@@ -152,7 +246,7 @@
           <button
             type="button"
             (click)="activeTab.set('calibration')"
-            class="tab-btn"
+            class="tab-btn shrink-0"
             [class.active]="activeTab() === 'calibration'"
           >
             <span class="material-icons-outlined text-base">straighten</span>
@@ -666,49 +760,107 @@
             </div>
           </div>
 
+          <!-- Mobile switch to preview button at the bottom of settings -->
+          <div class="lg:hidden pt-3 pb-2">
+            <button
+              type="button"
+              (click)="mobileActiveView.set('preview')"
+              class="w-full py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-sm flex items-center justify-center gap-2 cursor-pointer transition-colors"
+            >
+              <span class="material-icons-outlined text-base">visibility</span>
+              <span>ดูตัวอย่างป้ายที่ปรับแต่ง (Live Preview)</span>
+            </button>
+          </div>
+
         </div>
       </div>
 
-      <!-- Right Panel: Live Multi-Column Sheet/Roll Preview (5 cols) -->
-      <div class="lg:col-span-5 flex flex-col min-h-0 bg-slate-100/70 p-4">
+      <!-- Right Panel: Live Multi-Column Sheet/Roll Preview (5 cols on desktop, responsive on mobile) -->
+      <div
+        class="lg:col-span-5 flex flex-col min-h-0 bg-slate-100/70 p-3 sm:p-4"
+        [class.hidden]="mobileActiveView() !== 'preview'"
+        [class.flex]="mobileActiveView() === 'preview'"
+      >
         
         <!-- Preview Header & Pager -->
-        <div class="flex items-center justify-between pb-3 shrink-0">
-          <div class="flex items-center gap-2">
-            <span class="text-xs font-bold text-slate-800">ตัวอย่างจำลองหน้าพิมพ์ (Live Preview)</span>
+        <div class="flex items-center justify-between pb-2.5 shrink-0 flex-wrap gap-2">
+          <div class="flex items-center gap-1.5 sm:gap-2">
+            <span class="text-xs font-bold text-slate-800">ตัวอย่างจำลองหน้าพิมพ์</span>
             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-700">
               {{ columnsCount() }} คอลัมน์
             </span>
+            <button
+              type="button"
+              (click)="mobileActiveView.set('settings')"
+              class="lg:hidden ml-1 px-2 py-0.5 rounded-lg text-[11px] font-semibold text-sky-700 bg-sky-50 border border-sky-200 hover:bg-sky-100 flex items-center gap-1 cursor-pointer"
+            >
+              <span class="material-icons-outlined text-xs">tune</span>
+              <span>ปรับแต่ง</span>
+            </button>
           </div>
 
-          <!-- Pager for selected batch items -->
-          <div *ngIf="allItems().length > 1" class="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2 py-1 shadow-2xs">
-            <button
-              type="button"
-              (click)="prevItem()"
-              [disabled]="activeItemIndex() <= 0"
-              class="text-slate-500 hover:text-slate-800 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
-              title="ดูรายการก่อนหน้า"
-            >
-              <span class="material-icons-outlined text-sm">chevron_left</span>
-            </button>
-            <span class="text-[11px] font-semibold text-slate-700">
-              {{ activeItemIndex() + 1 }} / {{ allItems().length }}
-            </span>
-            <button
-              type="button"
-              (click)="nextItem()"
-              [disabled]="activeItemIndex() >= allItems().length - 1"
-              class="text-slate-500 hover:text-slate-800 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
-              title="ดูรายการถัดไป"
-            >
-              <span class="material-icons-outlined text-sm">chevron_right</span>
-            </button>
+          <!-- Zoom & Pager controls -->
+          <div class="flex items-center gap-2">
+            <!-- Zoom levels -->
+            <div class="flex items-center gap-0.5 bg-white border border-slate-200 rounded-lg p-0.5 text-[10px] font-semibold">
+              <button
+                type="button"
+                (click)="previewZoom.set(1)"
+                class="px-1.5 py-0.5 rounded cursor-pointer transition-colors"
+                [class.bg-sky-100]="previewZoom() === 1"
+                [class.text-sky-700]="previewZoom() === 1"
+              >
+                1x
+              </button>
+              <button
+                type="button"
+                (click)="previewZoom.set(1.4)"
+                class="px-1.5 py-0.5 rounded cursor-pointer transition-colors"
+                [class.bg-sky-100]="previewZoom() === 1.4"
+                [class.text-sky-700]="previewZoom() === 1.4"
+              >
+                1.4x (ปกติ)
+              </button>
+              <button
+                type="button"
+                (click)="previewZoom.set(1.8)"
+                class="px-1.5 py-0.5 rounded cursor-pointer transition-colors"
+                [class.bg-sky-100]="previewZoom() === 1.8"
+                [class.text-sky-700]="previewZoom() === 1.8"
+              >
+                1.8x (ขยาย)
+              </button>
+            </div>
+
+            <!-- Pager for selected batch items -->
+            <div *ngIf="allItems().length > 1" class="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2 py-1 shadow-2xs">
+              <button
+                type="button"
+                (click)="prevItem()"
+                [disabled]="activeItemIndex() <= 0"
+                class="text-slate-500 hover:text-slate-800 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
+                title="ดูรายการก่อนหน้า"
+              >
+                <span class="material-icons-outlined text-sm">chevron_left</span>
+              </button>
+              <span class="text-[11px] font-semibold text-slate-700">
+                {{ activeItemIndex() + 1 }} / {{ allItems().length }}
+              </span>
+              <button
+                type="button"
+                (click)="nextItem()"
+                [disabled]="activeItemIndex() >= allItems().length - 1"
+                class="text-slate-500 hover:text-slate-800 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
+                title="ดูรายการถัดไป"
+              >
+                <span class="material-icons-outlined text-sm">chevron_right</span>
+              </button>
+            </div>
           </div>
         </div>
 
         <!-- Canvas Container with Visual Roll / Sheet Grid -->
-        <div class="flex-1 overflow-auto flex items-center justify-center p-3 bg-slate-200/60 rounded-xl border border-slate-300/80 shadow-inner">
+        <div class="flex-1 overflow-auto flex items-start justify-center p-4 bg-slate-200/60 rounded-xl border border-slate-300/80 shadow-inner">
           
           <!-- Scaled Visual Paper Canvas -->
           <div
@@ -718,6 +870,8 @@
             [style.padding-bottom.mm]="marginBottomMm()"
             [style.padding-left.mm]="marginLeftMm()"
             [style.padding-right.mm]="marginRightMm()"
+            [style.transform]="'scale(' + previewZoom() + ')'"
+            [style.transform-origin]="'top center'"
           >
             <!-- Visual Grid of Labels across the Columns -->
             <div
@@ -756,16 +910,14 @@
                     {{ activeItem()?.brandName }} {{ activeItem()?.productModelName }}
                   </div>
                   <div class="preview-meta-row">
-                    <span *ngIf="showSku() && activeItem()" class="preview-sku">SKU: {{ activeItem()?.sku }}</span>
-                    <span *ngIf="showSerialNumber() && activeItem()?.serialNumber" class="preview-serial">S/N: {{ activeItem()?.serialNumber }}</span>
-                  </div>
-                  <div class="preview-meta-row mt-0.5">
-                    <span *ngIf="showShutterCount() && activeItem()?.shutterCount" class="text-[9px] text-slate-500">
-                      SC: {{ activeItem()?.shutterCount | number }}
-                    </span>
-                    <span *ngIf="showPrice() && activeItem()" class="preview-price">
-                      ฿{{ activeItem()?.sellingPrice | number:'1.0-0' }}
-                    </span>
+                    <div class="preview-meta-left">
+                      <span *ngIf="showSku() && activeItem()" class="preview-sku">SKU: {{ activeItem()?.sku }}</span>
+                      <span *ngIf="showSerialNumber() && activeItem()?.serialNumber" class="preview-serial">S/N: {{ activeItem()?.serialNumber }}</span>
+                      <span *ngIf="showShutterCount() && activeItem()?.shutterCount" class="preview-shutter">SC: {{ activeItem()?.shutterCount | number }}</span>
+                    </div>
+                    <div *ngIf="showPrice() && activeItem()" class="preview-meta-right">
+                      <span class="preview-price">฿{{ activeItem()?.sellingPrice | number:'1.0-0' }}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -778,10 +930,15 @@
                       [width]="barcodeWidthRatio()"
                       [height]="barcodeHeightMm() * 3.5"
                       [displayValue]="showBarcodeText()"
-                      class="max-w-full"
+                      class="w-full flex justify-center"
                     ></app-barcode>
                   </div>
-                  <div *ngIf="codeStyle() !== 'barcode_only' && activeItem()" class="preview-qr-box">
+                  <div
+                    *ngIf="codeStyle() !== 'barcode_only' && activeItem()"
+                    class="preview-qr-box"
+                    [style.width.mm]="qrSizeMm()"
+                    [style.height.mm]="qrSizeMm()"
+                  >
                     <app-qrcode
                       [value]="encodeValue() === 'serial' ? (activeItem()?.serialNumber || activeItem()?.sku || '') : (activeItem()?.sku || '')"
                       [size]="qrSizeMm() * 3.78"
@@ -805,29 +962,33 @@
     </div>
 
     <!-- Modal Footer -->
-    <div class="px-5 py-3 border-t border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-3 shrink-0">
-      <div class="flex items-center gap-3">
-        <div class="flex items-center gap-2 bg-white px-2.5 py-1 rounded-xl border border-slate-200">
-          <label class="text-xs font-semibold text-slate-700">จำนวนดวงต่อรายการ:</label>
+    <div class="px-3.5 sm:px-5 py-2.5 sm:py-3 border-t border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 shrink-0">
+      
+      <!-- Copies & Quantity Summary -->
+      <div class="flex items-center justify-between sm:justify-start gap-2 sm:gap-3">
+        <div class="flex items-center gap-1.5 sm:gap-2 bg-white px-2 sm:px-2.5 py-1 rounded-xl border border-slate-200">
+          <label class="text-xs font-semibold text-slate-700 whitespace-nowrap">จำนวน/รายการ:</label>
           <input
             type="number"
             min="1"
             max="100"
             [ngModel]="printCopies()"
             (ngModelChange)="printCopies.set(+$event || 1)"
-            class="w-14 text-xs font-bold text-center px-1 py-0.5 border border-slate-300 rounded-md"
+            class="w-12 text-xs font-bold text-center px-1 py-0.5 border border-slate-300 rounded-md"
           />
         </div>
-        <span class="text-xs font-semibold text-slate-600">
-          รวมพิมพ์ทั้งหมด: <strong class="text-sky-700">{{ totalStickerQuantity() }} ดวง</strong> ({{ columnsCount() }} คอลัมน์)
+        <span class="text-xs font-semibold text-slate-600 truncate">
+          รวมพิมพ์: <strong class="text-sky-700 font-bold">{{ totalStickerQuantity() }} ดวง</strong>
+          <span class="hidden sm:inline text-slate-400 font-normal"> ({{ columnsCount() }} คอลัมน์)</span>
         </span>
       </div>
 
-      <div class="flex items-center gap-2">
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-2 justify-end">
         <button
           type="button"
           (click)="printCalibrationSheet()"
-          class="btn-secondary"
+          class="btn-secondary hidden sm:inline-flex"
           title="พิมพ์แผ่นทดสอบเพื่อวัดสเกลความแม่นยำ"
         >
           <span class="material-icons-outlined text-sm">straighten</span>
@@ -837,7 +998,7 @@
         <button
           type="button"
           (click)="closeModal.emit()"
-          class="btn-secondary"
+          class="btn-secondary text-xs py-2 px-3.5"
         >
           ยกเลิก
         </button>
@@ -845,11 +1006,11 @@
         <button
           type="button"
           (click)="print()"
-          class="btn-primary"
+          class="btn-primary flex-1 sm:flex-initial text-xs py-2 px-4 justify-center"
           [disabled]="isWidthExceeded() || allItems().length === 0"
         >
           <span class="material-icons-outlined text-base">print</span>
-          <span>สั่งพิมพ์ทั้งหมด ({{ totalStickerQuantity() }} ดวง)</span>
+          <span>สั่งพิมพ์ ({{ totalStickerQuantity() }} ดวง)</span>
         </button>
       </div>
     </div>

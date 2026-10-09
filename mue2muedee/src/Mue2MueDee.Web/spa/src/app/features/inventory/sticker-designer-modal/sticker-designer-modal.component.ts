@@ -44,6 +44,20 @@ export class StickerDesignerModalComponent implements OnInit {
   // Active Tab: 'layout' | 'content' | 'codes' | 'calibration'
   activeTab = signal<'layout' | 'content' | 'codes' | 'calibration'>('layout');
 
+  // Mobile View Toggle: 'preview' | 'settings' (defaults to 'preview' for immediate visual feedback on mobile)
+  mobileActiveView = signal<'preview' | 'settings'>('preview');
+
+  // Mobile Template Actions Menu Toggle
+  showMobileTemplateMenu = signal<boolean>(false);
+
+  toggleMobileTemplateMenu(): void {
+    this.showMobileTemplateMenu.update(v => !v);
+  }
+
+  setMobileView(view: 'preview' | 'settings'): void {
+    this.mobileActiveView.set(view);
+  }
+
   // Batch items computation
   allItems = computed<InventoryItem[]>(() => {
     const batch = this.items();
@@ -111,6 +125,7 @@ export class StickerDesignerModalComponent implements OnInit {
   showBarcodeText = signal<boolean>(false);
 
   // Print controls
+  previewZoom = signal<number>(1.4);
   printCopies = signal<number>(1);
   statusMessage = signal<string | null>(null);
   errorMessage = signal<string | null>(null);
@@ -683,10 +698,11 @@ export class StickerDesignerModalComponent implements OnInit {
             overflow: hidden;
             background: #ffffff;
             border: 1px solid #000000;
-            padding: 1.2mm 1.5mm;
+            padding: 1mm 1.5mm;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            box-sizing: border-box;
           }
           .sticker-header {
             display: flex;
@@ -694,8 +710,9 @@ export class StickerDesignerModalComponent implements OnInit {
             justify-content: space-between;
             gap: 1mm;
             border-bottom: 0.5px solid #000000;
-            padding-bottom: 0.8mm;
-            margin-bottom: 0.8mm;
+            padding-bottom: 0.4mm;
+            margin-bottom: 0.4mm;
+            flex-shrink: 0;
           }
           .store-brand-left {
             display: flex;
@@ -705,15 +722,15 @@ export class StickerDesignerModalComponent implements OnInit {
             flex: 1;
           }
           .store-logo-img {
-            width: 4.5mm;
-            height: 4.5mm;
+            width: 4mm;
+            height: 4mm;
             object-fit: contain;
           }
           .monochrome-logo {
             filter: grayscale(100%) contrast(200%);
           }
           .store-name-text {
-            font-size: 6.5pt;
+            font-size: 6pt;
             font-weight: 800;
             white-space: nowrap;
             overflow: hidden;
@@ -722,22 +739,23 @@ export class StickerDesignerModalComponent implements OnInit {
           }
           .badge-grade {
             border: 1px solid #000000;
-            font-size: 6pt;
+            font-size: 5.5pt;
             font-weight: 900;
-            padding: 0.2mm 1mm;
+            padding: 0.2mm 0.8mm;
             line-height: 1;
             white-space: nowrap;
           }
           .sticker-body {
-            flex: 1;
+            flex: 1 1 auto;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            gap: 0.4mm;
+            justify-content: flex-start;
+            gap: 0.2mm;
             min-height: 0;
+            overflow: hidden;
           }
           .product-title {
-            font-size: 7.5pt;
+            font-size: 6.5pt;
             font-weight: 800;
             line-height: 1.15;
             white-space: normal;
@@ -745,38 +763,54 @@ export class StickerDesignerModalComponent implements OnInit {
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            margin-bottom: 0.2mm;
           }
           .meta-row {
             display: flex;
-            align-items: center;
+            align-items: flex-end;
             justify-content: space-between;
-            font-size: 5.5pt;
+            gap: 1mm;
             line-height: 1.1;
           }
-          .sku-text {
-            font-family: monospace;
-            font-weight: 700;
+          .meta-left {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2mm;
+            min-width: 0;
           }
-          .serial-text {
+          .sku-text, .serial-text {
             font-family: monospace;
-            font-weight: 600;
+            font-size: 5pt;
+            font-weight: 700;
+            line-height: 1;
+          }
+          .shutter-text {
+            font-size: 4.5pt;
+            color: #444444;
+            line-height: 1;
+          }
+          .meta-right {
+            text-align: right;
+            flex-shrink: 0;
           }
           .price-text {
-            font-size: 8.5pt;
+            font-size: 8pt;
             font-weight: 900;
             line-height: 1;
+            white-space: nowrap;
           }
           .sticker-footer {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 1.5mm;
-            margin-top: 0.6mm;
-            padding-top: 0.6mm;
+            margin-top: 0.4mm;
+            padding-top: 0.4mm;
             border-top: 0.5px solid #000000;
+            flex-shrink: 0;
           }
           .barcode-container {
-            flex: 1;
+            flex: 1 1 0;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -791,27 +825,29 @@ export class StickerDesignerModalComponent implements OnInit {
           }
           .barcode-number {
             font-family: monospace;
-            font-size: 5pt;
+            font-size: 4.5pt;
             font-weight: bold;
             line-height: 1;
             margin-top: 0.2mm;
           }
           .qr-container {
-            flex-shrink: 0;
+            flex: 0 0 auto;
+            width: ${this.qrSizeMm()}mm;
+            height: ${this.qrSizeMm()}mm;
             display: flex;
             align-items: center;
             justify-content: center;
           }
           .qr-container svg {
-            width: ${this.qrSizeMm()}mm !important;
-            height: ${this.qrSizeMm()}mm !important;
+            width: 100% !important;
+            height: 100% !important;
           }
           .footer-note {
-            font-size: 4.5pt;
+            font-size: 4pt;
             text-align: center;
             color: #333333;
             line-height: 1;
-            margin-top: 0.4mm;
+            margin-top: 0.3mm;
           }
         </style>
       </head>
@@ -890,13 +926,12 @@ export class StickerDesignerModalComponent implements OnInit {
           ${this.showProductTitle() ? `<div class="product-title">${item.brandName} ${item.productModelName}</div>` : ''}
           
           <div class="meta-row">
-            ${this.showSku() ? `<span class="sku-text">SKU: ${item.sku}</span>` : '<span></span>'}
-            ${this.showSerialNumber() && item.serialNumber ? `<span class="serial-text">S/N: ${item.serialNumber}</span>` : '<span></span>'}
-          </div>
-
-          <div class="meta-row" style="margin-top: 0.3mm;">
-            ${this.showShutterCount() && item.shutterCount ? `<span style="font-size: 5pt; color: #444;">SC: ${item.shutterCount.toLocaleString()}</span>` : '<span></span>'}
-            ${this.showPrice() ? `<span class="price-text">฿${priceFormatted}</span>` : '<span></span>'}
+            <div class="meta-left">
+              ${this.showSku() ? `<span class="sku-text">SKU: ${item.sku}</span>` : ''}
+              ${this.showSerialNumber() && item.serialNumber ? `<span class="serial-text">S/N: ${item.serialNumber}</span>` : ''}
+              ${this.showShutterCount() && item.shutterCount ? `<span class="shutter-text">SC: ${item.shutterCount.toLocaleString()}</span>` : ''}
+            </div>
+            ${this.showPrice() ? `<div class="meta-right"><span class="price-text">฿${priceFormatted}</span></div>` : ''}
           </div>
         </div>
 
