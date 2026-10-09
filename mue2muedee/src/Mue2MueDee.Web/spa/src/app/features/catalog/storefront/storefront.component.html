@@ -381,10 +381,10 @@
 
   <!-- Modal 1: Product Detail Modal -->
   @if (selectedItem(); as item) {
-    <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-      <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-3xl overflow-hidden animate-scale-up">
+    <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in">
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-3xl overflow-hidden animate-scale-up my-auto max-h-[92vh] flex flex-col">
         <!-- Modal Header -->
-        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+        <div class="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60 shrink-0">
           <div class="flex items-center gap-2">
             <span class="px-2 py-0.5 rounded-lg text-xs font-bold" [ngClass]="getGradeBadgeClass(item.gradeCode)">
               เกรด {{ item.gradeCode }}
@@ -397,7 +397,7 @@
         </div>
 
         <!-- Modal Body -->
-        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 overflow-y-auto flex-1">
           <!-- Left: Image Gallery & Thumbnails -->
           <div class="flex flex-col gap-3">
             <!-- Main Display Image -->
@@ -556,10 +556,10 @@
 
   <!-- Modal 2: Inquire & Contact Modal -->
   @if (isInquireModalOpen()) {
-    <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-      <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden animate-scale-up">
+    <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in">
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden animate-scale-up my-auto max-h-[92vh] flex flex-col">
         <!-- Modal Header -->
-        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+        <div class="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60 shrink-0">
           <div class="flex items-center gap-2">
             <span class="material-icons-outlined text-emerald-600 text-xl">contact_support</span>
             <h3 class="text-base font-bold text-slate-800">ติดต่อสอบถามร้านค้า</h3>
@@ -569,7 +569,7 @@
           </button>
         </div>
 
-        <div class="p-6 space-y-5">
+        <div class="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto flex-1">
           <!-- Pre-composed Message Box -->
           <div class="space-y-2">
             <label class="text-xs font-semibold text-slate-700 flex items-center justify-between">
@@ -676,9 +676,9 @@
 
   <!-- Modal 3: Contact Store Modal (General) -->
   @if (isContactStoreModalOpen()) {
-    <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-      <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden animate-scale-up">
-        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+    <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in">
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden animate-scale-up my-auto max-h-[92vh] flex flex-col">
+        <div class="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60 shrink-0">
           <div class="flex items-center gap-2">
             <span class="material-icons-outlined text-slate-700 text-xl">store</span>
             <h3 class="text-base font-bold text-slate-800">ข้อมูลติดต่อร้าน {{ store()?.name }}</h3>
@@ -688,7 +688,7 @@
           </button>
         </div>
 
-        <div class="p-6 space-y-4 text-xs">
+        <div class="p-4 sm:p-6 space-y-4 text-xs overflow-y-auto flex-1">
           @if (store()?.address) {
             <div class="space-y-1">
               <span class="text-slate-400">ที่อยู่หน้าร้าน:</span>
@@ -776,18 +776,18 @@
             <button
               type="button"
               (click)="prevImage()"
-              class="absolute left-2 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/50 hover:bg-black/75 text-white backdrop-blur-sm flex items-center justify-center transition-all cursor-pointer shadow-lg hover:scale-110"
+              class="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-black/60 hover:bg-black/80 text-white backdrop-blur-sm flex items-center justify-center transition-all cursor-pointer shadow-lg hover:scale-110"
               title="รูปก่อนหน้า"
             >
-              <span class="material-icons-outlined text-2xl">chevron_left</span>
+              <span class="material-icons-outlined text-xl sm:text-2xl">chevron_left</span>
             </button>
             <button
               type="button"
               (click)="nextImage()"
-              class="absolute right-2 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/50 hover:bg-black/75 text-white backdrop-blur-sm flex items-center justify-center transition-all cursor-pointer shadow-lg hover:scale-110"
+              class="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-black/60 hover:bg-black/80 text-white backdrop-blur-sm flex items-center justify-center transition-all cursor-pointer shadow-lg hover:scale-110"
               title="รูปถัดไป"
             >
-              <span class="material-icons-outlined text-2xl">chevron_right</span>
+              <span class="material-icons-outlined text-xl sm:text-2xl">chevron_right</span>
             </button>
           }
         </div>

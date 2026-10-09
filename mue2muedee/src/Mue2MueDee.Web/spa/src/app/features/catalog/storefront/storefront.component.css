@@ -25,3 +25,14 @@
 .animate-scale-up {
   animation: scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Touch Momentum Scrolling */
+.scrollbar-thin {
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 640px) {
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
