@@ -44,6 +44,7 @@ public class InventoryItem : AuditableEntity<Guid>, ITenantEntity, ISoftDelete
     public ICollection<StockMovement> StockMovements { get; set; } = new List<StockMovement>();
     public ICollection<InventoryCost> Costs { get; set; } = new List<InventoryCost>();
     public ICollection<PriceHistory> PriceHistories { get; set; } = new List<PriceHistory>();
+    public ICollection<InventoryItemImage> Images { get; set; } = new List<InventoryItemImage>();
 
     public InventoryItem()
     {

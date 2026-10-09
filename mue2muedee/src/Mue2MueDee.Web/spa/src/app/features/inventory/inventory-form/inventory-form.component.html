@@ -116,6 +116,17 @@
       <div class="section-divider"></div>
 
       <div class="section-block">
+        <h2 class="section-title">รูปภาพสินค้าชิ้นนี้ (เพิ่มได้ไม่จำกัด)</h2>
+        <app-multi-image-uploader
+          label="แกลเลอรีรูปภาพ"
+          hint="ถ่ายให้ครบทุกมุม รวมถึงตำหนิ/อุปกรณ์ เพื่อให้ลูกค้าตัดสินใจง่าย • รูปแรกคือรูปปก • ถ้าไม่ใส่จะใช้รูปจากสินค้ามาสเตอร์"
+          formControlName="imageUrls"
+        ></app-multi-image-uploader>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <div class="section-block">
         <h2 class="section-title">3. ราคารับซื้อ & ราคาตั้งขาย</h2>
         <div class="form-grid">
           <app-number

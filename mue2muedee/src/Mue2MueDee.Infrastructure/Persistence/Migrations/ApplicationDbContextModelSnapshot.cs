@@ -778,6 +778,61 @@ namespace Mue2MueDee.Infrastructure.Persistence.Migrations
                     b.ToTable("inventory_items", (string)null);
                 });
 
+            modelBuilder.Entity("Mue2MueDee.Domain.Entities.InventoryItemImage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<Guid>("InventoryItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("inventory_item_id");
+
+                    b.Property<int>("SortOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("sort_order");
+
+                    b.Property<Guid>("StoreId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("store_id");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("url");
+
+                    b.HasKey("Id")
+                        .HasName("pk_inventory_item_images");
+
+                    b.HasIndex("InventoryItemId")
+                        .HasDatabaseName("ix_inventory_item_images_inventory_item_id");
+
+                    b.HasIndex("StoreId", "InventoryItemId", "SortOrder")
+                        .HasDatabaseName("ix_inventory_item_images_store_id_inventory_item_id_sort_order");
+
+                    b.ToTable("inventory_item_images", (string)null);
+                });
+
             modelBuilder.Entity("Mue2MueDee.Domain.Entities.PriceHistory", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2040,6 +2095,27 @@ namespace Mue2MueDee.Infrastructure.Persistence.Migrations
                     b.Navigation("Store");
                 });
 
+            modelBuilder.Entity("Mue2MueDee.Domain.Entities.InventoryItemImage", b =>
+                {
+                    b.HasOne("Mue2MueDee.Domain.Entities.InventoryItem", "InventoryItem")
+                        .WithMany("Images")
+                        .HasForeignKey("InventoryItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_inventory_item_images_inventory_items_inventory_item_id");
+
+                    b.HasOne("Mue2MueDee.Domain.Entities.Store", "Store")
+                        .WithMany()
+                        .HasForeignKey("StoreId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_inventory_item_images_stores_store_id");
+
+                    b.Navigation("InventoryItem");
+
+                    b.Navigation("Store");
+                });
+
             modelBuilder.Entity("Mue2MueDee.Domain.Entities.PriceHistory", b =>
                 {
                     b.HasOne("Mue2MueDee.Domain.Entities.InventoryItem", "InventoryItem")
@@ -2342,6 +2418,8 @@ namespace Mue2MueDee.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Mue2MueDee.Domain.Entities.InventoryItem", b =>
                 {
                     b.Navigation("Costs");
+
+                    b.Navigation("Images");
 
                     b.Navigation("PriceHistories");
 

@@ -53,6 +53,13 @@ public class InventoryController : ApiControllerBase
         return Success(item, $"แก้ไขข้อมูลสินค้า {item.ProductModelName} (SKU: {item.Sku}) สำเร็จ");
     }
 
+    [HttpPut("{id:guid}/images")]
+    public async Task<IActionResult> UpdateImages(Guid id, [FromBody] UpdateInventoryImagesRequest request)
+    {
+        var item = await _inventoryService.UpdateImagesAsync(id, request);
+        return Success(item, $"บันทึกรูปภาพสินค้า {item.Sku} สำเร็จ ({item.ImageUrls.Count} รูป)");
+    }
+
     [HttpPost("{id:guid}/adjust-cost")]
     public async Task<IActionResult> AdjustCost(Guid id, [FromBody] AdjustInventoryCostRequest request)
     {

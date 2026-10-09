@@ -8,7 +8,8 @@ import {
   TextboxComponent,
   NumberComponent,
   TextareaComponent,
-  SelectComponent
+  SelectComponent,
+  MultiImageUploaderComponent
 } from '../../../shared/components';
 
 @Component({
@@ -21,7 +22,8 @@ import {
     TextboxComponent,
     NumberComponent,
     TextareaComponent,
-    SelectComponent
+    SelectComponent,
+    MultiImageUploaderComponent
   ],
   templateUrl: './inventory-form.component.html',
   styleUrl: './inventory-form.component.css'
@@ -51,7 +53,8 @@ export class InventoryFormComponent implements OnInit {
     accessories: new FormControl(''),
     defects: new FormControl(''),
     customerId: new FormControl(''),
-    notes: new FormControl('')
+    notes: new FormControl(''),
+    imageUrls: new FormControl<string[]>([], { nonNullable: true })
   });
 
   ngOnInit(): void {
@@ -143,7 +146,8 @@ export class InventoryFormComponent implements OnInit {
       accessories: val.accessories || undefined,
       defects: val.defects || undefined,
       notes: val.notes || undefined,
-      customerId: val.customerId || undefined
+      customerId: val.customerId || undefined,
+      imageUrls: val.imageUrls
     }).subscribe({
       next: created => {
         this.isSubmitting.set(false);

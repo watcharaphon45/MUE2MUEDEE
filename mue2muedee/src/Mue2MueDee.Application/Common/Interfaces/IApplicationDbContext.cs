@@ -26,6 +26,7 @@ public interface IApplicationDbContext
     DbSet<InspectionResult> InspectionResults { get; }
     DbSet<PurchasePayment> PurchasePayments { get; }
     DbSet<InventoryCost> InventoryCosts { get; }
+    DbSet<InventoryItemImage> InventoryItemImages { get; }
     DbSet<PriceHistory> PriceHistories { get; }
 
     DbSet<SaleOrder> SaleOrders { get; }

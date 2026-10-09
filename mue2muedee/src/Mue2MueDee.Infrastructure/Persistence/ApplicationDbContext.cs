@@ -41,6 +41,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<InspectionResult> InspectionResults => Set<InspectionResult>();
     public DbSet<PurchasePayment> PurchasePayments => Set<PurchasePayment>();
     public DbSet<InventoryCost> InventoryCosts => Set<InventoryCost>();
+    public DbSet<InventoryItemImage> InventoryItemImages => Set<InventoryItemImage>();
     public DbSet<PriceHistory> PriceHistories => Set<PriceHistory>();
     public DbSet<SaleOrder> SaleOrders => Set<SaleOrder>();
     public DbSet<SaleItem> SaleItems => Set<SaleItem>();

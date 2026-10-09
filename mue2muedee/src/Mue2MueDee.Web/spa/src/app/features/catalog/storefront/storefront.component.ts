@@ -23,8 +23,10 @@ export class StorefrontComponent implements OnInit {
   readonly selectedGradeId = signal<string>('');
   readonly sortBy = signal<string>('newest');
 
-  // Modals
+  // Modals & Gallery
   readonly selectedItem = signal<PublicCatalogItem | null>(null);
+  readonly activeImageIndex = signal<number>(0);
+  readonly showImageLightbox = signal<boolean>(false);
   readonly isInquireModalOpen = signal<boolean>(false);
   readonly isContactStoreModalOpen = signal<boolean>(false);
   readonly copiedMessage = signal<boolean>(false);
@@ -78,10 +80,48 @@ export class StorefrontComponent implements OnInit {
 
   openItemDetail(item: PublicCatalogItem): void {
     this.selectedItem.set(item);
+    this.activeImageIndex.set(0);
+    this.showImageLightbox.set(false);
   }
 
   closeItemDetail(): void {
     this.selectedItem.set(null);
+    this.showImageLightbox.set(false);
+  }
+
+  getItemImages(item: PublicCatalogItem | null): string[] {
+    if (!item) return [];
+    if (item.imageUrls && item.imageUrls.length > 0) {
+      return item.imageUrls;
+    }
+    return item.imageUrl ? [item.imageUrl] : [];
+  }
+
+  selectImage(index: number): void {
+    this.activeImageIndex.set(index);
+  }
+
+  nextImage(): void {
+    const images = this.getItemImages(this.selectedItem());
+    if (images.length <= 1) return;
+    this.activeImageIndex.update(idx => (idx + 1) % images.length);
+  }
+
+  prevImage(): void {
+    const images = this.getItemImages(this.selectedItem());
+    if (images.length <= 1) return;
+    this.activeImageIndex.update(idx => (idx - 1 + images.length) % images.length);
+  }
+
+  openLightbox(): void {
+    const images = this.getItemImages(this.selectedItem());
+    if (images.length > 0) {
+      this.showImageLightbox.set(true);
+    }
+  }
+
+  closeLightbox(): void {
+    this.showImageLightbox.set(false);
   }
 
   openInquireModal(item?: PublicCatalogItem): void {

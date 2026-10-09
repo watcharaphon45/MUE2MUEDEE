@@ -274,6 +274,16 @@
                   </div>
                 }
 
+                <!-- Multiple Photos Badge -->
+                @if (item.imageUrls && item.imageUrls.length > 1) {
+                  <div class="absolute bottom-3 right-3 z-10">
+                    <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-black/60 text-white backdrop-blur-md flex items-center gap-1 shadow-sm">
+                      <span class="material-icons-outlined text-[12px]">collections</span>
+                      <span>{{ item.imageUrls.length }} รูป</span>
+                    </span>
+                  </div>
+                }
+
                 <!-- Grade Badge Overlay -->
                 <div class="absolute top-3 left-3">
                   <span 
@@ -388,14 +398,82 @@
 
         <!-- Modal Body -->
         <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- Left: Big Image -->
-          <div class="bg-slate-100 rounded-2xl overflow-hidden flex items-center justify-center aspect-square border border-slate-200/70">
-            @if (item.imageUrl) {
-              <img [src]="item.imageUrl" [alt]="item.modelName" class="w-full h-full object-cover" />
-            } @else {
-              <div class="text-slate-300 flex flex-col items-center gap-2">
-                <span class="material-icons-outlined text-6xl">photo_camera</span>
-                <span class="text-xs text-slate-400">ไม่มีรูปภาพสินค้า</span>
+          <!-- Left: Image Gallery & Thumbnails -->
+          <div class="flex flex-col gap-3">
+            <!-- Main Display Image -->
+            <div class="relative bg-slate-100 rounded-2xl overflow-hidden flex items-center justify-center aspect-square border border-slate-200/80 group/gallery">
+              @if (getItemImages(item).length > 0) {
+                <img
+                  [src]="getItemImages(item)[activeImageIndex()]"
+                  [alt]="item.modelName + ' - ภาพที่ ' + (activeImageIndex() + 1)"
+                  class="w-full h-full object-cover transition-all duration-300 cursor-zoom-in"
+                  (click)="openLightbox()"
+                />
+
+                <!-- Zoom Button Overlay -->
+                <button
+                  type="button"
+                  (click)="openLightbox()"
+                  class="absolute top-3 right-3 p-2 rounded-xl bg-black/50 hover:bg-black/70 text-white backdrop-blur-md opacity-0 group-hover/gallery:opacity-100 transition-opacity cursor-pointer shadow-md"
+                  title="ดูรูปภาพขนาดเต็ม (Lightbox)"
+                >
+                  <span class="material-icons-outlined text-base">zoom_in</span>
+                </button>
+
+                <!-- Navigation Arrows (if > 1 image) -->
+                @if (getItemImages(item).length > 1) {
+                  <button
+                    type="button"
+                    (click)="$event.stopPropagation(); prevImage()"
+                    class="absolute left-2.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition-transform hover:scale-110 cursor-pointer"
+                    title="รูปก่อนหน้า"
+                  >
+                    <span class="material-icons-outlined text-lg">chevron_left</span>
+                  </button>
+                  <button
+                    type="button"
+                    (click)="$event.stopPropagation(); nextImage()"
+                    class="absolute right-2.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 hover:bg-white text-slate-800 shadow-md flex items-center justify-center transition-transform hover:scale-110 cursor-pointer"
+                    title="รูปถัดไป"
+                  >
+                    <span class="material-icons-outlined text-lg">chevron_right</span>
+                  </button>
+
+                  <!-- Image Index Counter Badge -->
+                  <div class="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/60 text-white text-[11px] font-medium backdrop-blur-md tracking-wider">
+                    {{ activeImageIndex() + 1 }} / {{ getItemImages(item).length }}
+                  </div>
+                }
+              } @else {
+                <div class="text-slate-300 flex flex-col items-center gap-2">
+                  <span class="material-icons-outlined text-6xl">photo_camera</span>
+                  <span class="text-xs text-slate-400">ไม่มีรูปภาพสินค้า</span>
+                </div>
+              }
+            </div>
+
+            <!-- Thumbnail Carousel / Strip -->
+            @if (getItemImages(item).length > 1) {
+              <div class="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 scrollbar-thin">
+                @for (img of getItemImages(item); track img; let idx = $index) {
+                  <button
+                    type="button"
+                    (click)="selectImage(idx)"
+                    [class.ring-2]="activeImageIndex() === idx"
+                    [class.ring-sky-500]="activeImageIndex() === idx"
+                    [class.opacity-50]="activeImageIndex() !== idx"
+                    [class.hover:opacity-100]="activeImageIndex() !== idx"
+                    class="relative w-16 h-16 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 transition-all cursor-pointer focus:outline-none"
+                    [title]="'ดูรูปที่ ' + (idx + 1)"
+                  >
+                    <img [src]="img" [alt]="'Thumbnail ' + (idx + 1)" class="w-full h-full object-cover" />
+                    @if (idx === 0) {
+                      <span class="absolute bottom-0 inset-x-0 bg-sky-600/90 text-white text-[8px] font-bold py-0.5 text-center leading-none">
+                        ปก
+                      </span>
+                    }
+                  </button>
+                }
               </div>
             }
           </div>
@@ -654,6 +732,84 @@
             </div>
           }
         </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal: Fullscreen Image Lightbox -->
+  @if (showImageLightbox() && selectedItem(); as item) {
+    <div
+      class="fixed inset-0 z-60 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in"
+      (click)="closeLightbox()"
+    >
+      <div class="relative max-w-5xl w-full max-h-[92vh] flex flex-col items-center justify-center" (click)="$event.stopPropagation()">
+        <!-- Top bar -->
+        <div class="w-full flex items-center justify-between pb-3 px-2 text-white">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">
+              {{ item.brandName }} {{ item.modelName }}
+            </span>
+            <span class="text-xs text-white/70 font-mono">
+              (รูปที่ {{ activeImageIndex() + 1 }} / {{ getItemImages(item).length }})
+            </span>
+          </div>
+          <button
+            type="button"
+            (click)="closeLightbox()"
+            class="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center cursor-pointer transition-colors"
+            title="ปิด"
+          >
+            <span class="material-icons-outlined text-xl">close</span>
+          </button>
+        </div>
+
+        <!-- Big image -->
+        <div class="relative w-full flex items-center justify-center max-h-[80vh]">
+          <img
+            [src]="getItemImages(item)[activeImageIndex()]"
+            [alt]="item.modelName"
+            class="max-w-full max-h-[78vh] object-contain rounded-2xl shadow-2xl"
+          />
+
+          <!-- Navigation Buttons -->
+          @if (getItemImages(item).length > 1) {
+            <button
+              type="button"
+              (click)="prevImage()"
+              class="absolute left-2 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/50 hover:bg-black/75 text-white backdrop-blur-sm flex items-center justify-center transition-all cursor-pointer shadow-lg hover:scale-110"
+              title="รูปก่อนหน้า"
+            >
+              <span class="material-icons-outlined text-2xl">chevron_left</span>
+            </button>
+            <button
+              type="button"
+              (click)="nextImage()"
+              class="absolute right-2 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/50 hover:bg-black/75 text-white backdrop-blur-sm flex items-center justify-center transition-all cursor-pointer shadow-lg hover:scale-110"
+              title="รูปถัดไป"
+            >
+              <span class="material-icons-outlined text-2xl">chevron_right</span>
+            </button>
+          }
+        </div>
+
+        <!-- Bottom thumbnails in Lightbox -->
+        @if (getItemImages(item).length > 1) {
+          <div class="flex items-center gap-2 overflow-x-auto pt-3 pb-1 max-w-full scrollbar-thin">
+            @for (img of getItemImages(item); track img; let idx = $index) {
+              <button
+                type="button"
+                (click)="selectImage(idx)"
+                [class.ring-2]="activeImageIndex() === idx"
+                [class.ring-sky-400]="activeImageIndex() === idx"
+                [class.opacity-40]="activeImageIndex() !== idx"
+                [class.hover:opacity-100]="activeImageIndex() !== idx"
+                class="w-14 h-14 rounded-xl overflow-hidden bg-white/10 shrink-0 transition-all cursor-pointer focus:outline-none"
+              >
+                <img [src]="img" [alt]="'Thumbnail ' + (idx + 1)" class="w-full h-full object-cover" />
+              </button>
+            }
+          </div>
+        }
       </div>
     </div>
   }

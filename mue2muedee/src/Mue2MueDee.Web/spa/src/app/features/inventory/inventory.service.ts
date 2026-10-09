@@ -118,6 +118,19 @@ export class InventoryService {
     );
   }
 
+  updateImages(id: string, imageUrls: string[]): Observable<InventoryItem> {
+    return this.http.put<ApiResponse<InventoryItem>>(`${this.baseUrl}/${id}/images`, { imageUrls }).pipe(
+      map(res => res.data),
+      tap(updated => {
+        this.selectedItem.set(updated);
+        this.pagedResult.update(p => ({
+          ...p,
+          items: p.items.map(i => (i.id === id ? updated : i))
+        }));
+      })
+    );
+  }
+
   adjustCost(id: string, req: AdjustCostRequest): Observable<InventoryItem> {
     return this.http.post<ApiResponse<InventoryItem>>(`${this.baseUrl}/${id}/adjust-cost`, req).pipe(
       map(res => res.data),

@@ -29,8 +29,9 @@ public record PublicCatalogItemDto(
     string? Accessories,
     string? Defects,
     string? Notes,
-    string? ImageUrl,
-    DateTimeOffset ReceivedAt
+    string? ImageUrl, // รูปปก (รูปแรกของชิ้น หรือ fallback เป็นรูป Product)
+    DateTimeOffset ReceivedAt,
+    IReadOnlyList<string> ImageUrls // แกลเลอรีทั้งหมด
 );
 
 public record CatalogFilterOptionDto(

@@ -31,7 +31,8 @@ public record InventoryItemDto(
     Guid? CustomerId,
     string? CustomerName,
     int StockAgeDays,
-    DateTimeOffset CreatedAt
+    DateTimeOffset CreatedAt,
+    IReadOnlyList<string> ImageUrls // รูปของชิ้นนี้ (เรียงตาม SortOrder, ตัวแรก = รูปปก)
 );
 
 public record CreateInventoryItemRequest(
@@ -46,7 +47,8 @@ public record CreateInventoryItemRequest(
     string? Defects,
     string? Notes,
     Guid? CustomerId,
-    DateTimeOffset? ReceivedAt
+    DateTimeOffset? ReceivedAt,
+    List<string>? ImageUrls = null
 );
 
 public record UpdateInventoryItemRequest(
@@ -56,7 +58,12 @@ public record UpdateInventoryItemRequest(
     int? ShutterCount,
     string? Accessories,
     string? Defects,
-    string? Notes
+    string? Notes,
+    List<string>? ImageUrls = null // null = ไม่แก้ไขรูป, [] = ลบรูปทั้งหมด
+);
+
+public record UpdateInventoryImagesRequest(
+    List<string> ImageUrls // เรียงลำดับตามที่ต้องการ ตัวแรก = รูปปก
 );
 
 public record AdjustInventoryCostRequest(

@@ -28,6 +28,7 @@ export interface PublicCatalogItem {
   defects?: string;
   notes?: string;
   imageUrl?: string;
+  imageUrls?: string[];
   receivedAt: string;
 }
 

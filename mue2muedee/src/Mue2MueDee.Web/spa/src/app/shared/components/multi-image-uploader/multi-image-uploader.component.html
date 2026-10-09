@@ -1,0 +1,137 @@
+<div class="space-y-1.5 w-full">
+  <!-- Label & Actions -->
+  <div class="flex items-center justify-between">
+    @if (label) {
+      <label class="block text-xs font-medium text-slate-600 truncate">
+        {{ label }}
+        <span class="text-slate-400 font-normal ml-1">({{ images.length }} รูป)</span>
+      </label>
+    }
+    <button
+      type="button"
+      (click)="showUrlInput = !showUrlInput"
+      class="text-[11px] text-sky-600 hover:text-sky-700 hover:underline flex items-center gap-1 cursor-pointer"
+    >
+      <span class="material-icons-outlined text-xs">link</span>
+      <span>เพิ่มจาก URL</span>
+    </button>
+  </div>
+
+  <input
+    #fileInput
+    type="file"
+    multiple
+    accept="image/png,image/jpeg,image/webp,image/gif"
+    (change)="onFileChange($event)"
+    class="hidden"
+  />
+
+  <!-- Grid -->
+  <div
+    class="mi-grid"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave($event)"
+    (drop)="onDrop($event)"
+    [class.mi-grid--dragging]="isDragging"
+  >
+    @for (img of images; track img; let i = $index) {
+      <div
+        class="mi-thumb group"
+        [class.mi-thumb--cover]="i === 0"
+        [class.mi-thumb--moving]="dragIndex === i"
+        [attr.draggable]="!disabled"
+        (dragstart)="onThumbDragStart(i)"
+        (dragover)="onThumbDragOver(i, $event)"
+        (dragend)="onThumbDragEnd()"
+        (click)="openPreview(i)"
+      >
+        <img [src]="img" [alt]="'รูปสินค้า ' + (i + 1)" loading="lazy" />
+
+        @if (i === 0) {
+          <span class="mi-cover-badge">
+            <span class="material-icons-outlined text-[12px]">star</span> รูปปก
+          </span>
+        }
+
+        <div class="mi-actions">
+          @if (i !== 0) {
+            <button type="button" (click)="setCover(i, $event)" title="ตั้งเป็นรูปปก" class="mi-action-btn">
+              <span class="material-icons-outlined text-sm">star_outline</span>
+            </button>
+          }
+          <button type="button" (click)="remove(i, $event)" title="ลบรูป" class="mi-action-btn mi-action-btn--danger">
+            <span class="material-icons-outlined text-sm">delete</span>
+          </button>
+        </div>
+      </div>
+    }
+
+    @for (slot of uploadingSlots; track $index) {
+      <div class="mi-thumb mi-thumb--loading">
+        <span class="material-icons-outlined text-2xl text-sky-500 animate-spin">refresh</span>
+      </div>
+    }
+
+    <!-- Add tile -->
+    <button
+      type="button"
+      class="mi-add"
+      [disabled]="disabled"
+      (click)="triggerFileInput()"
+    >
+      <span class="material-icons-outlined text-2xl">add_photo_alternate</span>
+      <span class="text-[11px] font-semibold">เพิ่มรูป</span>
+      <span class="text-[10px] text-slate-400">เลือกได้หลายไฟล์</span>
+    </button>
+  </div>
+
+  @if (showUrlInput) {
+    <div class="flex gap-2 pt-1">
+      <input
+        type="url"
+        [value]="urlDraft"
+        (input)="urlDraft = $any($event.target).value"
+        (keydown.enter)="$event.preventDefault(); addUrl()"
+        [disabled]="disabled"
+        placeholder="https://example.com/image.jpg"
+        class="flex-1 h-[38px] px-3 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+      />
+      <button type="button" (click)="addUrl()" class="px-3 h-[38px] rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold cursor-pointer">
+        เพิ่ม
+      </button>
+    </div>
+  }
+
+  @if (uploadError) {
+    <p class="text-[11px] text-rose-600 flex items-center gap-1">
+      <span class="material-icons-outlined text-xs">error</span>{{ uploadError }}
+    </p>
+  } @else if (errorMessage) {
+    <p class="text-[11px] text-rose-600">{{ errorMessage }}</p>
+  } @else {
+    <p class="text-[11px] text-slate-400">
+      {{ hint || 'ลากรูปมาวางได้หลายไฟล์ • ลากรูปเพื่อเรียงลำดับ • รูปแรกคือรูปปกที่แสดงหน้าร้าน' }}
+    </p>
+  }
+
+  <!-- Lightbox -->
+  @if (previewIndex !== null && images[previewIndex]) {
+    <div class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4" (click)="closePreview()">
+      <img [src]="images[previewIndex]" alt="ภาพขยาย" class="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl" (click)="$event.stopPropagation()" />
+      @if (images.length > 1) {
+        <button type="button" class="mi-nav left-4" (click)="prev($event)">
+          <span class="material-icons-outlined">chevron_left</span>
+        </button>
+        <button type="button" class="mi-nav right-4" (click)="next($event)">
+          <span class="material-icons-outlined">chevron_right</span>
+        </button>
+      }
+      <span class="absolute bottom-5 left-1/2 -translate-x-1/2 text-white/80 text-xs">
+        {{ previewIndex + 1 }} / {{ images.length }}
+      </span>
+      <button type="button" class="absolute top-4 right-4 text-white/80 hover:text-white cursor-pointer" (click)="closePreview()">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+  }
+</div>

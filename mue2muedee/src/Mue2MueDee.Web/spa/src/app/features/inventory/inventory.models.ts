@@ -40,6 +40,7 @@ export interface InventoryItem {
   customerName?: string;
   stockAgeDays: number;
   createdAt: string;
+  imageUrls: string[];
 }
 
 export interface CreateInventoryItemRequest {
@@ -55,6 +56,7 @@ export interface CreateInventoryItemRequest {
   notes?: string;
   customerId?: string;
   receivedAt?: string;
+  imageUrls?: string[];
 }
 
 export interface UpdateInventoryItemRequest {
@@ -65,6 +67,7 @@ export interface UpdateInventoryItemRequest {
   accessories?: string;
   defects?: string;
   notes?: string;
+  imageUrls?: string[]; // undefined = ไม่แก้รูป
 }
 
 export interface AdjustCostRequest {

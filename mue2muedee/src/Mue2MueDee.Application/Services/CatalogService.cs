@@ -166,8 +166,9 @@ public class CatalogService : ICatalogService
                 i.Accessories,
                 i.Defects,
                 i.Notes,
-                i.Product.ImageUrl,
-                i.ReceivedAt
+                i.Images.OrderBy(img => img.SortOrder).Select(img => img.Url).FirstOrDefault() ?? i.Product.ImageUrl,
+                i.ReceivedAt,
+                i.Images.OrderBy(img => img.SortOrder).Select(img => img.Url).ToList()
             ))
             .ToListAsync(ct);
 
@@ -202,6 +203,7 @@ public class CatalogService : ICatalogService
             .Include(i => i.Product)
                 .ThenInclude(p => p.Category)
             .Include(i => i.ConditionGrade)
+            .Include(i => i.Images)
             .FirstOrDefaultAsync(i =>
                 i.Id == itemId &&
                 i.StoreId == store.Id &&
@@ -212,6 +214,8 @@ public class CatalogService : ICatalogService
         {
             throw new KeyNotFoundException("ไม่พบสินค้าที่ต้องการ หรือสินค้านี้ถูกจำหน่ายออกไปแล้ว");
         }
+
+        var imageUrls = item.Images.OrderBy(img => img.SortOrder).Select(img => img.Url).ToList();
 
         return new PublicCatalogItemDto(
             item.Id,
@@ -226,8 +230,9 @@ public class CatalogService : ICatalogService
             item.Accessories,
             item.Defects,
             item.Notes,
-            item.Product.ImageUrl,
-            item.ReceivedAt
+            imageUrls.FirstOrDefault() ?? item.Product.ImageUrl,
+            item.ReceivedAt,
+            imageUrls
         );
     }
 

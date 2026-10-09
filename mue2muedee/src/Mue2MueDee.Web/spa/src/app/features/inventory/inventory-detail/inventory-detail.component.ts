@@ -17,7 +17,8 @@ import {
   NumberComponent,
   TextareaComponent,
   SelectComponent,
-  StatusBadgeComponent
+  StatusBadgeComponent,
+  MultiImageUploaderComponent
 } from '../../../shared/components';
 
 @Component({
@@ -31,7 +32,8 @@ import {
     NumberComponent,
     TextareaComponent,
     SelectComponent,
-    StatusBadgeComponent
+    StatusBadgeComponent,
+    MultiImageUploaderComponent
   ],
   templateUrl: './inventory-detail.component.html',
   styleUrl: './inventory-detail.component.css'
@@ -45,9 +47,14 @@ export class InventoryDetailComponent implements OnInit {
   showAddCostModal = signal<boolean>(false);
   showUpdatePriceModal = signal<boolean>(false);
   showChangeStatusModal = signal<boolean>(false);
+  showManageImagesModal = signal<boolean>(false);
   showImagePreview = signal<boolean>(false);
+  activeImageIndex = signal<number>(0);
   isSubmitting = signal<boolean>(false);
   feedbackMessage = signal<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Images Form Control
+  imagesControl = new FormControl<string[]>([], { nonNullable: true });
 
   // Live margin adjustment for pricing recommendation
   targetMarginControl = new FormControl<number>(15, [Validators.required, Validators.min(1), Validators.max(90)]);
@@ -110,6 +117,7 @@ export class InventoryDetailComponent implements OnInit {
       next: item => {
         this.statusForm.controls.newStatus.setValue(item.status.toString());
         this.updatePriceForm.controls.newPrice.setValue(item.sellingPrice);
+        this.imagesControl.setValue(item.imageUrls || []);
       }
     });
 
@@ -262,5 +270,65 @@ export class InventoryDetailComponent implements OnInit {
         this.feedbackMessage.set({ type: 'error', text: err.error?.message ?? 'เกิดข้อผิดพลาดในการเปลี่ยนสถานะ' });
       }
     });
+  }
+
+  // ==========================================
+  // Image Gallery & Management
+  // ==========================================
+
+  openManageImages(): void {
+    const item = this.inventoryService.selectedItem();
+    this.imagesControl.setValue([...(item?.imageUrls || [])]);
+    this.showManageImagesModal.set(true);
+  }
+
+  closeManageImages(): void {
+    this.showManageImagesModal.set(false);
+  }
+
+  saveImages(): void {
+    this.isSubmitting.set(true);
+    const urls = this.imagesControl.value || [];
+    this.inventoryService.updateImages(this.itemId(), urls).subscribe({
+      next: updated => {
+        this.isSubmitting.set(false);
+        this.closeManageImages();
+        this.feedbackMessage.set({
+          type: 'success',
+          text: `บันทึกรูปภาพสินค้า ${updated.sku} เรียบร้อยแล้ว (${updated.imageUrls?.length || 0} รูป)`
+        });
+      },
+      error: err => {
+        this.isSubmitting.set(false);
+        this.feedbackMessage.set({
+          type: 'error',
+          text: err.error?.message ?? 'เกิดข้อผิดพลาดในการบันทึกรูปภาพ'
+        });
+      }
+    });
+  }
+
+  getItemImages(item: InventoryItem | null): string[] {
+    if (!item) return [];
+    if (item.imageUrls && item.imageUrls.length > 0) {
+      return item.imageUrls;
+    }
+    return item.productImageUrl ? [item.productImageUrl] : [];
+  }
+
+  selectImage(idx: number): void {
+    this.activeImageIndex.set(idx);
+  }
+
+  prevImage(): void {
+    const images = this.getItemImages(this.inventoryService.selectedItem());
+    if (images.length <= 1) return;
+    this.activeImageIndex.update(idx => (idx - 1 + images.length) % images.length);
+  }
+
+  nextImage(): void {
+    const images = this.getItemImages(this.inventoryService.selectedItem());
+    if (images.length <= 1) return;
+    this.activeImageIndex.update(idx => (idx + 1) % images.length);
   }
 }

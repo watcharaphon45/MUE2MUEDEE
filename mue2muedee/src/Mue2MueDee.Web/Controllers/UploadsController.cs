@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Mue2MueDee.Application.Common.Exceptions;
+using Mue2MueDee.Application.Common.Interfaces;
 using Mue2MueDee.Web.Controllers.Common;
 
 namespace Mue2MueDee.Web.Controllers;
@@ -11,52 +12,69 @@ public class UploadsController : ApiControllerBase
 {
     private readonly IWebHostEnvironment _environment;
     private readonly ILogger<UploadsController> _logger;
+    private readonly IImageStorage _imageStorage;
 
-    public UploadsController(IWebHostEnvironment environment, ILogger<UploadsController> logger)
+    private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+    private const long MaxFileSize = 10 * 1024 * 1024; // 10MB
+
+    public UploadsController(IWebHostEnvironment environment, ILogger<UploadsController> logger, IImageStorage imageStorage)
     {
         _environment = environment;
         _logger = logger;
+        _imageStorage = imageStorage;
     }
 
     [HttpPost("image")]
     [Authorize]
-    public async Task<IActionResult> UploadImage(IFormFile? file)
+    public async Task<IActionResult> UploadImage(IFormFile? file, CancellationToken ct)
     {
         if (file == null || file.Length == 0)
         {
             throw AppException.BadRequest("กรุณาเลือกไฟล์รูปภาพที่ต้องการอัปโหลด");
         }
 
-        if (file.Length > 10 * 1024 * 1024) // 10MB
+        var result = await SaveAsync(file, ct);
+        return Success(result, "อัปโหลดรูปภาพสำเร็จ");
+    }
+
+    [HttpPost("images")]
+    [Authorize]
+    [RequestSizeLimit(200 * 1024 * 1024)]
+    public async Task<IActionResult> UploadImages(List<IFormFile>? files, CancellationToken ct)
+    {
+        if (files == null || files.Count == 0)
         {
-            throw AppException.BadRequest("ขนาดไฟล์รูปภาพต้องไม่เกิน 10MB");
+            throw AppException.BadRequest("กรุณาเลือกไฟล์รูปภาพอย่างน้อย 1 ไฟล์");
+        }
+
+        var results = new List<object>();
+        foreach (var file in files.Where(f => f.Length > 0))
+        {
+            results.Add(await SaveAsync(file, ct));
+        }
+
+        return Success(results, $"อัปโหลดรูปภาพสำเร็จ {results.Count} รูป");
+    }
+
+    private async Task<object> SaveAsync(IFormFile file, CancellationToken ct)
+    {
+        if (file.Length > MaxFileSize)
+        {
+            throw AppException.BadRequest($"ไฟล์ '{file.FileName}' มีขนาดเกิน 10MB");
         }
 
         var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
-        if (!allowedExtensions.Contains(ext))
+        if (!AllowedExtensions.Contains(ext))
         {
-            throw AppException.BadRequest("รองรับเฉพาะไฟล์รูปภาพนามสกุล .jpg, .jpeg, .png, .webp, .gif เท่านั้น");
+            throw AppException.BadRequest($"ไฟล์ '{file.FileName}' ไม่รองรับ — รองรับเฉพาะ .jpg, .jpeg, .png, .webp, .gif");
         }
 
-        var uploadsFolder = Path.Combine(_environment.ContentRootPath, "App_Data", "uploads");
-        if (!Directory.Exists(uploadsFolder))
-        {
-            Directory.CreateDirectory(uploadsFolder);
-        }
+        await using var stream = file.OpenReadStream();
+        var stored = await _imageStorage.UploadAsync(stream, file.FileName, "items", ct);
 
-        var uniqueFileName = $"{Guid.NewGuid():N}{ext}";
-        var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+        _logger.LogInformation("Image uploaded: {Url} ({Size} bytes)", stored.Url, file.Length);
 
-        using (var stream = new FileStream(filePath, FileMode.Create))
-        {
-            await file.CopyToAsync(stream);
-        }
-
-        _logger.LogInformation("Image uploaded successfully: {FileName} ({Size} bytes)", uniqueFileName, file.Length);
-
-        var url = $"/api/uploads/{uniqueFileName}";
-        return Success(new { Url = url, FileName = file.FileName, Size = file.Length }, "อัปโหลดรูปภาพสำเร็จ");
+        return new { Url = stored.Url, FileName = file.FileName, Size = file.Length };
     }
 
     [HttpGet("{fileName}")]

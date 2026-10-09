@@ -41,6 +41,7 @@ public class InventoryService : IInventoryService
             .Include(i => i.Product).ThenInclude(p => p.Category)
             .Include(i => i.ConditionGrade)
             .Include(i => i.Customer)
+            .Include(i => i.Images)
             .Where(i => i.StoreId == storeId);
 
         if (filter.BrandId.HasValue)
@@ -99,6 +100,7 @@ public class InventoryService : IInventoryService
             .Include(i => i.Product).ThenInclude(p => p.Category)
             .Include(i => i.ConditionGrade)
             .Include(i => i.Customer)
+            .Include(i => i.Images)
             .FirstOrDefaultAsync(i => i.StoreId == storeId && i.Id == id);
 
         if (item == null)
@@ -117,6 +119,7 @@ public class InventoryService : IInventoryService
             .Include(i => i.Product).ThenInclude(p => p.Category)
             .Include(i => i.ConditionGrade)
             .Include(i => i.Customer)
+            .Include(i => i.Images)
             .FirstOrDefaultAsync(i => i.StoreId == storeId &&
                 (i.Sku.ToLower() == normalized.ToLower() || i.SerialNumber.ToLower() == normalized.ToLower()));
 
@@ -192,6 +195,7 @@ public class InventoryService : IInventoryService
         };
 
         _context.InventoryItems.Add(item);
+        AddImages(item, storeId, request.ImageUrls);
 
         // Add Initial Stock Movement: Receive
         var movement = new StockMovement
@@ -221,6 +225,28 @@ public class InventoryService : IInventoryService
         return MapToDto(item);
     }
 
+    public async Task<InventoryItemDto> UpdateImagesAsync(Guid id, UpdateInventoryImagesRequest request)
+    {
+        var storeId = RequireStoreId();
+        var item = await _context.InventoryItems
+            .Include(i => i.Product).ThenInclude(p => p.Brand)
+            .Include(i => i.Product).ThenInclude(p => p.Category)
+            .Include(i => i.ConditionGrade)
+            .Include(i => i.Customer)
+            .Include(i => i.Images)
+            .FirstOrDefaultAsync(i => i.StoreId == storeId && i.Id == id);
+
+        if (item == null)
+            throw AppException.NotFound($"ไม่พบรายการสินค้าในคลังรหัส {id}");
+
+        _context.InventoryItemImages.RemoveRange(item.Images);
+        item.Images.Clear();
+        AddImages(item, storeId, request.ImageUrls ?? new List<string>());
+
+        await _context.SaveChangesAsync();
+        return MapToDto(item);
+    }
+
     public async Task<InventoryItemDto> UpdateInventoryItemAsync(Guid id, UpdateInventoryItemRequest request)
     {
         var storeId = RequireStoreId();
@@ -229,6 +255,7 @@ public class InventoryService : IInventoryService
             .Include(i => i.Product).ThenInclude(p => p.Category)
             .Include(i => i.ConditionGrade)
             .Include(i => i.Customer)
+            .Include(i => i.Images)
             .FirstOrDefaultAsync(i => i.StoreId == storeId && i.Id == id);
 
         if (item == null)
@@ -258,6 +285,13 @@ public class InventoryService : IInventoryService
         item.Defects = request.Defects?.Trim();
         item.Notes = request.Notes?.Trim();
 
+        if (request.ImageUrls != null)
+        {
+            _context.InventoryItemImages.RemoveRange(item.Images);
+            item.Images.Clear();
+            AddImages(item, storeId, request.ImageUrls);
+        }
+
         await _context.SaveChangesAsync();
 
         return MapToDto(item);
@@ -271,6 +305,7 @@ public class InventoryService : IInventoryService
             .Include(i => i.Product).ThenInclude(p => p.Category)
             .Include(i => i.ConditionGrade)
             .Include(i => i.Customer)
+            .Include(i => i.Images)
             .FirstOrDefaultAsync(i => i.StoreId == storeId && i.Id == id);
 
         if (item == null)
@@ -308,6 +343,7 @@ public class InventoryService : IInventoryService
             .Include(i => i.Product).ThenInclude(p => p.Category)
             .Include(i => i.ConditionGrade)
             .Include(i => i.Customer)
+            .Include(i => i.Images)
             .FirstOrDefaultAsync(i => i.StoreId == storeId && i.Id == id);
 
         if (item == null)
@@ -423,6 +459,12 @@ public class InventoryService : IInventoryService
 
         var ageDays = (int)(DateTimeOffset.UtcNow - i.ReceivedAt).TotalDays;
 
+        var imageUrls = i.Images
+            .OrderBy(img => img.SortOrder)
+            .Select(img => img.Url)
+            .ToList();
+        var coverUrl = imageUrls.FirstOrDefault() ?? i.Product?.ImageUrl;
+
         return new InventoryItemDto(
             i.Id,
             i.Sku,
@@ -431,7 +473,7 @@ public class InventoryService : IInventoryService
             i.Product?.ProductCode ?? "",
             i.Product?.Brand?.Name ?? "",
             i.Product?.Category?.Name ?? "",
-            i.Product?.ImageUrl,
+            coverUrl,
             i.SerialNumber,
             i.ConditionGradeId,
             i.ConditionGrade?.GradeCode ?? "",
@@ -452,8 +494,36 @@ public class InventoryService : IInventoryService
             i.CustomerId,
             i.Customer?.Name,
             ageDays,
-            i.CreatedAt
+            i.CreatedAt,
+            imageUrls
         );
+    }
+
+    private void AddImages(InventoryItem item, Guid storeId, IEnumerable<string>? urls)
+    {
+        if (urls == null) return;
+
+        var cleaned = urls
+            .Where(u => !string.IsNullOrWhiteSpace(u))
+            .Select(u => u.Trim())
+            .Distinct()
+            .ToList();
+
+        if (cleaned.Any(u => u.Length > 1000))
+            throw AppException.BadRequest("URL รูปภาพยาวเกิน 1000 ตัวอักษร");
+
+        for (var idx = 0; idx < cleaned.Count; idx++)
+        {
+            var image = new InventoryItemImage
+            {
+                StoreId = storeId,
+                InventoryItemId = item.Id,
+                Url = cleaned[idx],
+                SortOrder = idx
+            };
+            item.Images.Add(image);
+            _context.InventoryItemImages.Add(image);
+        }
     }
 
     private static string GetCategoryPrefix(CategoryType type) => type switch
