@@ -31,11 +31,11 @@
       <!-- Item Hero Card -->
       <div class="hero-card">
         <div class="hero-header">
-          <div class="flex items-start gap-4 flex-1 min-w-0">
+          <div class="flex flex-col sm:flex-row items-start gap-3 sm:gap-4 flex-1 min-w-0">
             <!-- Product Photo Thumbnail -->
             <div
               *ngIf="getItemImages(item).length > 0; else noPhotoThumb"
-              class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 relative group/heroimg cursor-pointer"
+              class="w-16 h-16 sm:w-24 sm:h-24 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 relative group/heroimg cursor-pointer"
               (click)="showImagePreview.set(true)"
               title="คลิกเพื่อดูรูปภาพขนาดเต็ม"
             >
@@ -168,7 +168,7 @@
 
         <!-- Photos Gallery Card -->
         <div class="info-card mt-4">
-          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
             <div>
               <h2 class="card-title mb-0 flex items-center gap-2">
                 <span class="material-icons-outlined text-sky-600">collections</span>
@@ -269,32 +269,34 @@
           <!-- Cost Items Table -->
           <div class="cost-items-section">
             <h3 class="section-title">รายการบันทึกต้นทุนย่อย (Itemized Costs)</h3>
-            <table *ngIf="(inventoryService.costBreakdown()?.costItems?.length || 0) > 0" class="data-table">
-              <thead>
-                <tr>
-                  <th>วันที่เกิดค่าใช้จ่าย</th>
-                  <th>ประเภทต้นทุน</th>
-                  <th>รายละเอียด / รายการ</th>
-                  <th>ผู้บันทึก</th>
-                  <th class="text-right">จำนวนเงิน (บาท)</th>
-                  <th class="text-center">จัดการ</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let c of inventoryService.costBreakdown()?.costItems">
-                  <td>{{ c.incurredAt | date:'d MMM yyyy, HH:mm' }}</td>
-                  <td><span class="cost-type-pill">{{ c.costTypeName }}</span></td>
-                  <td>{{ c.description || '-' }}</td>
-                  <td>{{ c.createdBy || 'ระบบ' }}</td>
-                  <td class="text-right font-bold">฿{{ c.amount | number:'1.2-2' }}</td>
-                  <td class="text-center">
-                    <button type="button" class="btn-delete-small" (click)="deleteCostItem(c.id)" title="ลบรายการนี้">
-                      ลบ
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <div class="table-responsive" *ngIf="(inventoryService.costBreakdown()?.costItems?.length || 0) > 0">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>วันที่เกิดค่าใช้จ่าย</th>
+                    <th>ประเภทต้นทุน</th>
+                    <th>รายละเอียด / รายการ</th>
+                    <th>ผู้บันทึก</th>
+                    <th class="text-right">จำนวนเงิน (บาท)</th>
+                    <th class="text-center">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let c of inventoryService.costBreakdown()?.costItems">
+                    <td>{{ c.incurredAt | date:'d MMM yyyy, HH:mm' }}</td>
+                    <td><span class="cost-type-pill">{{ c.costTypeName }}</span></td>
+                    <td>{{ c.description || '-' }}</td>
+                    <td>{{ c.createdBy || 'ระบบ' }}</td>
+                    <td class="text-right font-bold">฿{{ c.amount | number:'1.2-2' }}</td>
+                    <td class="text-center">
+                      <button type="button" class="btn-delete-small" (click)="deleteCostItem(c.id)" title="ลบรายการนี้">
+                        ลบ
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
             <div *ngIf="(inventoryService.costBreakdown()?.costItems?.length || 0) === 0" class="empty-hint">
               ยังไม่มีบันทึกต้นทุนย่อยเพิ่มเติม (ต้นทุนปัจจุบันมาจากราคารับซื้อเข้า ฿{{ item.purchaseCost | number:'1.2-2' }})
@@ -389,30 +391,32 @@
           <!-- Price History Table -->
           <div class="price-history-section">
             <h3 class="section-title">ประวัติการปรับราคาขาย (Price Change History)</h3>
-            <table *ngIf="inventoryService.priceHistories().length > 0" class="data-table">
-              <thead>
-                <tr>
-                  <th>วันเวลาที่ปรับ</th>
-                  <th>ราคาเดิม</th>
-                  <th>ราคาใหม่</th>
-                  <th>ส่วนต่าง</th>
-                  <th>เหตุผลการปรับราคา</th>
-                  <th>ผู้ดำเนินการ</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let h of inventoryService.priceHistories()">
-                  <td>{{ h.changedAt | date:'d MMM yyyy, HH:mm' }}</td>
-                  <td class="font-mono">฿{{ h.oldPrice | number:'1.0-0' }}</td>
-                  <td class="font-mono font-bold text-blue-600">฿{{ h.newPrice | number:'1.0-0' }}</td>
-                  <td [class.text-green-600]="h.priceDifference > 0" [class.text-rose-600]="h.priceDifference < 0">
-                    {{ h.priceDifference > 0 ? '+' : '' }}฿{{ h.priceDifference | number:'1.0-0' }}
-                  </td>
-                  <td>{{ h.reason || '-' }}</td>
-                  <td>{{ h.changedBy }}</td>
-                </tr>
-              </tbody>
-            </table>
+            <div class="table-responsive" *ngIf="inventoryService.priceHistories().length > 0">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>วันเวลาที่ปรับ</th>
+                    <th>ราคาเดิม</th>
+                    <th>ราคาใหม่</th>
+                    <th>ส่วนต่าง</th>
+                    <th>เหตุผลการปรับราคา</th>
+                    <th>ผู้ดำเนินการ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let h of inventoryService.priceHistories()">
+                    <td>{{ h.changedAt | date:'d MMM yyyy, HH:mm' }}</td>
+                    <td class="font-mono">฿{{ h.oldPrice | number:'1.0-0' }}</td>
+                    <td class="font-mono font-bold text-blue-600">฿{{ h.newPrice | number:'1.0-0' }}</td>
+                    <td [class.text-green-600]="h.priceDifference > 0" [class.text-rose-600]="h.priceDifference < 0">
+                      {{ h.priceDifference > 0 ? '+' : '' }}฿{{ h.priceDifference | number:'1.0-0' }}
+                    </td>
+                    <td>{{ h.reason || '-' }}</td>
+                    <td>{{ h.changedBy }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
             <div *ngIf="inventoryService.priceHistories().length === 0" class="empty-hint">
               ยังไม่มีประวัติการปรับราคาสำหรับสินค้านี้
@@ -631,14 +635,14 @@
   <!-- Manage Images Modal -->
   <div
     *ngIf="showManageImagesModal()"
-    class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn"
+    class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fadeIn"
     (click)="closeManageImages()"
   >
     <div
-      class="bg-white rounded-3xl overflow-hidden shadow-2xl max-w-2xl w-full border border-slate-200"
+      class="bg-white rounded-3xl overflow-hidden shadow-2xl max-w-2xl w-full border border-slate-200 my-auto max-h-[92vh] flex flex-col"
       (click)="$event.stopPropagation()"
     >
-      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+      <div class="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 shrink-0">
         <div>
           <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
             <span class="material-icons-outlined text-sky-600">collections</span>
@@ -655,18 +659,18 @@
         </button>
       </div>
 
-      <div class="p-6 max-h-[70vh] overflow-y-auto">
+      <div class="p-4 sm:p-6 overflow-y-auto flex-1">
         <app-multi-image-uploader
           label="รูปภาพสินค้าทั้งหมด"
           [formControl]="imagesControl"
         ></app-multi-image-uploader>
       </div>
 
-      <div class="px-6 py-4 bg-slate-50/70 border-t border-slate-100 flex items-center justify-between">
+      <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/70 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
         <span class="text-xs text-slate-500 font-medium">
           รวม {{ imagesControl.value.length }} รูป
         </span>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center justify-end gap-2">
           <button
             type="button"
             (click)="closeManageImages()"
@@ -691,14 +695,14 @@
   <!-- Image Lightbox Modal -->
   <div
     *ngIf="showImagePreview() && inventoryService.selectedItem() as currentItem"
-    class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn"
+    class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 animate-fadeIn"
     (click)="showImagePreview.set(false)"
   >
     <div
-      class="bg-white rounded-3xl overflow-hidden shadow-2xl max-w-3xl w-full border border-slate-200"
+      class="bg-white rounded-3xl overflow-hidden shadow-2xl max-w-3xl w-full border border-slate-200 my-auto max-h-[92vh] flex flex-col"
       (click)="$event.stopPropagation()"
     >
-      <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+      <div class="p-3 sm:p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 shrink-0">
         <div class="flex items-center gap-2 truncate">
           <span class="material-icons-outlined text-sky-600 text-base">image</span>
           <span class="text-xs font-bold text-slate-800 truncate">
@@ -718,37 +722,37 @@
       </div>
 
       <!-- Main Preview Area with Prev/Next -->
-      <div class="relative p-4 bg-slate-900/95 flex items-center justify-center min-h-[350px] max-h-[70vh] overflow-hidden">
+      <div class="relative p-2 sm:p-4 bg-slate-900/95 flex items-center justify-center min-h-[260px] sm:min-h-[350px] max-h-[65vh] overflow-hidden flex-1">
         <img
           *ngIf="getItemImages(currentItem).length > 0"
           [src]="getItemImages(currentItem)[activeImageIndex()]"
           [alt]="currentItem.productModelName"
-          class="max-w-full max-h-[65vh] object-contain rounded-xl shadow-2xl"
+          class="max-w-full max-h-[60vh] object-contain rounded-xl shadow-2xl"
         />
 
         @if (getItemImages(currentItem).length > 1) {
           <button
             type="button"
             (click)="prevImage()"
-            class="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 text-white backdrop-blur-sm flex items-center justify-center transition-all cursor-pointer shadow-lg hover:scale-110"
+            class="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/20 hover:bg-white/40 text-white backdrop-blur-sm flex items-center justify-center transition-all cursor-pointer shadow-lg hover:scale-110"
             title="รูปก่อนหน้า"
           >
-            <span class="material-icons-outlined text-2xl">chevron_left</span>
+            <span class="material-icons-outlined text-xl sm:text-2xl">chevron_left</span>
           </button>
           <button
             type="button"
             (click)="nextImage()"
-            class="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 text-white backdrop-blur-sm flex items-center justify-center transition-all cursor-pointer shadow-lg hover:scale-110"
+            class="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/20 hover:bg-white/40 text-white backdrop-blur-sm flex items-center justify-center transition-all cursor-pointer shadow-lg hover:scale-110"
             title="รูปถัดไป"
           >
-            <span class="material-icons-outlined text-2xl">chevron_right</span>
+            <span class="material-icons-outlined text-xl sm:text-2xl">chevron_right</span>
           </button>
         }
       </div>
 
       <!-- Bottom thumbnails & actions -->
-      <div class="p-3 bg-white border-t border-slate-100 flex items-center justify-between gap-2">
-        <div class="flex items-center gap-1.5 overflow-x-auto max-w-[70%] py-0.5 scrollbar-thin">
+      <div class="p-3 bg-white border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shrink-0">
+        <div class="flex items-center gap-1.5 overflow-x-auto w-full sm:max-w-[65%] py-0.5 scrollbar-thin">
           @for (img of getItemImages(currentItem); track img; let idx = $index) {
             <button
               type="button"
@@ -763,7 +767,7 @@
           }
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex items-center justify-end gap-2 w-full sm:w-auto">
           <button
             type="button"
             (click)="showImagePreview.set(false); openManageImages()"
