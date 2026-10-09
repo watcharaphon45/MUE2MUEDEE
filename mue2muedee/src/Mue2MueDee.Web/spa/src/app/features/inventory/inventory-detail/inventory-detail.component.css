@@ -2,6 +2,9 @@
   padding: 1.5rem 2rem;
   max-width: 1200px;
   margin: 0 auto;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .top-bar {
@@ -117,14 +120,17 @@
 /* Layout */
 .content-grid {
   display: grid;
-  grid-template-columns: 1fr 340px;
+  grid-template-columns: minmax(0, 1fr) 340px;
   gap: 1.5rem;
   align-items: start;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
 }
 
 @media (max-width: 960px) {
   .content-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -132,6 +138,15 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+}
+
+.tab-pane {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
 }
 
 /* Hero Card */
@@ -143,6 +158,9 @@
   border-radius: 0.75rem;
   padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .hero-header {
@@ -261,6 +279,9 @@
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
 }
 
 .nav-tabs::-webkit-scrollbar {
@@ -881,10 +902,11 @@
 
 .info-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
+  min-width: 0;
+  max-width: 100%;
 }
-
 
 .info-label {
   font-size: 0.6875rem;
@@ -898,6 +920,7 @@
   color: #111827;
   margin: 0.25rem 0 0;
   word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .col-span-2 {
@@ -918,7 +941,7 @@
 
 @media (max-width: 768px) {
   .detail-container {
-    padding: 1rem 0.75rem;
+    padding: 0;
   }
 
   .top-bar {
@@ -940,8 +963,10 @@
     justify-content: center;
   }
 
-  .hero-card {
-    padding: 1rem;
+  .hero-card,
+  .info-card,
+  .finance-card {
+    padding: 1rem 0.875rem;
   }
 
   .hero-header {
@@ -976,7 +1001,7 @@
   }
 
   .info-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .col-span-2 {
@@ -984,12 +1009,12 @@
   }
 
   .cost-categories-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.5rem;
   }
 
   .pricing-deck {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .modal-dialog {
@@ -1008,7 +1033,7 @@
 
 @media (max-width: 480px) {
   .detail-container {
-    padding: 0.75rem 0.5rem;
+    padding: 0;
   }
 
   .meta-stats-row {
