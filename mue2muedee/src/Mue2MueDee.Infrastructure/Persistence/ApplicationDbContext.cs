@@ -46,6 +46,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<SaleOrder> SaleOrders => Set<SaleOrder>();
     public DbSet<SaleItem> SaleItems => Set<SaleItem>();
     public DbSet<SalePayment> SalePayments => Set<SalePayment>();
+    public DbSet<StickerTemplate> StickerTemplates => Set<StickerTemplate>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -32,6 +32,7 @@ public interface IApplicationDbContext
     DbSet<SaleOrder> SaleOrders { get; }
     DbSet<SaleItem> SaleItems { get; }
     DbSet<SalePayment> SalePayments { get; }
+    DbSet<StickerTemplate> StickerTemplates { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

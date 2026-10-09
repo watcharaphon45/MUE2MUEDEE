@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -34,19 +34,74 @@ export class InventoryListComponent implements OnInit {
   protected readonly masterDataService = inject(MasterDataService);
   protected readonly Math = Math;
 
-  // Sticker Designer Modal
+  // Sticker Designer Modal (Single & Batch)
   selectedStickerItem = signal<InventoryItem | null>(null);
+  batchStickerItems = signal<InventoryItem[]>([]);
   showStickerModal = signal<boolean>(false);
+
+  // Checkbox multi-select state
+  selectedItemIds = signal<Set<string>>(new Set());
+
+  isAllSelected = computed(() => {
+    const items = this.inventoryService.pagedResult().items;
+    if (items.length === 0) return false;
+    const sel = this.selectedItemIds();
+    return items.every(i => sel.has(i.id));
+  });
+
+  selectedItemsCount = computed(() => this.selectedItemIds().size);
+
+  selectedInventoryItems = computed(() => {
+    const sel = this.selectedItemIds();
+    const items = this.inventoryService.pagedResult().items;
+    return items.filter(i => sel.has(i.id));
+  });
+
+  toggleSelectAll(): void {
+    const items = this.inventoryService.pagedResult().items;
+    const current = new Set(this.selectedItemIds());
+    if (this.isAllSelected()) {
+      items.forEach(i => current.delete(i.id));
+    } else {
+      items.forEach(i => current.add(i.id));
+    }
+    this.selectedItemIds.set(current);
+  }
+
+  toggleSelectItem(id: string, event?: Event): void {
+    if (event) event.stopPropagation();
+    const current = new Set(this.selectedItemIds());
+    if (current.has(id)) {
+      current.delete(id);
+    } else {
+      current.add(id);
+    }
+    this.selectedItemIds.set(current);
+  }
+
+  clearSelection(): void {
+    this.selectedItemIds.set(new Set());
+  }
 
   openStickerModal(item: InventoryItem, event?: Event): void {
     if (event) event.stopPropagation();
+    this.batchStickerItems.set([item]);
     this.selectedStickerItem.set(item);
+    this.showStickerModal.set(true);
+  }
+
+  openBatchStickerModal(): void {
+    const items = this.selectedInventoryItems();
+    if (items.length === 0) return;
+    this.batchStickerItems.set(items);
+    this.selectedStickerItem.set(items[0]);
     this.showStickerModal.set(true);
   }
 
   closeStickerModal(): void {
     this.showStickerModal.set(false);
     this.selectedStickerItem.set(null);
+    this.batchStickerItems.set([]);
   }
 
   readonly statusOptions = [

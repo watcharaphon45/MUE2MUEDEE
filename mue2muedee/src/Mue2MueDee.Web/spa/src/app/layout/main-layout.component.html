@@ -19,10 +19,8 @@
       @if (!isSidebarCollapsed()) {
         <div class="w-full flex items-center justify-between gap-2">
           <div class="flex items-center gap-2.5 min-w-0">
-            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-500 to-amber-400 p-[2px] shadow-md shadow-sky-500/20 shrink-0">
-              <div class="w-full h-full bg-white rounded-[10px] flex items-center justify-center">
-                <span class="material-icons-outlined text-amber-600 text-lg">photo_camera</span>
-              </div>
+            <div class="w-10 h-10 rounded-xl overflow-hidden shadow-md shadow-amber-500/10 shrink-0 border border-amber-200/60 bg-white flex items-center justify-center p-0.5">
+              <img src="/logo.png" alt="MUE2MUEDEE" class="w-full h-full object-contain" />
             </div>
             <div class="min-w-0 flex-1">
               <div class="font-bold text-sm text-slate-800 tracking-tight truncate" [title]="authService.currentStore()?.storeName ?? 'MUE2MUEDEE'">
@@ -60,10 +58,8 @@
         </div>
       } @else {
         <div class="w-full flex items-center justify-between gap-1 px-0.5">
-          <div class="w-[30px] h-[30px] rounded-lg bg-gradient-to-tr from-sky-500 to-amber-400 p-[2px] shadow-sm shrink-0" [title]="authService.currentStore()?.storeName ?? 'MUE2MUEDEE'">
-            <div class="w-full h-full bg-white rounded-[6px] flex items-center justify-center">
-              <span class="material-icons-outlined text-amber-600 text-sm">photo_camera</span>
-            </div>
+          <div class="w-[34px] h-[34px] rounded-lg overflow-hidden shadow-sm shrink-0 border border-amber-200/60 bg-white flex items-center justify-center p-0.5" [title]="authService.currentStore()?.storeName ?? 'MUE2MUEDEE'">
+            <img src="/logo.png" alt="MUE2MUEDEE" class="w-full h-full object-contain" />
           </div>
           <button 
             type="button" 

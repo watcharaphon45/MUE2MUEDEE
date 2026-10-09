@@ -17,6 +17,7 @@ public static class DependencyInjection
         services.AddScoped<IAnalyticsService, AnalyticsService>();
         services.AddScoped<ISuperAdminService, SuperAdminService>();
         services.AddScoped<ICatalogService, CatalogService>();
+        services.AddScoped<IStickerTemplateService, StickerTemplateService>();
 
         return services;
     }

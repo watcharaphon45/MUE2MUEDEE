@@ -1,409 +1,858 @@
-<div *ngIf="isOpen()" class="modal-backdrop print:hidden" (click)="closeModal.emit()">
-  <div class="modal-dialog" (click)="$event.stopPropagation()">
+<div *ngIf="isOpen()" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-fade-in">
+  <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-6xl max-h-[92vh] flex flex-col overflow-hidden">
+    
     <!-- Modal Header -->
-    <div class="modal-header">
-      <div class="flex items-center gap-2">
-        <span class="material-icons-outlined text-sky-600 text-xl">qr_code_2</span>
-        <h3 class="modal-title">ออกแบบสติ๊กเกอร์บาร์โค้ด & แท็กสินค้า (Sticker Label Designer)</h3>
+    <div class="px-5 py-3.5 border-b border-slate-200 bg-slate-50/80 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center">
+          <span class="material-icons-outlined text-xl">label</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-base font-bold text-slate-800">ออกแบบและพิมพ์ป้ายบาร์โค้ดสินค้า (Flexible Sticker Printing)</h2>
+            <span *ngIf="allItems().length > 1" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+              🏷️ พิมพ์เป็นชุด ({{ allItems().length }} รายการ)
+            </span>
+          </div>
+          <p class="text-xs text-slate-500">รองรับ 1, 2, 3 คอลัมน์ ทั้งเครื่องพิมพ์ความร้อนแบบม้วน (Thermal Roll) และกระดาษแผ่น (A4)</p>
+        </div>
       </div>
-      <button type="button" class="modal-close" (click)="closeModal.emit()">&times;</button>
+      <button
+        type="button"
+        (click)="closeModal.emit()"
+        class="w-8 h-8 rounded-lg hover:bg-slate-200/80 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+        title="ปิดหน้าต่าง"
+      >
+        <span class="material-icons-outlined text-lg">close</span>
+      </button>
     </div>
 
-    <!-- Feedback Message -->
-    <div *ngIf="saveSuccessMessage()" class="alert-success-banner">
-      {{ saveSuccessMessage() }}
+    <!-- Template Management Bar -->
+    <div class="px-5 py-2.5 bg-sky-50/50 border-b border-sky-100 flex flex-wrap items-center justify-between gap-2.5 shrink-0">
+      <div class="flex items-center gap-2 flex-wrap min-w-0">
+        <span class="text-xs font-semibold text-slate-700 whitespace-nowrap">รูปแบบสติ๊กเกอร์ (Template):</span>
+        <select
+          [ngModel]="currentTemplateId()"
+          (change)="onSelectTemplate($event)"
+          class="text-xs font-medium bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-sky-500 outline-hidden max-w-xs truncate"
+        >
+          <option *ngFor="let t of templateService.templates()" [value]="t.id">
+            {{ t.name }} ({{ t.columnsCount }} คอลัมน์ - {{ t.labelWidthMm }}x{{ t.labelHeightMm }}mm){{ t.isDefault ? ' ⭐ [เริ่มต้น]' : '' }}
+          </option>
+        </select>
+
+        <button
+          type="button"
+          (click)="saveTemplate()"
+          class="btn-sm-action bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+          title="บันทึกการตั้งค่าลงเทมเพลตปัจจุบัน"
+        >
+          <span class="material-icons-outlined text-xs">save</span>
+          <span>บันทึก</span>
+        </button>
+
+        <button
+          type="button"
+          (click)="createNewTemplate()"
+          class="btn-sm-action bg-sky-600 hover:bg-sky-700 text-white font-medium"
+          title="สร้างเป็นเทมเพลตรูปแบบใหม่"
+        >
+          <span class="material-icons-outlined text-xs">add</span>
+          <span>สร้างใหม่</span>
+        </button>
+
+        <button
+          type="button"
+          *ngIf="currentTemplateId()"
+          (click)="duplicateTemplate()"
+          class="btn-sm-action bg-white hover:bg-slate-100 text-slate-700 border border-slate-300"
+          title="คัดลอกเป็นเทมเพลตใหม่"
+        >
+          <span class="material-icons-outlined text-xs">content_copy</span>
+          <span>คัดลอก</span>
+        </button>
+
+        <button
+          type="button"
+          *ngIf="currentTemplateId() && !isDefault()"
+          (click)="setAsDefaultTemplate()"
+          class="btn-sm-action bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300"
+          title="ตั้งรูปแบบนี้เป็นค่าเริ่มต้นของร้าน"
+        >
+          <span class="material-icons-outlined text-xs">star</span>
+          <span>ตั้งเป็นค่าเริ่มต้น</span>
+        </button>
+
+        <button
+          type="button"
+          *ngIf="currentTemplateId()"
+          (click)="deleteTemplate()"
+          class="btn-sm-action bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300"
+          title="ลบเทมเพลตนี้"
+        >
+          <span class="material-icons-outlined text-xs">delete</span>
+          <span>ลบ</span>
+        </button>
+
+        <button
+          type="button"
+          (click)="resetToSystemDefaults()"
+          class="btn-sm-action bg-white hover:bg-slate-100 text-slate-500 border border-slate-200"
+          title="รีเซ็ตกลับเป็น 4 รูปแบบมาตรฐานของระบบ"
+        >
+          <span class="material-icons-outlined text-xs">restart_alt</span>
+          <span>คืนค่าระบบ</span>
+        </button>
+      </div>
+
+      <!-- Quick status/error notifications -->
+      <div *ngIf="statusMessage()" class="text-xs text-emerald-700 font-medium bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200 animate-fade-in">
+        ✓ {{ statusMessage() }}
+      </div>
+      <div *ngIf="errorMessage()" class="text-xs text-rose-700 font-medium bg-rose-50 px-2.5 py-1 rounded-md border border-rose-200 animate-fade-in">
+        ⚠️ {{ errorMessage() }}
+      </div>
     </div>
 
-    <!-- Modal Body: Split Layout -->
-    <div class="designer-body">
-      <!-- LEFT: Controls & Customization -->
-      <div class="controls-panel">
-        <!-- 1. Dimension Section -->
-        <div class="control-group">
-          <label class="control-heading">1. ขนาดสติ๊กเกอร์ (Label Size)</label>
-          <div class="size-options-grid">
-            <label class="size-radio-chip" [class.active]="labelSize() === '50x30'">
-              <input type="radio" name="labelSize" value="50x30" [ngModel]="labelSize()" (ngModelChange)="labelSize.set($event)" />
-              <span class="chip-title">50 × 30 mm</span>
-              <span class="chip-desc">มาตรฐาน Thermal พกพา</span>
-            </label>
-            <label class="size-radio-chip" [class.active]="labelSize() === '40x30'">
-              <input type="radio" name="labelSize" value="40x30" [ngModel]="labelSize()" (ngModelChange)="labelSize.set($event)" />
-              <span class="chip-title">40 × 30 mm</span>
-              <span class="chip-desc">กะทัดรัด สำหรับเลนส์</span>
-            </label>
-            <label class="size-radio-chip" [class.active]="labelSize() === '40x20'">
-              <input type="radio" name="labelSize" value="40x20" [ngModel]="labelSize()" (ngModelChange)="labelSize.set($event)" />
-              <span class="chip-title">40 × 20 mm</span>
-              <span class="chip-desc">ขนาดเล็ก / อุปกรณ์</span>
-            </label>
-            <label class="size-radio-chip" [class.active]="labelSize() === '60x40'">
-              <input type="radio" name="labelSize" value="60x40" [ngModel]="labelSize()" (ngModelChange)="labelSize.set($event)" />
-              <span class="chip-title">60 × 40 mm</span>
-              <span class="chip-desc">ขนาดกลาง / หน้ากล่อง</span>
-            </label>
-            <label class="size-radio-chip" [class.active]="labelSize() === '70x50'">
-              <input type="radio" name="labelSize" value="70x50" [ngModel]="labelSize()" (ngModelChange)="labelSize.set($event)" />
-              <span class="chip-title">70 × 50 mm</span>
-              <span class="chip-desc">ขนาดใหญ่ ชัดเจนพิเศษ</span>
-            </label>
-            <label class="size-radio-chip" [class.active]="labelSize() === 'custom'">
-              <input type="radio" name="labelSize" value="custom" [ngModel]="labelSize()" (ngModelChange)="labelSize.set($event)" />
-              <span class="chip-title">กำหนดเอง</span>
-              <span class="chip-desc">ระบุ กว้าง × สูง (mm)</span>
-            </label>
-          </div>
-
-          <div *ngIf="labelSize() === 'custom'" class="custom-dim-row mt-2">
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-slate-500 font-medium">กว้าง:</span>
-              <input
-                type="number"
-                min="20"
-                max="120"
-                [ngModel]="customWidthMm()"
-                (ngModelChange)="customWidthMm.set($event)"
-                class="dim-input"
-              />
-              <span class="text-xs text-slate-400">mm</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-slate-500 font-medium">สูง:</span>
-              <input
-                type="number"
-                min="15"
-                max="100"
-                [ngModel]="customHeightMm()"
-                (ngModelChange)="customHeightMm.set($event)"
-                class="dim-input"
-              />
-              <span class="text-xs text-slate-400">mm</span>
-            </div>
-          </div>
+    <!-- Main Content Grid -->
+    <div class="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-12 min-h-0">
+      
+      <!-- Left Panel: Controls & Tabs (7 cols) -->
+      <div class="lg:col-span-7 border-r border-slate-200 flex flex-col min-h-0 bg-white">
+        
+        <!-- Tab Navigation -->
+        <div class="flex border-b border-slate-200 bg-slate-50/50 px-4 gap-1 shrink-0">
+          <button
+            type="button"
+            (click)="activeTab.set('layout')"
+            class="tab-btn"
+            [class.active]="activeTab() === 'layout'"
+          >
+            <span class="material-icons-outlined text-base">view_column</span>
+            <span>ขนาด & คอลัมน์</span>
+          </button>
+          <button
+            type="button"
+            (click)="activeTab.set('content')"
+            class="tab-btn"
+            [class.active]="activeTab() === 'content'"
+          >
+            <span class="material-icons-outlined text-base">format_shapes</span>
+            <span>ข้อมูลบนป้าย</span>
+          </button>
+          <button
+            type="button"
+            (click)="activeTab.set('codes')"
+            class="tab-btn"
+            [class.active]="activeTab() === 'codes'"
+          >
+            <span class="material-icons-outlined text-base">qr_code</span>
+            <span>บาร์โค้ด & QR</span>
+          </button>
+          <button
+            type="button"
+            (click)="activeTab.set('calibration')"
+            class="tab-btn"
+            [class.active]="activeTab() === 'calibration'"
+          >
+            <span class="material-icons-outlined text-base">straighten</span>
+            <span>ปรับเทียบพิมพ์</span>
+          </button>
         </div>
 
-        <!-- 2. Store Logo & Branding Section -->
-        <div class="control-group">
-          <label class="control-heading">2. แบรนด์ & โลโก้ร้านค้า (Store Branding)</label>
-          <div class="space-y-2">
-            <label class="toggle-checkbox">
-              <input type="checkbox" [ngModel]="showStoreLogo()" (ngModelChange)="showStoreLogo.set($event)" />
-              <span>แสดงโลโก้ร้านค้า (Store Logo)</span>
-            </label>
+        <!-- Tab Contents (Scrollable) -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-4">
 
-            <div *ngIf="showStoreLogo()" class="pl-6 space-y-2">
+          <!-- TAB 1: Layout & Columns -->
+          <div *ngIf="activeTab() === 'layout'" class="space-y-4">
+            
+            <!-- Quick Preset Chips -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1.5">เทมเพลตมาตรฐานด่วน (Quick Presets):</label>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                <button
+                  type="button"
+                  (click)="applyQuickPreset('1col_roll')"
+                  class="preset-chip"
+                  [class.active]="columnsCount() === 1 && isContinuousRoll()"
+                >
+                  <span class="font-bold">1 คอลัมน์ (ม้วน)</span>
+                  <span class="text-[10px] text-slate-500">50x30 mm</span>
+                </button>
+                <button
+                  type="button"
+                  (click)="applyQuickPreset('2col_roll')"
+                  class="preset-chip"
+                  [class.active]="columnsCount() === 2 && isContinuousRoll()"
+                >
+                  <span class="font-bold">2 คอลัมน์ (คู่)</span>
+                  <span class="text-[10px] text-slate-500">35x25 mm</span>
+                </button>
+                <button
+                  type="button"
+                  (click)="applyQuickPreset('3col_roll')"
+                  class="preset-chip"
+                  [class.active]="columnsCount() === 3 && isContinuousRoll()"
+                >
+                  <span class="font-bold">3 คอลัมน์ (ม้วน)</span>
+                  <span class="text-[10px] text-slate-500">25x15 mm</span>
+                </button>
+                <button
+                  type="button"
+                  (click)="applyQuickPreset('a4_3x8')"
+                  class="preset-chip"
+                  [class.active]="columnsCount() === 3 && !isContinuousRoll()"
+                >
+                  <span class="font-bold">กระดาษ A4</span>
+                  <span class="text-[10px] text-slate-500">3x8 (24 ดวง)</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Template Name & Type -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+              <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">ชื่อรูปแบบ (Template Name):</label>
+                <input
+                  type="text"
+                  [ngModel]="templateName()"
+                  (ngModelChange)="templateName.set($event)"
+                  class="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500"
+                  placeholder="เช่น ม้วนคู่ 35x25mm หน้าร้าน"
+                />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">ประเภทกระดาษ / เครื่องพิมพ์:</label>
+                <select
+                  [ngModel]="isContinuousRoll()"
+                  (ngModelChange)="isContinuousRoll.set($event === 'true' || $event === true)"
+                  class="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500"
+                >
+                  <option [ngValue]="true">เครื่องพิมพ์ความร้อนแบบม้วน (Continuous Roll)</option>
+                  <option [ngValue]="false">กระดาษแผ่นสำเร็จรูป (Fixed Sheet เช่น A4)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Grid Columns & Sticker Dimensions -->
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+              <div class="font-bold text-xs text-slate-800 flex items-center justify-between">
+                <span>📐 การจัดวางคอลัมน์และขนาดดวง (Columns & Size)</span>
+                <span class="text-[11px] font-semibold text-sky-700">{{ columnsCount() }} คอลัมน์ต่อแถว</span>
+              </div>
+
+              <div class="grid grid-cols-3 gap-2.5">
+                <div>
+                  <label class="block text-[11px] font-medium text-slate-600 mb-0.5">จำนวนคอลัมน์ (Cols):</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="6"
+                    [ngModel]="columnsCount()"
+                    (ngModelChange)="columnsCount.set(+$event || 1)"
+                    class="w-full text-xs px-2 py-1 bg-white border border-slate-300 rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label class="block text-[11px] font-medium text-slate-600 mb-0.5">ความกว้างสติ๊กเกอร์ (mm):</label>
+                  <input
+                    type="number"
+                    min="10"
+                    max="150"
+                    step="0.5"
+                    [ngModel]="labelWidthMm()"
+                    (ngModelChange)="labelWidthMm.set(+$event || 10)"
+                    class="w-full text-xs px-2 py-1 bg-white border border-slate-300 rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label class="block text-[11px] font-medium text-slate-600 mb-0.5">ความยาวสติ๊กเกอร์ (mm):</label>
+                  <input
+                    type="number"
+                    min="10"
+                    max="150"
+                    step="0.5"
+                    [ngModel]="labelHeightMm()"
+                    (ngModelChange)="labelHeightMm.set(+$event || 10)"
+                    class="w-full text-xs px-2 py-1 bg-white border border-slate-300 rounded-lg"
+                  />
+                </div>
+              </div>
+
+              <!-- Paper Dimensions -->
+              <div class="grid grid-cols-2 gap-2.5 pt-1">
+                <div>
+                  <label class="block text-[11px] font-medium text-slate-600 mb-0.5">หน้ากว้างกระดาษ/ม้วน (mm):</label>
+                  <input
+                    type="number"
+                    min="20"
+                    max="300"
+                    step="0.5"
+                    [ngModel]="paperWidthMm()"
+                    (ngModelChange)="paperWidthMm.set(+$event || 50)"
+                    class="w-full text-xs px-2 py-1 bg-white border border-slate-300 rounded-lg"
+                  />
+                </div>
+                <div *ngIf="!isContinuousRoll()">
+                  <label class="block text-[11px] font-medium text-slate-600 mb-0.5">ความสูงหน้ากระดาษ (mm):</label>
+                  <input
+                    type="number"
+                    min="50"
+                    max="500"
+                    step="0.5"
+                    [ngModel]="paperHeightMm() ?? 297"
+                    (ngModelChange)="paperHeightMm.set(+$event || 297)"
+                    class="w-full text-xs px-2 py-1 bg-white border border-slate-300 rounded-lg"
+                  />
+                </div>
+                <div *ngIf="!isContinuousRoll()">
+                  <label class="block text-[11px] font-medium text-slate-600 mb-0.5">จำนวนแถวต่อหน้า (Rows):</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="20"
+                    [ngModel]="rowsCount() ?? 8"
+                    (ngModelChange)="rowsCount.set(+$event || 8)"
+                    class="w-full text-xs px-2 py-1 bg-white border border-slate-300 rounded-lg"
+                  />
+                </div>
+              </div>
+
+              <!-- Spacing & Gaps -->
+              <div class="grid grid-cols-2 gap-2.5 pt-1">
+                <div>
+                  <label class="block text-[11px] font-medium text-slate-600 mb-0.5">ระยะห่างแนวนอน (H-Gap mm):</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="30"
+                    step="0.5"
+                    [ngModel]="horizontalGapMm()"
+                    (ngModelChange)="horizontalGapMm.set(+$event || 0)"
+                    class="w-full text-xs px-2 py-1 bg-white border border-slate-300 rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label class="block text-[11px] font-medium text-slate-600 mb-0.5">ระยะห่างแนวตั้ง (V-Gap mm):</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="30"
+                    step="0.5"
+                    [ngModel]="verticalGapMm()"
+                    (ngModelChange)="verticalGapMm.set(+$event || 0)"
+                    class="w-full text-xs px-2 py-1 bg-white border border-slate-300 rounded-lg"
+                  />
+                </div>
+              </div>
+
+              <!-- Margins -->
+              <div class="pt-2 border-t border-slate-200">
+                <span class="block text-[11px] font-medium text-slate-700 mb-1">ระยะขอบกระดาษ (Margins mm):</span>
+                <div class="grid grid-cols-4 gap-2">
+                  <div>
+                    <label class="block text-[10px] text-slate-500">ซ้าย (Left)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="50"
+                      step="0.5"
+                      [ngModel]="marginLeftMm()"
+                      (ngModelChange)="marginLeftMm.set(+$event || 0)"
+                      class="w-full text-xs px-1.5 py-1 bg-white border border-slate-300 rounded-md text-center"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] text-slate-500">ขวา (Right)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="50"
+                      step="0.5"
+                      [ngModel]="marginRightMm()"
+                      (ngModelChange)="marginRightMm.set(+$event || 0)"
+                      class="w-full text-xs px-1.5 py-1 bg-white border border-slate-300 rounded-md text-center"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] text-slate-500">บน (Top)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="50"
+                      step="0.5"
+                      [ngModel]="marginTopMm()"
+                      (ngModelChange)="marginTopMm.set(+$event || 0)"
+                      class="w-full text-xs px-1.5 py-1 bg-white border border-slate-300 rounded-md text-center"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] text-slate-500">ล่าง (Bottom)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="50"
+                      step="0.5"
+                      [ngModel]="marginBottomMm()"
+                      (ngModelChange)="marginBottomMm.set(+$event || 0)"
+                      class="w-full text-xs px-1.5 py-1 bg-white border border-slate-300 rounded-md text-center"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Printable Area Math Check -->
+              <div
+                class="p-2 rounded-lg text-xs flex items-center justify-between"
+                [class.bg-emerald-50]="!isWidthExceeded()"
+                [class.text-emerald-800]="!isWidthExceeded()"
+                [class.border]="true"
+                [class.border-emerald-200]="!isWidthExceeded()"
+                [class.bg-rose-50]="isWidthExceeded()"
+                [class.text-rose-800]="isWidthExceeded()"
+                [class.border-rose-200]="isWidthExceeded()"
+              >
+                <div>
+                  <span class="font-bold">หน้ากว้างรวมที่ต้องการ:</span>
+                  <span class="ml-1">{{ totalRequiredWidthMm() | number:'1.1-1' }} mm</span>
+                  <span class="text-slate-500 mx-1">/</span>
+                  <span>หน้ากว้างกระดาษ {{ paperWidthMm() }} mm</span>
+                </div>
+                <span *ngIf="isWidthExceeded()" class="font-bold text-rose-600">⚠️ เกินขนาดกระดาษ!</span>
+                <span *ngIf="!isWidthExceeded()" class="text-emerald-600 font-semibold">✓ ขนาดพอดี</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 2: Content Visibility & Branding -->
+          <div *ngIf="activeTab() === 'content'" class="space-y-4">
+            
+            <!-- Store Logo & Name -->
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+              <span class="block text-xs font-bold text-slate-800">🏪 โลโก้และชื่อร้านค้า</span>
+              
               <div class="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="chk-show-logo"
+                  [ngModel]="showStoreLogo()"
+                  (ngModelChange)="showStoreLogo.set($event)"
+                  class="rounded-sm text-sky-600"
+                />
+                <label for="chk-show-logo" class="text-xs text-slate-700 font-medium cursor-pointer">แสดงโลโก้ร้านค้า (Store Logo)</label>
+              </div>
+
+              <div *ngIf="showStoreLogo()" class="pl-6 space-y-2">
                 <input
                   type="text"
                   [ngModel]="storeLogoUrl()"
                   (ngModelChange)="storeLogoUrl.set($event)"
-                  placeholder="URL รูปโลโก้ร้าน (เช่น https://...)"
-                  class="setting-textbox flex-1"
+                  placeholder="URL รูปภาพโลโก้ เช่น /logo.png"
+                  class="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg"
+                />
+                <div class="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="chk-mono-logo"
+                    [ngModel]="monochromeLogo()"
+                    (ngModelChange)="monochromeLogo.set($event)"
+                    class="rounded-sm text-sky-600"
+                  />
+                  <label for="chk-mono-logo" class="text-[11px] text-slate-600 cursor-pointer">พิมพ์แบบขาวดำเข้ม (High Contrast Monochrome สำหรับ Thermal)</label>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 pt-2 border-t border-slate-200">
+                <input
+                  type="checkbox"
+                  id="chk-show-name"
+                  [ngModel]="showStoreName()"
+                  (ngModelChange)="showStoreName.set($event)"
+                  class="rounded-sm text-sky-600"
+                />
+                <label for="chk-show-name" class="text-xs text-slate-700 font-medium cursor-pointer">แสดงชื่อร้านค้า</label>
+              </div>
+
+              <div *ngIf="showStoreName()" class="pl-6">
+                <input
+                  type="text"
+                  [ngModel]="storeName()"
+                  (ngModelChange)="storeName.set($event)"
+                  placeholder="ชื่อร้านค้า"
+                  class="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg"
                 />
               </div>
-              <label class="toggle-checkbox text-xs text-slate-500">
-                <input type="checkbox" [ngModel]="monochromeLogo()" (ngModelChange)="monochromeLogo.set($event)" />
-                <span>ปรับภาพขาว-ดำความคมชัดสูง (สำหรับเครื่องพิมพ์ความร้อน Thermal)</span>
-              </label>
             </div>
 
-            <label class="toggle-checkbox">
-              <input type="checkbox" [ngModel]="showStoreName()" (ngModelChange)="showStoreName.set($event)" />
-              <span>แสดงชื่อร้านค้า (Store Name)</span>
-            </label>
+            <!-- Product Details Visibility Toggles -->
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+              <span class="block text-xs font-bold text-slate-800">📦 รายการข้อมูลสินค้าที่แสดงบนป้าย</span>
 
-            <div *ngIf="showStoreName()" class="pl-6">
-              <input
-                type="text"
-                [ngModel]="storeName()"
-                (ngModelChange)="storeName.set($event)"
-                placeholder="ชื่อร้านบนสติ๊กเกอร์"
-                class="setting-textbox w-full"
-              />
-            </div>
-          </div>
-        </div>
-
-        <!-- 3. Product Fields Toggles -->
-        <div class="control-group">
-          <label class="control-heading">3. ข้อมูลสินค้าบนป้าย (Product Fields)</label>
-          <div class="grid grid-cols-2 gap-2 text-xs">
-            <label class="toggle-checkbox">
-              <input type="checkbox" [ngModel]="showProductTitle()" (ngModelChange)="showProductTitle.set($event)" />
-              <span>ยี่ห้อ & ชื่อรุ่น</span>
-            </label>
-            <label class="toggle-checkbox">
-              <input type="checkbox" [ngModel]="showConditionGrade()" (ngModelChange)="showConditionGrade.set($event)" />
-              <span>เกรดสภาพ (Grade)</span>
-            </label>
-            <label class="toggle-checkbox">
-              <input type="checkbox" [ngModel]="showSerialNumber()" (ngModelChange)="showSerialNumber.set($event)" />
-              <span>Serial Number</span>
-            </label>
-            <label class="toggle-checkbox">
-              <input type="checkbox" [ngModel]="showSku()" (ngModelChange)="showSku.set($event)" />
-              <span>รหัส SKU</span>
-            </label>
-            <label class="toggle-checkbox">
-              <input type="checkbox" [ngModel]="showPrice()" (ngModelChange)="showPrice.set($event)" />
-              <span>ราคาขาย (ตัวหนา)</span>
-            </label>
-            <label class="toggle-checkbox">
-              <input type="checkbox" [ngModel]="showShutterCount()" (ngModelChange)="showShutterCount.set($event)" />
-              <span>จำนวนชัตเตอร์</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- 4. Barcode & QR Code Format -->
-        <div class="control-group">
-          <label class="control-heading">4. รูปแบบโค้ดสแกน (Barcode / QR Code)</label>
-          <div class="space-y-2">
-            <div class="code-style-row">
-              <label class="code-radio-option" [class.selected]="codeStyle() === 'barcode_qr'">
-                <input type="radio" name="codeStyle" value="barcode_qr" [ngModel]="codeStyle()" (ngModelChange)="codeStyle.set($event)" />
-                <span class="font-semibold text-xs">Barcode + QR คู่กัน</span>
-                <span class="text-[10px] text-slate-500">สแกนได้ทั้งเครื่องยิง & กล้องมือถือ</span>
-              </label>
-              <label class="code-radio-option" [class.selected]="codeStyle() === 'barcode_only'">
-                <input type="radio" name="codeStyle" value="barcode_only" [ngModel]="codeStyle()" (ngModelChange)="codeStyle.set($event)" />
-                <span class="font-semibold text-xs">เฉพาะ Barcode 1D</span>
-                <span class="text-[10px] text-slate-500">แนวนอนเต็ม สแกนง่ายสุด</span>
-              </label>
-              <label class="code-radio-option" [class.selected]="codeStyle() === 'qr_only'">
-                <input type="radio" name="codeStyle" value="qr_only" [ngModel]="codeStyle()" (ngModelChange)="codeStyle.set($event)" />
-                <span class="font-semibold text-xs">เฉพาะ QR Code</span>
-                <span class="text-[10px] text-slate-500">มินิมอล ประหยัดพื้นที่</span>
-              </label>
-            </div>
-
-            <div class="flex items-center gap-3 pt-1 text-xs">
-              <span class="text-slate-600 font-medium">ค่าที่เข้ารหัส:</span>
-              <label class="inline-flex items-center gap-1 cursor-pointer">
-                <input type="radio" name="encodeValue" value="serial" [ngModel]="encodeValue()" (ngModelChange)="encodeValue.set($event)" />
-                <span>Serial Number</span>
-              </label>
-              <label class="inline-flex items-center gap-1 cursor-pointer">
-                <input type="radio" name="encodeValue" value="sku" [ngModel]="encodeValue()" (ngModelChange)="encodeValue.set($event)" />
-                <span>SKU สินค้า</span>
-              </label>
-            </div>
-
-            <!-- Detailed Barcode / QR Sizing Controls -->
-            <div class="p-2.5 bg-slate-50 rounded-lg border border-slate-200 mt-2 space-y-2.5 text-xs">
-              <div *ngIf="codeStyle() !== 'qr_only'" class="space-y-2">
-                <div class="flex items-center justify-between">
-                  <span class="text-slate-700 font-medium">ความสูงบาร์โค้ด:</span>
-                  <div class="flex items-center gap-2">
-                    <input
-                      type="range"
-                      min="15"
-                      max="60"
-                      [ngModel]="barcodeHeight()"
-                      (ngModelChange)="barcodeHeight.set($event)"
-                      class="w-24 accent-sky-600 cursor-pointer"
-                    />
-                    <span class="font-mono text-[11px] w-8 text-right">{{ barcodeHeight() }}px</span>
-                  </div>
-                </div>
-
-                <div class="flex items-center justify-between">
-                  <span class="text-slate-700 font-medium">ความหนาแท่งบาร์โค้ด:</span>
-                  <div class="flex items-center gap-2">
-                    <input
-                      type="range"
-                      min="1.0"
-                      max="2.5"
-                      step="0.1"
-                      [ngModel]="barcodeWidth()"
-                      (ngModelChange)="barcodeWidth.set($event)"
-                      class="w-24 accent-sky-600 cursor-pointer"
-                    />
-                    <span class="font-mono text-[11px] w-8 text-right">{{ barcodeWidth() }}x</span>
-                  </div>
-                </div>
-
-                <label class="toggle-checkbox text-[11px] text-slate-600">
-                  <input type="checkbox" [ngModel]="showBarcodeText()" (ngModelChange)="showBarcodeText.set($event)" />
-                  <span>แสดงข้อความใต้บาร์โค้ด (Human-readable text)</span>
+              <div class="grid grid-cols-2 gap-2 text-xs">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" [ngModel]="showProductTitle()" (ngModelChange)="showProductTitle.set($event)" class="rounded-sm text-sky-600" />
+                  <span>ชื่อรุ่นสินค้า (Brand & Model)</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" [ngModel]="showConditionGrade()" (ngModelChange)="showConditionGrade.set($event)" class="rounded-sm text-sky-600" />
+                  <span>เกรดสภาพสินค้า (Grade Badge)</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" [ngModel]="showSerialNumber()" (ngModelChange)="showSerialNumber.set($event)" class="rounded-sm text-sky-600" />
+                  <span>Serial Number</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" [ngModel]="showSku()" (ngModelChange)="showSku.set($event)" class="rounded-sm text-sky-600" />
+                  <span>รหัส SKU สินค้า</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" [ngModel]="showPrice()" (ngModelChange)="showPrice.set($event)" class="rounded-sm text-sky-600" />
+                  <span>ราคาขาย (฿ Selling Price)</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" [ngModel]="showShutterCount()" (ngModelChange)="showShutterCount.set($event)" class="rounded-sm text-sky-600" />
+                  <span>จำนวนชัตเตอร์ (Shutter Count)</span>
                 </label>
               </div>
 
-              <div *ngIf="codeStyle() !== 'barcode_only'" class="flex items-center justify-between pt-1 border-t border-slate-200">
-                <span class="text-slate-700 font-medium">ขนาด QR Code:</span>
-                <div class="flex items-center gap-2">
-                  <input
-                    type="range"
-                    min="24"
-                    max="70"
-                    [ngModel]="qrSize()"
-                    (ngModelChange)="qrSize.set($event)"
-                    class="w-24 accent-sky-600 cursor-pointer"
-                  />
-                  <span class="font-mono text-[11px] w-8 text-right">{{ qrSize() }}px</span>
-                </div>
+              <!-- Footer Guarantee Note -->
+              <div class="pt-2 border-t border-slate-200">
+                <label class="flex items-center gap-2 cursor-pointer mb-1.5">
+                  <input type="checkbox" [ngModel]="showFooterText()" (ngModelChange)="showFooterText.set($event)" class="rounded-sm text-sky-600" />
+                  <span class="text-xs font-medium text-slate-700">ข้อความท้ายป้าย / ประกันสินค้า</span>
+                </label>
+                <input
+                  *ngIf="showFooterText()"
+                  type="text"
+                  [ngModel]="footerText()"
+                  (ngModelChange)="footerText.set($event)"
+                  placeholder="เช่น รับประกันร้าน 30 วัน"
+                  class="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg"
+                />
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- 5. Footer Text -->
-        <div class="control-group">
-          <label class="control-heading">5. ข้อความท้ายป้าย (Footer / Warranty)</label>
-          <div class="space-y-1.5">
-            <label class="toggle-checkbox">
-              <input type="checkbox" [ngModel]="showFooterText()" (ngModelChange)="showFooterText.set($event)" />
-              <span>แสดงข้อความท้ายป้าย</span>
-            </label>
-            <div *ngIf="showFooterText()" class="pl-6">
-              <input
-                type="text"
-                [ngModel]="footerText()"
-                (ngModelChange)="footerText.set($event)"
-                placeholder="เช่น ประกันร้าน 30 วัน, LINE: @shop"
-                class="setting-textbox w-full text-xs"
-              />
+          <!-- TAB 3: Barcode & QR Code -->
+          <div *ngIf="activeTab() === 'codes'" class="space-y-4">
+            
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+              <span class="block text-xs font-bold text-slate-800">📊 ตัวเลือกโค้ดและขนาด</span>
+
+              <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">รูปแบบโค้ด (Code Style):</label>
+                <div class="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    (click)="codeStyle.set('barcode_qr')"
+                    class="preset-chip text-center"
+                    [class.active]="codeStyle() === 'barcode_qr'"
+                  >
+                    บาร์โค้ด + QR Code
+                  </button>
+                  <button
+                    type="button"
+                    (click)="codeStyle.set('barcode_only')"
+                    class="preset-chip text-center"
+                    [class.active]="codeStyle() === 'barcode_only'"
+                  >
+                    บาร์โค้ดอย่างเดียว
+                  </button>
+                  <button
+                    type="button"
+                    (click)="codeStyle.set('qr_only')"
+                    class="preset-chip text-center"
+                    [class.active]="codeStyle() === 'qr_only'"
+                  >
+                    QR Code อย่างเดียว
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">ข้อมูลที่จะแปลงเป็นโค้ด (Encode Data):</label>
+                <div class="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    (click)="encodeValue.set('serial')"
+                    class="preset-chip text-center"
+                    [class.active]="encodeValue() === 'serial'"
+                  >
+                    Serial Number (แนะนำ)
+                  </button>
+                  <button
+                    type="button"
+                    (click)="encodeValue.set('sku')"
+                    class="preset-chip text-center"
+                    [class.active]="encodeValue() === 'sku'"
+                  >
+                    รหัสสินค้า (SKU)
+                  </button>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200">
+                <div *ngIf="codeStyle() !== 'qr_only'">
+                  <label class="block text-[11px] font-medium text-slate-600 mb-0.5">ความสูงบาร์โค้ด (mm):</label>
+                  <input
+                    type="number"
+                    min="3"
+                    max="20"
+                    step="0.5"
+                    [ngModel]="barcodeHeightMm()"
+                    (ngModelChange)="barcodeHeightMm.set(+$event || 6)"
+                    class="w-full text-xs px-2 py-1 bg-white border border-slate-300 rounded-lg"
+                  />
+                </div>
+                <div *ngIf="codeStyle() !== 'barcode_only'">
+                  <label class="block text-[11px] font-medium text-slate-600 mb-0.5">ขนาด QR Code (mm):</label>
+                  <input
+                    type="number"
+                    min="6"
+                    max="30"
+                    step="0.5"
+                    [ngModel]="qrSizeMm()"
+                    (ngModelChange)="qrSizeMm.set(+$event || 10)"
+                    class="w-full text-xs px-2 py-1 bg-white border border-slate-300 rounded-lg"
+                  />
+                </div>
+              </div>
+
+              <div *ngIf="codeStyle() !== 'qr_only'" class="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="chk-bar-text"
+                  [ngModel]="showBarcodeText()"
+                  (ngModelChange)="showBarcodeText.set($event)"
+                  class="rounded-sm text-sky-600"
+                />
+                <label for="chk-bar-text" class="text-xs text-slate-700 cursor-pointer">แสดงตัวเลขใต้แท่งบาร์โค้ด</label>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Action Row for Template -->
-        <div class="flex items-center justify-between pt-2 border-t border-slate-100">
-          <button type="button" (click)="saveAsDefaultTemplate()" class="btn-save-template">
-            <span class="material-icons-outlined text-sm">bookmark</span>
-            <span>บันทึกเป็นเทมเพลตเริ่มต้น</span>
-          </button>
-          <button type="button" (click)="resetToDefaults()" class="btn-reset-template">
-            คืนค่าเริ่มต้น
-          </button>
+          <!-- TAB 4: Calibration & Printer Guide -->
+          <div *ngIf="activeTab() === 'calibration'" class="space-y-4">
+            <div class="p-4 bg-sky-50 rounded-xl border border-sky-200 space-y-3">
+              <div class="flex items-center gap-2 text-sky-900 font-bold text-xs">
+                <span class="material-icons-outlined text-base">straighten</span>
+                <span>การปรับเทียบตำแหน่งการพิมพ์ (Printer Calibration)</span>
+              </div>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                เนื่องจากไดรเวอร์ของเครื่องพิมพ์สติ๊กเกอร์แต่ละรุ่น (Xprinter, TSC, Zebra, Gprinter) อาจมีระยะจุดเริ่มพิมพ์ (Zero Point Offset) ต่างกันเล็กน้อย คุณสามารถพิมพ์แผ่นปรับเทียบนี้ออกมาแล้ววัดด้วยไม้บรรทัดจริงเพื่อปรับค่า <strong>ระยะขอบซ้าย (Margin Left)</strong> หรือ <strong>ระยะขอบบน (Margin Top)</strong> ชดเชยได้พอดี 100%
+              </p>
+
+              <button
+                type="button"
+                (click)="printCalibrationSheet()"
+                class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <span class="material-icons-outlined text-base">print</span>
+                <span>พิมพ์แผ่นปรับเทียบ (Test Print Calibration Sheet)</span>
+              </button>
+            </div>
+
+            <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 space-y-1.5">
+              <span class="font-bold flex items-center gap-1.5">
+                <span class="material-icons-outlined text-sm">info</span>
+                <span>คำแนะนำการตั้งค่าหน้าต่างพิมพ์ของเบราว์เซอร์ (Chrome / Edge):</span>
+              </span>
+              <ul class="list-disc list-inside space-y-0.5 pl-1 text-[11px] text-amber-800">
+                <li><strong>Margins:</strong> เลือกเป็น <code>None</code> หรือ <code>ไม่มี</code> เสมอ</li>
+                <li><strong>Headers and footers:</strong> เอาเครื่องหมายถูกออก (Uncheck) เพื่อไม่ให้ติดวันที่/URL</li>
+                <li><strong>Scale:</strong> เลือก <code>100% (Default)</code> ห้ามเลือก Fit to page</li>
+                <li><strong>Paper Size:</strong> ในไดรเวอร์เครื่องพิมพ์ ควรตั้ง User-Defined Paper Size ให้ตรงกับขนาดม้วนจริง</li>
+              </ul>
+            </div>
+          </div>
+
         </div>
       </div>
 
-      <!-- RIGHT: Interactive Live Preview -->
-      <div class="preview-panel">
-        <div class="preview-header">
-          <div>
-            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">ตัวอย่างป้ายสติ๊กเกอร์ (Live Preview)</h4>
-            <p class="text-[11px] text-slate-400 mt-0.5">
-              ขนาดจริง: {{ actualWidthMm() }} × {{ actualHeightMm() }} mm • ความละเอียด SVG Vector คมกริบ
-            </p>
+      <!-- Right Panel: Live Multi-Column Sheet/Roll Preview (5 cols) -->
+      <div class="lg:col-span-5 flex flex-col min-h-0 bg-slate-100/70 p-4">
+        
+        <!-- Preview Header & Pager -->
+        <div class="flex items-center justify-between pb-3 shrink-0">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-slate-800">ตัวอย่างจำลองหน้าพิมพ์ (Live Preview)</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-700">
+              {{ columnsCount() }} คอลัมน์
+            </span>
+          </div>
+
+          <!-- Pager for selected batch items -->
+          <div *ngIf="allItems().length > 1" class="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2 py-1 shadow-2xs">
+            <button
+              type="button"
+              (click)="prevItem()"
+              [disabled]="activeItemIndex() <= 0"
+              class="text-slate-500 hover:text-slate-800 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
+              title="ดูรายการก่อนหน้า"
+            >
+              <span class="material-icons-outlined text-sm">chevron_left</span>
+            </button>
+            <span class="text-[11px] font-semibold text-slate-700">
+              {{ activeItemIndex() + 1 }} / {{ allItems().length }}
+            </span>
+            <button
+              type="button"
+              (click)="nextItem()"
+              [disabled]="activeItemIndex() >= allItems().length - 1"
+              class="text-slate-500 hover:text-slate-800 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
+              title="ดูรายการถัดไป"
+            >
+              <span class="material-icons-outlined text-sm">chevron_right</span>
+            </button>
           </div>
         </div>
 
-        <!-- The Physical Sticker Canvas Container -->
-        <div class="preview-stage">
+        <!-- Canvas Container with Visual Roll / Sheet Grid -->
+        <div class="flex-1 overflow-auto flex items-center justify-center p-3 bg-slate-200/60 rounded-xl border border-slate-300/80 shadow-inner">
+          
+          <!-- Scaled Visual Paper Canvas -->
           <div
-            id="sticker-label-preview"
-            class="sticker-canvas"
-            [style.width.mm]="actualWidthMm()"
-            [style.height.mm]="actualHeightMm()"
+            class="paper-preview-canvas shadow-lg"
+            [style.width.mm]="paperWidthMm()"
+            [style.padding-top.mm]="marginTopMm()"
+            [style.padding-bottom.mm]="marginBottomMm()"
+            [style.padding-left.mm]="marginLeftMm()"
+            [style.padding-right.mm]="marginRightMm()"
           >
-            <!-- Label Header -->
-            <div class="sticker-top-row">
-              <div class="store-branding-box">
-                <img
-                  *ngIf="showStoreLogo() && storeLogoUrl()"
-                  [src]="storeLogoUrl()"
-                  alt="Store Logo"
-                  class="store-logo-img"
-                  [class.monochrome-logo]="monochromeLogo()"
-                />
-                <span *ngIf="showStoreLogo() && !storeLogoUrl()" class="store-logo-placeholder">
-                  📷
-                </span>
-                <span *ngIf="showStoreName()" class="store-name-text">
-                  {{ storeName() || 'MUE2MUEDEE' }}
-                </span>
-              </div>
-              <span *ngIf="showConditionGrade() && item()?.conditionGradeCode" class="grade-badge-tag">
-                เกรด {{ item()?.conditionGradeCode }}
-              </span>
-            </div>
-
-            <!-- Product Model Title -->
-            <div *ngIf="showProductTitle() && item()" class="product-title-row">
-              <span class="font-bold text-slate-900 leading-tight">
-                {{ item()?.brandName }} {{ item()?.productModelName }}
-              </span>
-            </div>
-
-            <!-- Shutter Count if enabled -->
-            <div *ngIf="showShutterCount() && item()?.shutterCount" class="shutter-row">
-              ชัตเตอร์: {{ item()?.shutterCount | number }} sc
-            </div>
-
-            <!-- Codes Area (Barcode and/or QR) -->
-            <div class="codes-area" [ngClass]="codeStyle()">
-              <!-- Barcode -->
-              <div *ngIf="codeStyle() !== 'qr_only'" class="barcode-box">
-                <app-barcode
-                  [value]="encodedString()"
-                  [height]="barcodeHeight()"
-                  [width]="barcodeWidth()"
-                  [displayValue]="showBarcodeText()"
-                  [margin]="0"
-                ></app-barcode>
-                <div class="code-meta-text">
-                  <span *ngIf="showSerialNumber() && item()?.serialNumber">
-                    SN: <strong class="font-mono">{{ item()?.serialNumber }}</strong>
-                  </span>
-                  <span *ngIf="showSku() && item()?.sku">
-                    SKU: <strong class="font-mono">{{ item()?.sku }}</strong>
+            <!-- Visual Grid of Labels across the Columns -->
+            <div
+              class="preview-grid"
+              [style.grid-template-columns]="'repeat(' + columnsCount() + ', ' + labelWidthMm() + 'mm)'"
+              [style.column-gap.mm]="horizontalGapMm()"
+              [style.row-gap.mm]="verticalGapMm()"
+            >
+              <!-- Repeat for current row preview (e.g. 1 to columnsCount) -->
+              <div
+                *ngFor="let colIdx of [0, 1, 2].slice(0, columnsCount())"
+                class="preview-sticker-card"
+                [style.width.mm]="labelWidthMm()"
+                [style.height.mm]="labelHeightMm()"
+              >
+                <!-- Card Header -->
+                <div class="preview-header">
+                  <div class="flex items-center gap-1 min-w-0 flex-1">
+                    <img
+                      *ngIf="showStoreLogo() && storeLogoUrl()"
+                      [src]="storeLogoUrl()"
+                      alt="Logo"
+                      class="preview-logo-img"
+                      [class.grayscale]="monochromeLogo()"
+                    />
+                    <span *ngIf="showStoreName()" class="preview-store-name truncate">{{ storeName() || 'MUE2MUEDEE' }}</span>
+                  </div>
+                  <span *ngIf="showConditionGrade() && activeItem()" class="preview-badge-grade">
+                    เกรด {{ activeItem()?.conditionGradeCode }}
                   </span>
                 </div>
-              </div>
 
-              <!-- QR Code -->
-              <div *ngIf="codeStyle() !== 'barcode_only'" class="qr-box">
-                <app-qrcode
-                  [value]="encodedString()"
-                  [size]="qrSize()"
-                  [margin]="0"
-                ></app-qrcode>
-                <span *ngIf="codeStyle() === 'qr_only'" class="qr-label-text font-mono">
-                  {{ encodedString() }}
-                </span>
-              </div>
-            </div>
+                <!-- Card Body -->
+                <div class="preview-body">
+                  <div *ngIf="showProductTitle() && activeItem()" class="preview-product-title">
+                    {{ activeItem()?.brandName }} {{ activeItem()?.productModelName }}
+                  </div>
+                  <div class="preview-meta-row">
+                    <span *ngIf="showSku() && activeItem()" class="preview-sku">SKU: {{ activeItem()?.sku }}</span>
+                    <span *ngIf="showSerialNumber() && activeItem()?.serialNumber" class="preview-serial">S/N: {{ activeItem()?.serialNumber }}</span>
+                  </div>
+                  <div class="preview-meta-row mt-0.5">
+                    <span *ngIf="showShutterCount() && activeItem()?.shutterCount" class="text-[9px] text-slate-500">
+                      SC: {{ activeItem()?.shutterCount | number }}
+                    </span>
+                    <span *ngIf="showPrice() && activeItem()" class="preview-price">
+                      ฿{{ activeItem()?.sellingPrice | number:'1.0-0' }}
+                    </span>
+                  </div>
+                </div>
 
-            <!-- Bottom Price & Footer Row -->
-            <div class="sticker-bottom-row">
-              <div *ngIf="showPrice() && item()?.sellingPrice" class="price-tag-text">
-                ฿{{ item()?.sellingPrice | number:'1.0-0' }}
-              </div>
-              <div *ngIf="showFooterText() && footerText()" class="footer-warranty-text">
-                {{ footerText() }}
+                <!-- Card Footer: Barcode & QR -->
+                <div class="preview-footer">
+                  <div *ngIf="codeStyle() !== 'qr_only' && activeItem()" class="preview-barcode-box">
+                    <app-barcode
+                      [value]="encodeValue() === 'serial' ? (activeItem()?.serialNumber || activeItem()?.sku || '') : (activeItem()?.sku || '')"
+                      [format]="'CODE128'"
+                      [width]="barcodeWidthRatio()"
+                      [height]="barcodeHeightMm() * 3.5"
+                      [displayValue]="showBarcodeText()"
+                      class="max-w-full"
+                    ></app-barcode>
+                  </div>
+                  <div *ngIf="codeStyle() !== 'barcode_only' && activeItem()" class="preview-qr-box">
+                    <app-qrcode
+                      [value]="encodeValue() === 'serial' ? (activeItem()?.serialNumber || activeItem()?.sku || '') : (activeItem()?.sku || '')"
+                      [size]="qrSizeMm() * 3.78"
+                    ></app-qrcode>
+                  </div>
+                </div>
+
+                <!-- Footer Guarantee -->
+                <div *ngIf="showFooterText() && footerText()" class="preview-footer-note">
+                  {{ footerText() }}
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Print Action Footer in Preview -->
-        <div class="print-bar-box">
-          <div class="flex items-center gap-2">
-            <span class="text-xs text-slate-600 font-semibold">จำนวนดวง:</span>
-            <input
-              type="number"
-              min="1"
-              max="50"
-              [ngModel]="printCopies()"
-              (ngModelChange)="printCopies.set($event)"
-              class="copies-input"
-            />
-            <span class="text-xs text-slate-400">ดวง</span>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <button type="button" (click)="closeModal.emit()" class="btn-cancel">
-              ปิด
-            </button>
-            <button type="button" (click)="print()" class="btn-print-primary">
-              <span class="material-icons-outlined text-base">print</span>
-              <span>สั่งพิมพ์สติ๊กเกอร์ ({{ printCopies() }} ดวง)</span>
-            </button>
-          </div>
+        <div class="mt-2 text-[11px] text-slate-500 text-center">
+          * ตัวอย่างแสดงการจัดวางบนกระดาษจริง {{ paperWidthMm() }} mm (ระยะห่าง H: {{ horizontalGapMm() }}mm, V: {{ verticalGapMm() }}mm)
         </div>
       </div>
     </div>
+
+    <!-- Modal Footer -->
+    <div class="px-5 py-3 border-t border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-3 shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 bg-white px-2.5 py-1 rounded-xl border border-slate-200">
+          <label class="text-xs font-semibold text-slate-700">จำนวนดวงต่อรายการ:</label>
+          <input
+            type="number"
+            min="1"
+            max="100"
+            [ngModel]="printCopies()"
+            (ngModelChange)="printCopies.set(+$event || 1)"
+            class="w-14 text-xs font-bold text-center px-1 py-0.5 border border-slate-300 rounded-md"
+          />
+        </div>
+        <span class="text-xs font-semibold text-slate-600">
+          รวมพิมพ์ทั้งหมด: <strong class="text-sky-700">{{ totalStickerQuantity() }} ดวง</strong> ({{ columnsCount() }} คอลัมน์)
+        </span>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          (click)="printCalibrationSheet()"
+          class="btn-secondary"
+          title="พิมพ์แผ่นทดสอบเพื่อวัดสเกลความแม่นยำ"
+        >
+          <span class="material-icons-outlined text-sm">straighten</span>
+          <span>ทดสอบพิมพ์ปรับเทียบ</span>
+        </button>
+
+        <button
+          type="button"
+          (click)="closeModal.emit()"
+          class="btn-secondary"
+        >
+          ยกเลิก
+        </button>
+
+        <button
+          type="button"
+          (click)="print()"
+          class="btn-primary"
+          [disabled]="isWidthExceeded() || allItems().length === 0"
+        >
+          <span class="material-icons-outlined text-base">print</span>
+          <span>สั่งพิมพ์ทั้งหมด ({{ totalStickerQuantity() }} ดวง)</span>
+        </button>
+      </div>
+    </div>
+
   </div>
 </div>

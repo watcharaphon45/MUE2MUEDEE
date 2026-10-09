@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Mue2MueDee.Application.Common.Interfaces;
+using Mue2MueDee.Application.Services;
 using Mue2MueDee.Domain.Entities;
 using Mue2MueDee.Domain.Enums;
 
@@ -32,6 +33,7 @@ public class DbInitializer
                     Facebook = "https://facebook.com/abccamera",
                     Line = "@abccamera",
                     PrimaryColor = "#4f46e5",
+                    LogoUrl = "/logo.png",
                     IsActive = true
                 };
 
@@ -137,6 +139,19 @@ public class DbInitializer
 
                 await context.SaveChangesAsync();
             }
+
+            // Seed default sticker templates for stores that do not have any yet
+            var stores = await context.Stores.ToListAsync();
+            foreach (var st in stores)
+            {
+                var hasTemplates = await context.StickerTemplates.IgnoreQueryFilters().AnyAsync(t => t.StoreId == st.Id);
+                if (!hasTemplates)
+                {
+                    logger.LogInformation("Seeding default sticker templates for store: {StoreName}", st.Name);
+                    context.StickerTemplates.AddRange(StickerTemplateService.CreateDefaultTemplates(st.Id, st.Name, st.LogoUrl));
+                }
+            }
+            await context.SaveChangesAsync();
         }
         catch (Exception ex)
         {

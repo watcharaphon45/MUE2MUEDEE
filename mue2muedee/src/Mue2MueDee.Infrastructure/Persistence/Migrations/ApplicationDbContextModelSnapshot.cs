@@ -1629,6 +1629,220 @@ namespace Mue2MueDee.Infrastructure.Persistence.Migrations
                     b.ToTable("sale_payments", (string)null);
                 });
 
+            modelBuilder.Entity("Mue2MueDee.Domain.Entities.StickerTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("BarcodeHeightMm")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("numeric(8,2)")
+                        .HasColumnName("barcode_height_mm");
+
+                    b.Property<decimal>("BarcodeWidthRatio")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("numeric(8,2)")
+                        .HasColumnName("barcode_width_ratio");
+
+                    b.Property<string>("CodeStyle")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("code_style");
+
+                    b.Property<int>("ColumnsCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("columns_count");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("deleted_by");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("EncodeValue")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("encode_value");
+
+                    b.Property<string>("FooterText")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("footer_text");
+
+                    b.Property<decimal>("HorizontalGapMm")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("numeric(8,2)")
+                        .HasColumnName("horizontal_gap_mm");
+
+                    b.Property<bool>("IsContinuousRoll")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_continuous_roll");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_default");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_deleted");
+
+                    b.Property<decimal>("LabelHeightMm")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("numeric(8,2)")
+                        .HasColumnName("label_height_mm");
+
+                    b.Property<decimal>("LabelWidthMm")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("numeric(8,2)")
+                        .HasColumnName("label_width_mm");
+
+                    b.Property<decimal>("MarginBottomMm")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("numeric(8,2)")
+                        .HasColumnName("margin_bottom_mm");
+
+                    b.Property<decimal>("MarginLeftMm")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("numeric(8,2)")
+                        .HasColumnName("margin_left_mm");
+
+                    b.Property<decimal>("MarginRightMm")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("numeric(8,2)")
+                        .HasColumnName("margin_right_mm");
+
+                    b.Property<decimal>("MarginTopMm")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("numeric(8,2)")
+                        .HasColumnName("margin_top_mm");
+
+                    b.Property<bool>("MonochromeLogo")
+                        .HasColumnType("boolean")
+                        .HasColumnName("monochrome_logo");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("name");
+
+                    b.Property<decimal?>("PaperHeightMm")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("numeric(8,2)")
+                        .HasColumnName("paper_height_mm");
+
+                    b.Property<decimal>("PaperWidthMm")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("numeric(8,2)")
+                        .HasColumnName("paper_width_mm");
+
+                    b.Property<decimal>("QrSizeMm")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("numeric(8,2)")
+                        .HasColumnName("qr_size_mm");
+
+                    b.Property<int?>("RowsCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("rows_count");
+
+                    b.Property<bool>("ShowBarcodeText")
+                        .HasColumnType("boolean")
+                        .HasColumnName("show_barcode_text");
+
+                    b.Property<bool>("ShowConditionGrade")
+                        .HasColumnType("boolean")
+                        .HasColumnName("show_condition_grade");
+
+                    b.Property<bool>("ShowFooterText")
+                        .HasColumnType("boolean")
+                        .HasColumnName("show_footer_text");
+
+                    b.Property<bool>("ShowPrice")
+                        .HasColumnType("boolean")
+                        .HasColumnName("show_price");
+
+                    b.Property<bool>("ShowProductTitle")
+                        .HasColumnType("boolean")
+                        .HasColumnName("show_product_title");
+
+                    b.Property<bool>("ShowSerialNumber")
+                        .HasColumnType("boolean")
+                        .HasColumnName("show_serial_number");
+
+                    b.Property<bool>("ShowShutterCount")
+                        .HasColumnType("boolean")
+                        .HasColumnName("show_shutter_count");
+
+                    b.Property<bool>("ShowSku")
+                        .HasColumnType("boolean")
+                        .HasColumnName("show_sku");
+
+                    b.Property<bool>("ShowStoreLogo")
+                        .HasColumnType("boolean")
+                        .HasColumnName("show_store_logo");
+
+                    b.Property<bool>("ShowStoreName")
+                        .HasColumnType("boolean")
+                        .HasColumnName("show_store_name");
+
+                    b.Property<Guid>("StoreId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("store_id");
+
+                    b.Property<string>("StoreLogoUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("store_logo_url");
+
+                    b.Property<string>("StoreName")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
+                        .HasColumnName("store_name");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("updated_by");
+
+                    b.Property<decimal>("VerticalGapMm")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("numeric(8,2)")
+                        .HasColumnName("vertical_gap_mm");
+
+                    b.HasKey("Id")
+                        .HasName("pk_sticker_templates");
+
+                    b.HasIndex("StoreId", "IsDefault")
+                        .HasDatabaseName("ix_sticker_templates_store_id_is_default");
+
+                    b.HasIndex("StoreId", "Name")
+                        .HasDatabaseName("ix_sticker_templates_store_id_name");
+
+                    b.ToTable("sticker_templates", (string)null);
+                });
+
             modelBuilder.Entity("Mue2MueDee.Domain.Entities.StockMovement", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2346,6 +2560,16 @@ namespace Mue2MueDee.Infrastructure.Persistence.Migrations
                     b.Navigation("SaleOrder");
 
                     b.Navigation("Store");
+                });
+
+            modelBuilder.Entity("Mue2MueDee.Domain.Entities.StickerTemplate", b =>
+                {
+                    b.HasOne("Mue2MueDee.Domain.Entities.Store", null)
+                        .WithMany()
+                        .HasForeignKey("StoreId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_sticker_templates_stores_store_id");
                 });
 
             modelBuilder.Entity("Mue2MueDee.Domain.Entities.StockMovement", b =>

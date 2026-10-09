@@ -127,6 +127,23 @@
     </form>
   </div>
 
+  <!-- Batch Selection Action Bar -->
+  <div *ngIf="selectedItemsCount() > 0" class="batch-action-bar">
+    <div class="flex items-center gap-2.5">
+      <span class="batch-count-chip">{{ selectedItemsCount() }}</span>
+      <span class="text-sm font-bold text-slate-800">เลือกสินค้า {{ selectedItemsCount() }} รายการ</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button type="button" class="btn-batch-clear" (click)="clearSelection()">
+        ยกเลิกการเลือก
+      </button>
+      <button type="button" class="btn-batch-print" (click)="openBatchStickerModal()">
+        <span class="material-icons-outlined text-base">print</span>
+        <span>🏷️ พิมพ์ป้ายบาร์โค้ดที่เลือก ({{ selectedItemsCount() }} รายการ)</span>
+      </button>
+    </div>
+  </div>
+
   <!-- Inventory Data Table -->
   <div class="table-container">
     <div *ngIf="inventoryService.loading()" class="loading-overlay">
@@ -137,6 +154,15 @@
     <table class="inventory-table">
       <thead>
         <tr>
+          <th class="w-10 text-center">
+            <input
+              type="checkbox"
+              [checked]="isAllSelected()"
+              (change)="toggleSelectAll()"
+              class="row-checkbox"
+              title="เลือกทั้งหมดในหน้านี้"
+            />
+          </th>
           <th>SKU / รหัสสินค้า</th>
           <th>รายการสินค้า & แบรนด์</th>
           <th>Serial Number</th>
@@ -152,6 +178,14 @@
       </thead>
       <tbody>
         <tr *ngFor="let item of inventoryService.pagedResult().items" class="table-row">
+          <td class="text-center" (click)="$event.stopPropagation()">
+            <input
+              type="checkbox"
+              [checked]="selectedItemIds().has(item.id)"
+              (change)="toggleSelectItem(item.id, $event)"
+              class="row-checkbox cursor-pointer"
+            />
+          </td>
           <td>
             <div class="sku-cell">
               <span class="sku-badge">{{ item.sku }}</span>
@@ -246,7 +280,7 @@
         </tr>
 
         <tr *ngIf="inventoryService.pagedResult().items.length === 0 && !inventoryService.loading()">
-          <td colspan="11" class="empty-state">
+          <td colspan="12" class="empty-state">
             <svg class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
             </svg>
@@ -325,9 +359,10 @@
     </div>
   </div>
 
-  <!-- Sticker Designer Modal -->
+  <!-- Sticker Designer Modal (Single & Batch) -->
   <app-sticker-designer-modal
     [item]="selectedStickerItem()"
+    [items]="batchStickerItems()"
     [isOpen]="showStickerModal()"
     (closeModal)="closeStickerModal()"
   ></app-sticker-designer-modal>
