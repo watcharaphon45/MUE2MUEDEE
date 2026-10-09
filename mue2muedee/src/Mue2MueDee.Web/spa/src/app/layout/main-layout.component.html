@@ -1,6 +1,19 @@
-<div class="h-screen overflow-hidden bg-sky-50 text-slate-800 flex selection:bg-sky-500 selection:text-white">
-  <!-- Sidebar -->
-  <aside class="layout-sidebar h-full bg-white/90 border-r border-slate-200 flex flex-col shrink-0" [class.is-collapsed]="isSidebarCollapsed()">
+<div class="h-screen overflow-hidden bg-sky-50/60 text-slate-800 flex selection:bg-sky-500 selection:text-white relative">
+  <!-- Mobile Backdrop Overlay -->
+  @if (isMobileMenuOpen()) {
+    <div 
+      class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-40 lg:hidden transition-opacity"
+      (click)="closeMobileMenu()"
+    ></div>
+  }
+
+  <!-- Sidebar (Drawer on Mobile, Collapsible on Desktop) -->
+  <aside 
+    class="layout-sidebar h-full bg-white/95 border-r border-slate-200 flex flex-col shrink-0 fixed inset-y-0 left-0 z-50 lg:static transition-transform duration-200 lg:translate-x-0"
+    [class.-translate-x-full]="!isMobileMenuOpen()"
+    [class.translate-x-0]="isMobileMenuOpen()"
+    [class.is-collapsed]="isSidebarCollapsed()"
+  >
     <!-- Brand / Store Info & Single Primary Collapse/Expand Toggle Point -->
     <div class="h-16 border-b border-slate-200 flex items-center" [class.px-4]="!isSidebarCollapsed()" [class.px-2]="isSidebarCollapsed()">
       @if (!isSidebarCollapsed()) {
@@ -22,15 +35,28 @@
             </div>
           </div>
 
-          <button 
-            type="button" 
-            (click)="toggleSidebar()" 
-            class="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors shrink-0 cursor-pointer flex items-center justify-center" 
-            title="ย่อแถบเมนู (Collapse Sidebar)"
-            id="sidebar-toggle-btn"
-          >
-            <span class="material-icons-outlined text-lg">chevron_left</span>
-          </button>
+          <div class="flex items-center gap-1 shrink-0">
+            <!-- Mobile Close Button -->
+            <button
+              type="button"
+              (click)="closeMobileMenu()"
+              class="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+              title="ปิดเมนู"
+            >
+              <span class="material-icons-outlined text-xl">close</span>
+            </button>
+
+            <!-- Desktop Collapse Button -->
+            <button 
+              type="button" 
+              (click)="toggleSidebar()" 
+              class="hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors cursor-pointer items-center justify-center" 
+              title="ย่อแถบเมนู (Collapse Sidebar)"
+              id="sidebar-toggle-btn"
+            >
+              <span class="material-icons-outlined text-lg">chevron_left</span>
+            </button>
+          </div>
         </div>
       } @else {
         <div class="w-full flex items-center justify-between gap-1 px-0.5">
@@ -42,7 +68,7 @@
           <button 
             type="button" 
             (click)="toggleSidebar()" 
-            class="w-6 h-6 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors shrink-0 cursor-pointer flex items-center justify-center" 
+            class="hidden lg:flex w-6 h-6 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors shrink-0 cursor-pointer items-center justify-center" 
             title="ขยายแถบเมนู (Expand Sidebar)"
             id="sidebar-toggle-btn"
           >
@@ -71,6 +97,7 @@
               [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
               class="nav-item"
               [title]="item.label"
+              (click)="closeMobileMenu()"
             >
               <span class="material-icons-outlined nav-icon">{{ item.icon }}</span>
               @if (!isSidebarCollapsed()) {
@@ -82,7 +109,7 @@
       }
     </nav>
 
-    <!-- Current User Profile in Sidebar (Single dedicated profile display, no redundant logout) -->
+    <!-- Current User Profile in Sidebar -->
     <div class="p-2.5 border-t border-slate-200 bg-white/60">
       @if (!isSidebarCollapsed()) {
         <div class="flex items-center gap-3 px-2 py-1.5">
@@ -123,13 +150,25 @@
   <!-- Main Content Area -->
   <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
     <!-- Header -->
-    <header class="h-16 border-b border-slate-200 bg-white/50 backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-40">
-      <!-- Store Info -->
-      <div class="flex items-center gap-3 text-xs text-slate-500">
-        <div class="flex items-center gap-1.5">
-          <span class="material-icons-outlined text-base text-slate-500">store</span>
-          <span>ร้านปัจจุบัน:</span>
-          <span class="font-semibold text-slate-700">{{ authService.currentStore()?.storeName }}</span>
+    <header class="h-16 border-b border-slate-200 bg-white/80 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between sticky top-0 z-30 gap-2">
+      <!-- Store Info & Hamburger Toggle -->
+      <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+        <button
+          type="button"
+          (click)="toggleMobileMenu()"
+          class="lg:hidden p-2 -ml-1 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer shrink-0 flex items-center justify-center"
+          title="เปิดเมนูหลัก"
+          id="mobile-menu-btn"
+        >
+          <span class="material-icons-outlined text-2xl">menu</span>
+        </button>
+
+        <div class="flex items-center gap-1.5 text-xs text-slate-500 min-w-0">
+          <span class="material-icons-outlined text-base text-slate-500 shrink-0">store</span>
+          <span class="hidden sm:inline">ร้านปัจจุบัน:</span>
+          <span class="font-semibold text-slate-700 truncate max-w-[120px] sm:max-w-[200px] md:max-w-xs" [title]="authService.currentStore()?.storeName">
+            {{ authService.currentStore()?.storeName }}
+          </span>
         </div>
 
         @if (authService.currentStore()?.storeCode) {
@@ -137,7 +176,7 @@
             [href]="'/shop/' + authService.currentStore()?.storeCode"
             target="_blank"
             rel="noopener noreferrer"
-            class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 text-[11px] font-medium transition-colors"
+            class="hidden md:inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 text-[11px] font-medium transition-colors shrink-0"
             title="เปิดดูหน้าร้านสำหรับลูกค้าในแท็บใหม่"
             id="header-view-storefront-btn"
           >
@@ -148,36 +187,36 @@
         }
       </div>
 
-      <!-- Store Switcher & Single Primary Logout Action Point -->
-      <div class="flex items-center gap-3">
+      <!-- Store Switcher & Logout Action Point -->
+      <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
         @if (authService.availableStores().length > 1) {
-          <div class="w-56">
+          <div class="w-32 sm:w-48 md:w-56">
             <app-select
               icon="store"
               [options]="storeOptions()"
               [value]="authService.currentStore()?.storeId"
               (valueChange)="onStoreSelect($event)"
-              placeholder="เลือกร้านค้า..."
+              placeholder="เลือกร้าน..."
             ></app-select>
           </div>
         }
 
-        <div class="w-px h-6 bg-slate-200"></div>
+        <div class="w-px h-6 bg-slate-200 hidden sm:block"></div>
 
         <button 
           (click)="authService.logout()" 
-          class="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-rose-700 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+          class="inline-flex items-center gap-1 text-xs text-slate-600 hover:text-rose-700 px-2.5 py-1.5 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer shrink-0"
           title="ออกจากระบบ"
           id="header-logout-btn"
         >
-          <span class="material-icons-outlined text-sm">power_settings_new</span>
-          <span>ออกจากระบบ</span>
+          <span class="material-icons-outlined text-base">power_settings_new</span>
+          <span class="hidden sm:inline">ออกจากระบบ</span>
         </button>
       </div>
     </header>
 
     <!-- Page Outlet Container -->
-    <main class="flex-1 p-6 lg:p-8">
+    <main class="flex-1 p-3.5 sm:p-5 md:p-6 lg:p-8 overflow-x-hidden">
       <router-outlet></router-outlet>
     </main>
   </div>

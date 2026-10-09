@@ -399,3 +399,53 @@
 
 .font-mono { font-family: monospace; }
 .font-bold { font-weight: 700; }
+
+/* Responsive Media Queries */
+@media (max-width: 768px) {
+  .trace-container {
+    padding: 1rem 0.75rem;
+  }
+
+  .top-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .top-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .top-actions a {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .search-card {
+    padding: 1rem;
+  }
+
+  .search-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .input-col {
+    min-width: 100%;
+  }
+
+  .btn-search {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .card {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .trace-container {
+    padding: 0.75rem 0.5rem;
+  }
+}

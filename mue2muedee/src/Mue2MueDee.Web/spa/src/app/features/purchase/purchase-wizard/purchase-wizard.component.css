@@ -608,3 +608,50 @@
   height: 1.25rem;
   flex-shrink: 0;
 }
+
+/* Responsive Media Queries */
+@media (max-width: 768px) {
+  .wizard-container {
+    padding: 1rem 0.75rem;
+  }
+
+  .stepper-bar {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.75rem 1rem;
+    scrollbar-width: none;
+  }
+
+  .stepper-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .step-node {
+    flex-shrink: 0;
+  }
+
+  .step-line {
+    min-width: 20px;
+    margin: 0 0.5rem;
+  }
+
+  .step-card {
+    padding: 1.25rem 1rem;
+  }
+
+  .step-actions {
+    flex-direction: column-reverse;
+  }
+
+  .step-actions button,
+  .step-actions a {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .wizard-container {
+    padding: 0.75rem 0.5rem;
+  }
+}

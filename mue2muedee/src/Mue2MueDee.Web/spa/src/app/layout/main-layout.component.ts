@@ -32,6 +32,8 @@ export class MainLayoutComponent {
     typeof window !== 'undefined' && localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'true'
   );
 
+  readonly isMobileMenuOpen = signal<boolean>(false);
+
   toggleSidebar(): void {
     const nextState = !this.isSidebarCollapsed();
     this.isSidebarCollapsed.set(nextState);
@@ -40,6 +42,14 @@ export class MainLayoutComponent {
     } catch {
       // Ignore storage errors in restricted environments
     }
+  }
+
+  toggleMobileMenu(): void {
+    this.isMobileMenuOpen.update(v => !v);
+  }
+
+  closeMobileMenu(): void {
+    this.isMobileMenuOpen.set(false);
   }
 
   readonly menuGroups = computed<NavGroup[]>(() => {

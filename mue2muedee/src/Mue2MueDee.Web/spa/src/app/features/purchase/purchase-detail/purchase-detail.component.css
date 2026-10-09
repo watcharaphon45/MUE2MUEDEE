@@ -332,6 +332,7 @@
 
 .payment-table {
   width: 100%;
+  min-width: 520px;
   border-collapse: collapse;
   font-size: 0.875rem;
 }
@@ -500,6 +501,55 @@
 .text-center { text-align: center; }
 .font-mono { font-family: monospace; }
 .font-bold { font-weight: 700; }
+
+/* Responsive Media Queries */
+@media (max-width: 768px) {
+  .detail-container {
+    padding: 1rem 0.75rem;
+  }
+
+  .top-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .action-buttons {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .action-buttons button,
+  .action-buttons a {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .card {
+    padding: 1rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .hero-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .item-details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-dialog {
+    width: 95% !important;
+    margin: 1rem auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .detail-container {
+    padding: 0.75rem 0.5rem;
+  }
+}
 
 /* Printable Contract */
 .printable-contract {
