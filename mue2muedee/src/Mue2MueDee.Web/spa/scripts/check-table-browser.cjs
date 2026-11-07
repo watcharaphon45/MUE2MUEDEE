@@ -7,6 +7,7 @@ const { spawn } = require('node:child_process');
 const assert = require('node:assert/strict');
 const dist = path.resolve(__dirname, '../dist/frontend/browser');
 const output = path.resolve(__dirname, '../.angular/table-ui-check');
+const selectedView = process.argv[2] || process.env.TABLE_VIEW;
 const stamp = '2026-11-07T02:00:00Z';
 const id = index => `00000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`;
 const rows = Array.from({ length: 61 }, (_, index) => ({
@@ -145,7 +146,7 @@ function api(url) {
     const results = [];
     for (const width of [1440, 390]) {
       await send('Emulation.setDeviceMetricsOverride', { width, height: 960, deviceScaleFactor: 1, mobile: width < 600 });
-      for (const [name, route, selector, action] of views) {
+      for (const [name, route, selector, action] of views.filter(([name]) => !selectedView || name === selectedView)) {
         const previousLoad = completedLoads;
         await send('Page.navigate', { url: origin + route });
         await until(() => completedLoads > previousLoad, name + ' document load');
@@ -164,6 +165,18 @@ function api(url) {
         const state = await evaluate(`(()=>({ width:innerWidth, documentWidth:document.documentElement.scrollWidth, tables:[...document.querySelectorAll('table.app-table')].filter(t=>t.getClientRects().length).map(t=>({rows:t.querySelectorAll('tbody tr').length,scroll:t.parentElement.scrollWidth>t.parentElement.clientWidth})),ranges:[...document.querySelectorAll('.page-range')].map(e=>e.textContent.trim()) }))()`);
         assert(state.documentWidth <= width + 2, `${name} overflows viewport at ${width}: ${state.documentWidth}`);
         for (const table of state.tables) assert(table.rows <= 25, `${name} did not paginate rows`);
+        if (name === 'inventory') {
+          const layout = await evaluate(`(()=>{
+            const cell=document.querySelector('td.inventory-product');
+            const name=cell.querySelector('.model-name');
+            return {cellWidth:cell.getBoundingClientRect().width,nameWidth:name.getBoundingClientRect().width};
+          })()`);
+          assert(layout.cellWidth >= 270, `Inventory product column is squeezed: ${layout.cellWidth}px`);
+          assert(layout.nameWidth >= 190, `Inventory product name is squeezed: ${layout.nameWidth}px`);
+          await evaluate("document.querySelector('table.inventory-table').scrollIntoView({block:'start'})");
+          const tableScreenshot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
+          fs.writeFileSync(path.join(output, `inventory-columns-${width}.png`), Buffer.from(tableScreenshot.data, 'base64'));
+        }
         await evaluate(`document.querySelector('app-table-pagination button[aria-label="หน้าถัดไป"]')?.click()`);
         await until(() => evaluate("Array.from(document.querySelectorAll('.page-range')).some(e=> /แสดง (16|26|51)–/.test(e.textContent))"), name + ' next page');
         await evaluate("document.querySelector('app-table-pagination').scrollIntoView({block:'center'}); document.querySelector('app-table-pagination .select-trigger-container').click()");

@@ -228,6 +228,27 @@
   vertical-align: middle;
 }
 
+/* Keep the image and product name readable alongside the compact data columns. */
+:host .app-table-scroll > table.inventory-table :is(th, td).inventory-product {
+  min-width: 17rem;
+  width: 22rem;
+  max-width: 26rem;
+}
+
+:host .app-table-scroll > table.inventory-table :is(th, td).inventory-sku {
+  min-width: 10rem;
+}
+
+:host .app-table-scroll > table.inventory-table :is(th, td).table-number {
+  min-width: 6rem;
+  white-space: nowrap;
+}
+
+.inventory-product .item-name-cell {
+  flex: 1;
+  min-width: 0;
+}
+
 .sku-cell {
   display: flex;
   flex-direction: column;

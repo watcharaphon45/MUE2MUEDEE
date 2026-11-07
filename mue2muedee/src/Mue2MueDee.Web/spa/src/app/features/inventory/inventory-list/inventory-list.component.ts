@@ -171,14 +171,15 @@ export class InventoryListComponent implements OnInit {
   }
 
   search(page: number = 1): void {
+    this.clearSelection();
     const val = this.filterForm.value;
     this.inventoryService.loadInventory({
       search: val.search || undefined,
       brandId: val.brandId || undefined,
       categoryId: val.categoryId || undefined,
       status: val.status ? (parseInt(val.status, 10) as InventoryStatus) : undefined,
-      minPrice: val.minPrice || undefined,
-      maxPrice: val.maxPrice || undefined,
+      minPrice: val.minPrice ?? undefined,
+      maxPrice: val.maxPrice ?? undefined,
       page,
       pageSize: this.tablePageSize()
     }).subscribe();

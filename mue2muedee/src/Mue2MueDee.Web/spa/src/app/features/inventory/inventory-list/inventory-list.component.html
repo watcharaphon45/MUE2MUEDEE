@@ -165,15 +165,15 @@
               title="เลือกทั้งหมดในหน้านี้"
             />
           </th>
-          <th class="table-text">SKU / รหัสสินค้า</th>
-          <th class="table-text">รายการสินค้า & แบรนด์</th>
+          <th class="table-code inventory-sku">SKU / รหัสสินค้า</th>
+          <th class="table-text inventory-product">รายการสินค้า & แบรนด์</th>
           <th class="table-code">Serial Number</th>
           <th class="table-compact">เกรดสภาพ</th>
-          <th class="table-text">ชัตเตอร์</th>
+          <th class="table-number">ชัตเตอร์</th>
           <th class="table-money text-right">ต้นทุนจริง</th>
           <th class="table-money text-right">ราคาตั้งขาย</th>
           <th class="table-money text-right">กำไรคาดการณ์</th>
-          <th class="table-text">อายุสต็อก</th>
+          <th class="table-compact">อายุสต็อก</th>
           <th class="table-compact">สถานะ</th>
           <th class="table-actions text-center">การจัดการ</th>
         </tr>
@@ -188,13 +188,13 @@
               class="row-checkbox cursor-pointer"
             />
           </td>
-          <td class="table-text">
+          <td class="table-code inventory-sku">
             <div class="sku-cell">
               <span class="sku-badge">{{ item.sku }}</span>
               <span class="product-code">{{ item.productCode }}</span>
             </div>
           </td>
-          <td class="table-text">
+          <td class="table-text inventory-product">
             <div class="flex items-center gap-2.5">
               <div
                 class="w-10 h-10 rounded-xl overflow-hidden bg-slate-100 border border-slate-200/90 shrink-0 flex items-center justify-center relative group/invimg"
@@ -230,9 +230,9 @@
           <td class="table-compact">
             <span class="grade-badge">{{ item.conditionGradeCode }}</span>
           </td>
-          <td class="table-text">
-            <span *ngIf="item.shutterCount" class="shutter-count">{{ item.shutterCount | number }} sc</span>
-            <span *ngIf="!item.shutterCount" class="text-gray-400">-</span>
+          <td class="table-number">
+            <span *ngIf="item.shutterCount != null" class="shutter-count">{{ item.shutterCount | number }} sc</span>
+            <span *ngIf="item.shutterCount == null" class="text-gray-400">-</span>
           </td>
           <td class="table-money text-right">
             <div class="cost-cell">
@@ -253,7 +253,7 @@
               <span class="margin-percent">({{ item.expectedMarginPercent }}%)</span>
             </div>
           </td>
-          <td class="table-text">
+          <td class="table-compact">
             <span class="age-badge" [class.age-warning]="item.stockAgeDays > 60" [class.age-danger]="item.stockAgeDays > 90">
               {{ item.stockAgeDays }} วัน
             </span>
