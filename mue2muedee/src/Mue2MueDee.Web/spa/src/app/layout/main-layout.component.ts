@@ -33,6 +33,8 @@ export class MainLayoutComponent {
   );
 
   readonly isMobileMenuOpen = signal<boolean>(false);
+  readonly isSwitchingStore = signal(false);
+  readonly switchStoreError = signal<string | null>(null);
 
   toggleSidebar(): void {
     const nextState = !this.isSidebarCollapsed();
@@ -53,7 +55,7 @@ export class MainLayoutComponent {
   }
 
   readonly menuGroups = computed<NavGroup[]>(() => {
-    const groups: NavGroup[] = [
+    const groups: NavGroup[] = this.authService.currentStore() ? [
       {
         title: 'ภาพรวมระบบ',
         items: [
@@ -89,7 +91,7 @@ export class MainLayoutComponent {
           { label: 'ข้อมูลร้านค้า & ผู้ใช้งาน', route: '/settings', icon: 'storefront' }
         ]
       }
-    ];
+    ] : [];
 
     if (this.authService.isSuperAdmin()) {
       groups.push({
@@ -106,13 +108,23 @@ export class MainLayoutComponent {
   readonly storeOptions = computed<SelectOption[]>(() =>
     this.authService.availableStores().map(s => ({
       value: s.storeId,
-      label: `${s.storeName} (${s.role})`
+      label: `${s.storeName} (${this.authService.isSuperAdmin() ? 'Super Admin' : s.role})`
     }))
   );
 
   onStoreSelect(storeId: any): void {
+    if (this.isSwitchingStore()) return;
     if (storeId && storeId !== this.authService.currentStore()?.storeId) {
-      this.authService.switchStore(storeId).subscribe();
+      this.isSwitchingStore.set(true);
+      this.switchStoreError.set(null);
+      this.authService.switchStore(storeId).subscribe({
+        // Reload to discard cached data and unfinished forms from the previous store.
+        next: () => window.location.assign('/dashboard'),
+        error: err => {
+          this.isSwitchingStore.set(false);
+          this.switchStoreError.set(err.error?.message ?? 'ไม่สามารถสลับร้านค้าได้ กรุณาลองใหม่');
+        }
+      });
     }
   }
 }

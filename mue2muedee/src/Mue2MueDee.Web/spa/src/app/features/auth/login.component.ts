@@ -56,7 +56,7 @@ export class LoginComponent {
     this.authService.login(usernameOrEmail, password).subscribe({
       next: () => {
         this.loading.set(false);
-        this.router.navigate(['/']);
+        this.router.navigate([this.authService.isSuperAdmin() ? '/super-admin/stores' : '/']);
       },
       error: (err) => {
         this.loading.set(false);

@@ -3,7 +3,7 @@ import { LoginComponent } from './features/auth/login.component';
 import { MainLayoutComponent } from './layout/main-layout.component';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { StoreSettingsComponent } from './features/store/store-settings.component';
-import { authGuard } from './core/guards/auth.guard';
+import { authGuard, storeContextGuard, superAdminGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -18,6 +18,7 @@ export const routes: Routes = [
     path: '',
     component: MainLayoutComponent,
     canActivate: [authGuard],
+    canActivateChild: [storeContextGuard],
     children: [
       {
         path: '',
@@ -64,6 +65,7 @@ export const routes: Routes = [
       },
       {
         path: 'super-admin/stores',
+        canActivate: [superAdminGuard],
         loadComponent: () => import('./features/super-admin/stores/super-admin-stores.component').then(m => m.SuperAdminStoresComponent)
       },
       {

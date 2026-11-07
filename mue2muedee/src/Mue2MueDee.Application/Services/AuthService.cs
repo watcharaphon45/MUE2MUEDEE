@@ -58,8 +58,8 @@ public class AuthService : IAuthService
         }
 
         // Determine target store
-        UserStore? selectedUserStore = null;
-        var activeUserStores = user.UserStores.Where(us => us.IsActive && us.Store.IsActive).ToList();
+        UserStoreInfoDto? selectedUserStore = null;
+        var activeUserStores = await GetAccessibleStoresAsync(user, ct);
 
         if (request.StoreId.HasValue)
         {
@@ -69,7 +69,7 @@ public class AuthService : IAuthService
                 throw new UnauthorizedAccessException("คุณไม่มีสิทธิ์เข้าถึงร้านนี้");
             }
         }
-        else
+        else if (!user.IsSuperAdmin)
         {
             // Default to first store or owner store
             selectedUserStore = activeUserStores.OrderBy(us => us.Role == StoreRole.Owner ? 0 : 1).FirstOrDefault();
@@ -95,7 +95,7 @@ public class AuthService : IAuthService
             throw new UnauthorizedAccessException("ไม่พบข้อมูลผู้ใช้");
         }
 
-        var activeUserStores = user.UserStores.Where(us => us.IsActive && us.Store.IsActive).ToList();
+        var activeUserStores = await GetAccessibleStoresAsync(user, ct);
         var targetStore = activeUserStores.FirstOrDefault(us => us.StoreId == request.StoreId);
 
         if (targetStore == null)
@@ -127,15 +127,16 @@ public class AuthService : IAuthService
         token.RevokedByIp = ipAddress;
 
         var user = token.User;
-        var activeUserStores = user.UserStores.Where(us => us.IsActive && us.Store.IsActive).ToList();
+        var activeUserStores = await GetAccessibleStoresAsync(user, ct);
         
         // Retain current store if possible
-        UserStore? selectedUserStore = null;
+        UserStoreInfoDto? selectedUserStore = null;
         if (_currentStore.StoreId.HasValue)
         {
             selectedUserStore = activeUserStores.FirstOrDefault(us => us.StoreId == _currentStore.StoreId.Value);
         }
-        selectedUserStore ??= activeUserStores.FirstOrDefault();
+        if (!user.IsSuperAdmin)
+            selectedUserStore ??= activeUserStores.FirstOrDefault();
 
         return await GenerateAuthResponseAsync(user, selectedUserStore, activeUserStores, ipAddress, ct);
     }
@@ -206,8 +207,8 @@ public class AuthService : IAuthService
 
         await _context.SaveChangesAsync(ct);
 
-        var activeUserStores = new List<UserStore> { userStore };
-        return await GenerateAuthResponseAsync(user, userStore, activeUserStores, ipAddress, ct);
+        var activeUserStores = await GetAccessibleStoresAsync(user, ct);
+        return await GenerateAuthResponseAsync(user, activeUserStores.Single(), activeUserStores, ipAddress, ct);
     }
 
     public async Task<AuthUserDto?> GetCurrentUserProfileAsync(CancellationToken ct = default)
@@ -220,10 +221,27 @@ public class AuthService : IAuthService
         return new AuthUserDto(user.Id, user.Username, user.Email, user.FullName, user.AvatarUrl, user.IsSuperAdmin);
     }
 
+    private async Task<List<UserStoreInfoDto>> GetAccessibleStoresAsync(User user, CancellationToken ct)
+    {
+        if (user.IsSuperAdmin)
+        {
+            // Platform access is resolved from the account, without creating store memberships.
+            return await _context.Stores.AsNoTracking()
+                .Where(s => s.IsActive)
+                .OrderBy(s => s.Name).ThenBy(s => s.Id)
+                .Select(s => new UserStoreInfoDto(s.Id, s.Name, s.Code, s.LogoUrl, StoreRole.Owner, s.PrimaryColor))
+                .ToListAsync(ct);
+        }
+
+        return user.UserStores.Where(us => us.IsActive && us.Store.IsActive)
+            .Select(us => new UserStoreInfoDto(us.StoreId, us.Store.Name, us.Store.Code,
+                us.Store.LogoUrl, us.Role, us.Store.PrimaryColor)).ToList();
+    }
+
     private async Task<LoginResponse> GenerateAuthResponseAsync(
         User user,
-        UserStore? selectedUserStore,
-        List<UserStore> activeUserStores,
+        UserStoreInfoDto? selectedUserStore,
+        List<UserStoreInfoDto> activeUserStores,
         string? ipAddress,
         CancellationToken ct)
     {
@@ -244,15 +262,6 @@ public class AuthService : IAuthService
         _context.RefreshTokens.Add(refreshTokenEntity);
         await _context.SaveChangesAsync(ct);
 
-        var availableStores = activeUserStores.Select(us => new UserStoreInfoDto(
-            us.StoreId,
-            us.Store.Name,
-            us.Store.Code,
-            us.Store.LogoUrl,
-            us.Role,
-            us.Store.PrimaryColor
-        )).ToList();
-
         var authUser = new AuthUserDto(user.Id, user.Username, user.Email, user.FullName, user.AvatarUrl, user.IsSuperAdmin);
 
         return new LoginResponse(
@@ -262,7 +271,7 @@ public class AuthService : IAuthService
             authUser,
             storeId,
             role,
-            availableStores
+            activeUserStores
         );
     }
 }

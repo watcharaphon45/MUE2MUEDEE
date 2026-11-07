@@ -81,8 +81,7 @@ export class AuthService {
     this.currentUser.set(res.user);
     this.availableStores.set(res.availableStores);
 
-    const activeStore = res.availableStores.find(s => s.storeId === res.currentStoreId)
-      ?? res.availableStores[0] ?? null;
+    const activeStore = res.availableStores.find(s => s.storeId === res.currentStoreId) ?? null;
 
     this.currentStore.set(activeStore);
     if (activeStore) {
