@@ -1,3 +1,4 @@
+import { TablePaginationComponent, TablePageChange } from '../../../shared/components/table-pagination/table-pagination.component';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -15,6 +16,7 @@ import {
   selector: 'app-purchase-list',
   standalone: true,
   imports: [
+    TablePaginationComponent,
     CommonModule,
     RouterLink,
     ReactiveFormsModule,
@@ -27,6 +29,13 @@ import {
   styleUrl: './purchase-list.component.css'
 })
 export class PurchaseListComponent implements OnInit {
+  readonly tablePageSize = signal(15);
+
+  changePagination(change: TablePageChange): void {
+    this.tablePageSize.set(change.pageSize);
+    this.search(change.page);
+  }
+
   protected readonly purchaseService = inject(PurchaseService);
   protected readonly Math = Math;
 
@@ -59,7 +68,7 @@ export class PurchaseListComponent implements OnInit {
       fromDate: val.fromDate || undefined,
       toDate: val.toDate || undefined,
       page,
-      pageSize: 15
+      pageSize: this.tablePageSize()
     }).subscribe();
   }
 

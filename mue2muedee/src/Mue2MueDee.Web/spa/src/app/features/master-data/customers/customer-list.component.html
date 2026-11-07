@@ -37,43 +37,45 @@
       </div>
     </div>
 
-    <table class="data-table">
+    <div class="app-table-scroll">
+
+      <table class="app-table data-table">
       <thead>
         <tr>
-          <th>ชื่อ - สกุล</th>
-          <th>ประเภท</th>
-          <th>เบอร์โทรศัพท์</th>
-          <th>เลขบัตรประชาชน</th>
-          <th>บัญชีธนาคารโอนเงินเข้า</th>
-          <th class="text-center">ประวัติขายเข้า (ชิ้น)</th>
+          <th class="table-text">ชื่อ - สกุล</th>
+          <th class="table-text">ประเภท</th>
+          <th class="table-text">เบอร์โทรศัพท์</th>
+          <th class="table-text">เลขบัตรประชาชน</th>
+          <th class="table-money">บัญชีธนาคารโอนเงินเข้า</th>
+          <th class="table-number text-center">ประวัติขายเข้า (ชิ้น)</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let c of masterDataService.customers()" class="table-row">
-          <td>
+        <tr *ngFor="let c of customersPager.pagedItems()" class="table-row">
+          <td class="table-text">
             <div class="customer-name-cell">
               <span class="customer-name">{{ c.name }}</span>
               <span *ngIf="c.lineId" class="contact-sub">Line: {{ c.lineId }}</span>
             </div>
           </td>
-          <td>
+          <td class="table-text">
             <span class="type-pill">{{ c.customerTypeName }}</span>
           </td>
-          <td>
+          <td class="table-text">
             <span class="phone-text">{{ c.phone }}</span>
           </td>
-          <td>
+          <td class="table-text">
             <span *ngIf="c.idCardNumber" class="font-mono text-gray-700">{{ c.idCardNumber }}</span>
             <span *ngIf="!c.idCardNumber" class="text-gray-400">-</span>
           </td>
-          <td>
+          <td class="table-money">
             <div *ngIf="c.bankAccountNumber" class="bank-cell">
               <span class="bank-name">{{ c.bankName }}</span>
               <span class="bank-acc font-mono">{{ c.bankAccountNumber }}</span>
             </div>
             <span *ngIf="!c.bankAccountNumber" class="text-gray-400">-</span>
           </td>
-          <td class="text-center">
+          <td class="table-number text-center">
             <span class="sourced-badge">
               {{ c.sourcedItemCount }} รายการ
             </span>
@@ -87,6 +89,8 @@
         </tr>
       </tbody>
     </table>
+    </div>
+    <app-table-pagination #customersPager [items]="masterDataService.customers()" label="ลูกค้าและผู้ขาย"></app-table-pagination>
   </div>
 
   <!-- Modal: Create Customer -->

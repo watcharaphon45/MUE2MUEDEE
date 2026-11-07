@@ -364,6 +364,7 @@
           }
         </div>
       }
+      <app-table-pagination label="สินค้าในร้านค้าออนไลน์" [totalCount]="catalogService.totalCount()" [page]="catalogService.currentPage()" [pageSize]="tablePageSize()" [disabled]="isLoading()" (paginationChange)="changePagination($event)"></app-table-pagination>
     </main>
 
     <!-- Footer -->

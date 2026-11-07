@@ -13,6 +13,8 @@
   <div class="relative w-full min-w-0 max-w-full">
     <div
       #triggerContainer
+      cdkOverlayOrigin
+      #dropdownOrigin="cdkOverlayOrigin"
       (click)="onContainerClick($event)"
       [ngClass]="{
         'border-rose-500 ring-2 ring-rose-500/20': !!errorMessage,
@@ -92,7 +94,7 @@
     </div>
 
     <!-- Custom Floating Dropdown Panel -->
-    @if (isOpen) {
+    @if (isOpen && !overlay) {
       <div
         #dropdownPanel
         role="listbox"
@@ -104,6 +106,25 @@
         class="select-panel absolute left-0 right-0 w-full min-w-0 max-w-full z-50 bg-white border border-slate-200/90 rounded-xl shadow-xl shadow-slate-200/70 p-1.5 max-h-64 overflow-y-auto space-y-0.5 animate-fadeIn box-border"
         (mousedown)="$event.preventDefault()"
       >
+        <ng-container [ngTemplateOutlet]="optionsTemplate"></ng-container>
+      </div>
+    }
+    <ng-template cdkConnectedOverlay
+      [cdkConnectedOverlayOrigin]="dropdownOrigin"
+      [cdkConnectedOverlayOpen]="overlay && isOpen"
+      [cdkConnectedOverlayWidth]="triggerContainer.offsetWidth"
+      [cdkConnectedOverlayPositions]="overlayPositions"
+      [cdkConnectedOverlayPush]="true"
+      [cdkConnectedOverlayViewportMargin]="8"
+      (overlayOutsideClick)="closeDropdown()"
+      (detach)="closeDropdown()">
+      <div #dropdownPanel role="listbox" [ngClass]="panelClass"
+        class="select-panel w-full bg-white border border-slate-200/90 rounded-xl shadow-xl p-1.5 max-h-64 overflow-y-auto space-y-0.5 box-border"
+        (mousedown)="$event.preventDefault()">
+        <ng-container [ngTemplateOutlet]="optionsTemplate"></ng-container>
+      </div>
+    </ng-template>
+    <ng-template #optionsTemplate>
         <!-- Options List -->
         @for (opt of filteredOptions; track opt.value; let idx = $index) {
           <div
@@ -138,8 +159,7 @@
             </p>
           </div>
         }
-      </div>
-    }
+    </ng-template>
   </div>
 
   <!-- Error Message or Hint -->

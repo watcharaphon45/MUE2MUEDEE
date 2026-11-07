@@ -141,22 +141,23 @@
   @if (activeTab() === 'products') {
     <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
       <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs">
+        <div class="app-table-scroll">
+          <table class="app-table w-full text-left text-xs">
           <thead class="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-medium">
             <tr>
-              <th class="py-3 px-4">รหัส / รุ่นสินค้า</th>
-              <th class="py-3 px-4">แบรนด์</th>
-              <th class="py-3 px-4">หมวดหมู่</th>
-              <th class="py-3 px-4 text-right">ราคาขายกลาง (Base Price)</th>
-              <th class="py-3 px-4 text-center">สต็อกปัจจุบัน</th>
-              <th class="py-3 px-4 text-center">สถานะ</th>
-              <th class="py-3 px-4 text-right">จัดการ</th>
+              <th class="table-text py-3 px-4">รหัส / รุ่นสินค้า</th>
+              <th class="table-text py-3 px-4">แบรนด์</th>
+              <th class="table-text py-3 px-4">หมวดหมู่</th>
+              <th class="table-money py-3 px-4 text-right">ราคาขายกลาง (Base Price)</th>
+              <th class="table-number py-3 px-4 text-center">สต็อกปัจจุบัน</th>
+              <th class="table-compact py-3 px-4 text-center">สถานะ</th>
+              <th class="table-actions py-3 px-4 text-right">จัดการ</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 text-slate-700">
-            @for (p of filteredProducts(); track p.id) {
+            @for (p of productsPager.pagedItems(); track p.id) {
               <tr class="hover:bg-sky-50/40 transition-colors">
-                <td class="py-3 px-4">
+                <td class="table-text py-3 px-4">
                   <div class="flex items-center gap-3">
                     <div
                       class="w-10 h-10 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center relative group/img"
@@ -179,16 +180,16 @@
                     </div>
                   </div>
                 </td>
-                <td class="py-3 px-4">
+                <td class="table-text py-3 px-4">
                   <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-medium text-[11px]">
                     {{ p.brandName }}
                   </span>
                 </td>
-                <td class="py-3 px-4 text-slate-600">{{ p.categoryName }}</td>
-                <td class="py-3 px-4 text-right font-mono font-medium text-slate-800">
+                <td class="table-text py-3 px-4 text-slate-600">{{ p.categoryName }}</td>
+                <td class="table-money py-3 px-4 text-right font-mono font-medium text-slate-800">
                   {{ p.defaultSellingPrice ? (p.defaultSellingPrice | number:'1.2-2') + ' ฿' : '-' }}
                 </td>
-                <td class="py-3 px-4 text-center">
+                <td class="table-number py-3 px-4 text-center">
                   <span
                     class="px-2 py-0.5 rounded-full text-[10px] font-semibold"
                     [ngClass]="p.inStockCount > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'"
@@ -196,7 +197,7 @@
                     {{ p.inStockCount }} ชิ้น
                   </span>
                 </td>
-                <td class="py-3 px-4 text-center">
+                <td class="table-compact py-3 px-4 text-center">
                   <span
                     class="px-2 py-0.5 rounded-full text-[10px] font-semibold"
                     [ngClass]="p.isActive ? 'bg-sky-50 text-sky-700' : 'bg-slate-100 text-slate-400'"
@@ -204,7 +205,7 @@
                     {{ p.isActive ? 'เปิดใช้งาน' : 'ระงับใช้งาน' }}
                   </span>
                 </td>
-                <td class="py-3 px-4 text-right">
+                <td class="table-actions py-3 px-4 text-right">
                   <div class="flex items-center justify-end gap-1">
                     <button
                       (click)="openEditModal(p)"
@@ -233,6 +234,8 @@
             }
           </tbody>
         </table>
+        </div>
+        <app-table-pagination #productsPager [items]="filteredProducts()" label="รุ่นสินค้า"></app-table-pagination>
       </div>
     </div>
   }
@@ -243,20 +246,21 @@
   @if (activeTab() === 'brands') {
     <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
       <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs">
+        <div class="app-table-scroll">
+          <table class="app-table w-full text-left text-xs">
           <thead class="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-medium">
             <tr>
-              <th class="py-3 px-4">ชื่อแบรนด์</th>
-              <th class="py-3 px-4">รายละเอียด</th>
-              <th class="py-3 px-4 text-center">รุ่นสินค้าที่ผูกอยู่</th>
-              <th class="py-3 px-4 text-center">สถานะ</th>
-              <th class="py-3 px-4 text-right">จัดการ</th>
+              <th class="table-text py-3 px-4">ชื่อแบรนด์</th>
+              <th class="table-text py-3 px-4">รายละเอียด</th>
+              <th class="table-text py-3 px-4 text-center">รุ่นสินค้าที่ผูกอยู่</th>
+              <th class="table-compact py-3 px-4 text-center">สถานะ</th>
+              <th class="table-actions py-3 px-4 text-right">จัดการ</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 text-slate-700">
-            @for (b of filteredBrands(); track b.id) {
+            @for (b of brandsPager.pagedItems(); track b.id) {
               <tr class="hover:bg-sky-50/40 transition-colors">
-                <td class="py-3 px-4">
+                <td class="table-text py-3 px-4">
                   <div class="flex items-center gap-2">
                     <div class="w-7 h-7 rounded-lg bg-sky-50 text-sky-700 flex items-center justify-center font-bold text-xs border border-sky-100">
                       {{ b.name.charAt(0) }}
@@ -264,13 +268,13 @@
                     <span class="font-semibold text-slate-900">{{ b.name }}</span>
                   </div>
                 </td>
-                <td class="py-3 px-4 text-slate-500">{{ b.description || '-' }}</td>
-                <td class="py-3 px-4 text-center">
+                <td class="table-text py-3 px-4 text-slate-500">{{ b.description || '-' }}</td>
+                <td class="table-text py-3 px-4 text-center">
                   <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-700">
                     {{ b.productCount }} รุ่น
                   </span>
                 </td>
-                <td class="py-3 px-4 text-center">
+                <td class="table-compact py-3 px-4 text-center">
                   <span
                     class="px-2 py-0.5 rounded-full text-[10px] font-semibold"
                     [ngClass]="b.isActive ? 'bg-sky-50 text-sky-700' : 'bg-slate-100 text-slate-400'"
@@ -278,7 +282,7 @@
                     {{ b.isActive ? 'เปิดใช้งาน' : 'ระงับใช้งาน' }}
                   </span>
                 </td>
-                <td class="py-3 px-4 text-right">
+                <td class="table-actions py-3 px-4 text-right">
                   <div class="flex items-center justify-end gap-1">
                     <button
                       (click)="openEditModal(b)"
@@ -307,6 +311,8 @@
             }
           </tbody>
         </table>
+        </div>
+        <app-table-pagination #brandsPager [items]="filteredBrands()" label="แบรนด์"></app-table-pagination>
       </div>
     </div>
   }
@@ -317,22 +323,23 @@
   @if (activeTab() === 'categories') {
     <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
       <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs">
+        <div class="app-table-scroll">
+          <table class="app-table w-full text-left text-xs">
           <thead class="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-medium">
             <tr>
-              <th class="py-3 px-4">ชื่อหมวดหมู่</th>
-              <th class="py-3 px-4">ประเภทอุปกรณ์</th>
-              <th class="py-3 px-4">รายละเอียด</th>
-              <th class="py-3 px-4 text-center">รุ่นสินค้าที่ผูกอยู่</th>
-              <th class="py-3 px-4 text-center">สถานะ</th>
-              <th class="py-3 px-4 text-right">จัดการ</th>
+              <th class="table-text py-3 px-4">ชื่อหมวดหมู่</th>
+              <th class="table-text py-3 px-4">ประเภทอุปกรณ์</th>
+              <th class="table-text py-3 px-4">รายละเอียด</th>
+              <th class="table-text py-3 px-4 text-center">รุ่นสินค้าที่ผูกอยู่</th>
+              <th class="table-compact py-3 px-4 text-center">สถานะ</th>
+              <th class="table-actions py-3 px-4 text-right">จัดการ</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 text-slate-700">
-            @for (c of filteredCategories(); track c.id) {
+            @for (c of categoriesPager.pagedItems(); track c.id) {
               <tr class="hover:bg-sky-50/40 transition-colors">
-                <td class="py-3 px-4 font-semibold text-slate-900">{{ c.name }}</td>
-                <td class="py-3 px-4">
+                <td class="table-text py-3 px-4 font-semibold text-slate-900">{{ c.name }}</td>
+                <td class="table-text py-3 px-4">
                   <span
                     class="px-2 py-0.5 rounded-md text-[10px] font-semibold"
                     [ngClass]="{
@@ -344,13 +351,13 @@
                     {{ c.typeName }}
                   </span>
                 </td>
-                <td class="py-3 px-4 text-slate-500">{{ c.description || '-' }}</td>
-                <td class="py-3 px-4 text-center">
+                <td class="table-text py-3 px-4 text-slate-500">{{ c.description || '-' }}</td>
+                <td class="table-text py-3 px-4 text-center">
                   <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-700">
                     {{ c.productCount }} รุ่น
                   </span>
                 </td>
-                <td class="py-3 px-4 text-center">
+                <td class="table-compact py-3 px-4 text-center">
                   <span
                     class="px-2 py-0.5 rounded-full text-[10px] font-semibold"
                     [ngClass]="c.isActive ? 'bg-sky-50 text-sky-700' : 'bg-slate-100 text-slate-400'"
@@ -358,7 +365,7 @@
                     {{ c.isActive ? 'เปิดใช้งาน' : 'ระงับใช้งาน' }}
                   </span>
                 </td>
-                <td class="py-3 px-4 text-right">
+                <td class="table-actions py-3 px-4 text-right">
                   <div class="flex items-center justify-end gap-1">
                     <button
                       (click)="openEditModal(c)"
@@ -387,6 +394,8 @@
             }
           </tbody>
         </table>
+        </div>
+        <app-table-pagination #categoriesPager [items]="filteredCategories()" label="หมวดหมู่"></app-table-pagination>
       </div>
     </div>
   }
@@ -397,29 +406,30 @@
   @if (activeTab() === 'grades') {
     <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
       <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs">
+        <div class="app-table-scroll">
+          <table class="app-table w-full text-left text-xs">
           <thead class="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-medium">
             <tr>
-              <th class="py-3 px-4 text-center">ลำดับ</th>
-              <th class="py-3 px-4">รหัสเกรด</th>
-              <th class="py-3 px-4">ชื่อเกรดสภาพ</th>
-              <th class="py-3 px-4">คำอธิบายมาตรฐาน</th>
-              <th class="py-3 px-4 text-center">สถานะ</th>
-              <th class="py-3 px-4 text-right">จัดการ</th>
+              <th class="table-number py-3 px-4 text-center">ลำดับ</th>
+              <th class="table-code py-3 px-4">รหัสเกรด</th>
+              <th class="table-text py-3 px-4">ชื่อเกรดสภาพ</th>
+              <th class="table-text py-3 px-4">คำอธิบายมาตรฐาน</th>
+              <th class="table-compact py-3 px-4 text-center">สถานะ</th>
+              <th class="table-actions py-3 px-4 text-right">จัดการ</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 text-slate-700">
-            @for (g of filteredGrades(); track g.id) {
+            @for (g of gradesPager.pagedItems(); track g.id) {
               <tr class="hover:bg-sky-50/40 transition-colors">
-                <td class="py-3 px-4 text-center font-mono font-medium text-slate-500">{{ g.sortOrder }}</td>
-                <td class="py-3 px-4 font-bold text-sky-700 font-mono text-sm">
+                <td class="table-number py-3 px-4 text-center font-mono font-medium text-slate-500">{{ g.sortOrder }}</td>
+                <td class="table-code py-3 px-4 font-bold text-sky-700 font-mono text-sm">
                   <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-sky-50 border border-sky-200">
                     {{ g.gradeCode }}
                   </span>
                 </td>
-                <td class="py-3 px-4 font-semibold text-slate-900">{{ g.gradeName }}</td>
-                <td class="py-3 px-4 text-slate-500">{{ g.description || '-' }}</td>
-                <td class="py-3 px-4 text-center">
+                <td class="table-text py-3 px-4 font-semibold text-slate-900">{{ g.gradeName }}</td>
+                <td class="table-text py-3 px-4 text-slate-500">{{ g.description || '-' }}</td>
+                <td class="table-compact py-3 px-4 text-center">
                   <span
                     class="px-2 py-0.5 rounded-full text-[10px] font-semibold"
                     [ngClass]="g.isActive ? 'bg-sky-50 text-sky-700' : 'bg-slate-100 text-slate-400'"
@@ -427,7 +437,7 @@
                     {{ g.isActive ? 'เปิดใช้งาน' : 'ระงับใช้งาน' }}
                   </span>
                 </td>
-                <td class="py-3 px-4 text-right">
+                <td class="table-actions py-3 px-4 text-right">
                   <div class="flex items-center justify-end gap-1">
                     <button
                       (click)="openEditModal(g)"
@@ -456,6 +466,8 @@
             }
           </tbody>
         </table>
+        </div>
+        <app-table-pagination #gradesPager [items]="filteredGrades()" label="เกรดสภาพ"></app-table-pagination>
       </div>
     </div>
   }
@@ -466,28 +478,29 @@
   @if (activeTab() === 'customers') {
     <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
       <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs">
+        <div class="app-table-scroll">
+          <table class="app-table w-full text-left text-xs">
           <thead class="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-medium">
             <tr>
-              <th class="py-3 px-4">ชื่อลูกค้า / ร้านค้า</th>
-              <th class="py-3 px-4">ประเภท</th>
-              <th class="py-3 px-4">เบอร์โทรศัพท์</th>
-              <th class="py-3 px-4">เลขบัตรประชาชน / เลขนิติบุคคล</th>
-              <th class="py-3 px-4">บัญชีธนาคาร (สำหรับโอนรับซื้อ)</th>
-              <th class="py-3 px-4 text-center">สินค้าที่เคยขายเข้า</th>
-              <th class="py-3 px-4 text-right">จัดการ</th>
+              <th class="table-text py-3 px-4">ชื่อลูกค้า / ร้านค้า</th>
+              <th class="table-text py-3 px-4">ประเภท</th>
+              <th class="table-text py-3 px-4">เบอร์โทรศัพท์</th>
+              <th class="table-text py-3 px-4">เลขบัตรประชาชน / เลขนิติบุคคล</th>
+              <th class="table-text py-3 px-4">บัญชีธนาคาร (สำหรับโอนรับซื้อ)</th>
+              <th class="table-text py-3 px-4 text-center">สินค้าที่เคยขายเข้า</th>
+              <th class="table-actions py-3 px-4 text-right">จัดการ</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 text-slate-700">
-            @for (cust of filteredCustomers(); track cust.id) {
+            @for (cust of customersPager.pagedItems(); track cust.id) {
               <tr class="hover:bg-sky-50/40 transition-colors">
-                <td class="py-3 px-4">
+                <td class="table-text py-3 px-4">
                   <div class="font-semibold text-slate-900">{{ cust.name }}</div>
                   @if (cust.lineId) {
                     <div class="text-[10px] text-emerald-600">Line: {{ cust.lineId }}</div>
                   }
                 </td>
-                <td class="py-3 px-4">
+                <td class="table-text py-3 px-4">
                   <span
                     class="px-2 py-0.5 rounded-md text-[10px] font-semibold"
                     [ngClass]="cust.customerType === 1 ? 'bg-sky-50 text-sky-700' : 'bg-purple-50 text-purple-700'"
@@ -495,9 +508,9 @@
                     {{ cust.customerTypeName }}
                   </span>
                 </td>
-                <td class="py-3 px-4 font-mono text-slate-700">{{ cust.phone }}</td>
-                <td class="py-3 px-4 font-mono text-slate-500">{{ cust.idCardNumber || '-' }}</td>
-                <td class="py-3 px-4">
+                <td class="table-text py-3 px-4 font-mono text-slate-700">{{ cust.phone }}</td>
+                <td class="table-text py-3 px-4 font-mono text-slate-500">{{ cust.idCardNumber || '-' }}</td>
+                <td class="table-text py-3 px-4">
                   @if (cust.bankAccountNumber) {
                     <div class="font-mono text-slate-800">{{ cust.bankAccountNumber }}</div>
                     <div class="text-[10px] text-slate-400">{{ cust.bankName }} ({{ cust.bankAccountName }})</div>
@@ -505,12 +518,12 @@
                     <span class="text-slate-400">-</span>
                   }
                 </td>
-                <td class="py-3 px-4 text-center">
+                <td class="table-text py-3 px-4 text-center">
                   <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-700">
                     {{ cust.sourcedItemCount }} รายการ
                   </span>
                 </td>
-                <td class="py-3 px-4 text-right">
+                <td class="table-actions py-3 px-4 text-right">
                   <div class="flex items-center justify-end gap-1">
                     <button
                       (click)="openEditModal(cust)"
@@ -539,6 +552,8 @@
             }
           </tbody>
         </table>
+        </div>
+        <app-table-pagination #customersPager [items]="filteredCustomers()" label="ลูกค้าและผู้ขาย"></app-table-pagination>
       </div>
     </div>
   }

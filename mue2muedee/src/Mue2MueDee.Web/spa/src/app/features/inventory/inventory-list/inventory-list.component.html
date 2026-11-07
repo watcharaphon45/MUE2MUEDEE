@@ -151,10 +151,12 @@
       <span>กำลังโหลดข้อมูลคลังสินค้า...</span>
     </div>
 
-    <table class="inventory-table">
+    <div class="app-table-scroll">
+
+      <table class="app-table inventory-table">
       <thead>
         <tr>
-          <th class="w-10 text-center">
+          <th class="table-check w-10 text-center">
             <input
               type="checkbox"
               [checked]="isAllSelected()"
@@ -163,22 +165,22 @@
               title="เลือกทั้งหมดในหน้านี้"
             />
           </th>
-          <th>SKU / รหัสสินค้า</th>
-          <th>รายการสินค้า & แบรนด์</th>
-          <th>Serial Number</th>
-          <th>เกรดสภาพ</th>
-          <th>ชัตเตอร์</th>
-          <th class="text-right">ต้นทุนจริง</th>
-          <th class="text-right">ราคาตั้งขาย</th>
-          <th class="text-right">กำไรคาดการณ์</th>
-          <th>อายุสต็อก</th>
-          <th>สถานะ</th>
-          <th class="text-center">การจัดการ</th>
+          <th class="table-text">SKU / รหัสสินค้า</th>
+          <th class="table-text">รายการสินค้า & แบรนด์</th>
+          <th class="table-code">Serial Number</th>
+          <th class="table-compact">เกรดสภาพ</th>
+          <th class="table-text">ชัตเตอร์</th>
+          <th class="table-money text-right">ต้นทุนจริง</th>
+          <th class="table-money text-right">ราคาตั้งขาย</th>
+          <th class="table-money text-right">กำไรคาดการณ์</th>
+          <th class="table-text">อายุสต็อก</th>
+          <th class="table-compact">สถานะ</th>
+          <th class="table-actions text-center">การจัดการ</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let item of inventoryService.pagedResult().items" class="table-row">
-          <td class="text-center" (click)="$event.stopPropagation()">
+          <td class="table-check text-center" (click)="$event.stopPropagation()">
             <input
               type="checkbox"
               [checked]="selectedItemIds().has(item.id)"
@@ -186,13 +188,13 @@
               class="row-checkbox cursor-pointer"
             />
           </td>
-          <td>
+          <td class="table-text">
             <div class="sku-cell">
               <span class="sku-badge">{{ item.sku }}</span>
               <span class="product-code">{{ item.productCode }}</span>
             </div>
           </td>
-          <td>
+          <td class="table-text">
             <div class="flex items-center gap-2.5">
               <div
                 class="w-10 h-10 rounded-xl overflow-hidden bg-slate-100 border border-slate-200/90 shrink-0 flex items-center justify-center relative group/invimg"
@@ -220,19 +222,19 @@
               </div>
             </div>
           </td>
-          <td>
+          <td class="table-code">
             <div class="serial-cell">
               <span class="serial-text">{{ item.serialNumber }}</span>
             </div>
           </td>
-          <td>
+          <td class="table-compact">
             <span class="grade-badge">{{ item.conditionGradeCode }}</span>
           </td>
-          <td>
+          <td class="table-text">
             <span *ngIf="item.shutterCount" class="shutter-count">{{ item.shutterCount | number }} sc</span>
             <span *ngIf="!item.shutterCount" class="text-gray-400">-</span>
           </td>
-          <td class="text-right">
+          <td class="table-money text-right">
             <div class="cost-cell">
               <span class="font-medium text-gray-900">฿{{ item.actualCost | number:'1.2-2' }}</span>
               <span *ngIf="item.actualCost > item.purchaseCost" class="cost-adjusted-tag">
@@ -240,10 +242,10 @@
               </span>
             </div>
           </td>
-          <td class="text-right font-semibold text-gray-900">
+          <td class="table-money text-right font-semibold text-gray-900">
             ฿{{ item.sellingPrice | number:'1.2-2' }}
           </td>
-          <td class="text-right">
+          <td class="table-money text-right">
             <div class="profit-cell">
               <span class="profit-value" [class.profit-positive]="item.expectedProfit > 0">
                 ฿{{ item.expectedProfit | number:'1.2-2' }}
@@ -251,15 +253,15 @@
               <span class="margin-percent">({{ item.expectedMarginPercent }}%)</span>
             </div>
           </td>
-          <td>
+          <td class="table-text">
             <span class="age-badge" [class.age-warning]="item.stockAgeDays > 60" [class.age-danger]="item.stockAgeDays > 90">
               {{ item.stockAgeDays }} วัน
             </span>
           </td>
-          <td>
+          <td class="table-compact">
             <app-status-badge [status]="item.statusName"></app-status-badge>
           </td>
-          <td class="text-center">
+          <td class="table-actions text-center">
             <div class="actions-group">
               <button
                 type="button"
@@ -289,32 +291,11 @@
         </tr>
       </tbody>
     </table>
+    </div>
+    <app-table-pagination label="คลังสินค้า" [totalCount]="inventoryService.pagedResult().totalCount" [page]="inventoryService.pagedResult().page" [pageSize]="inventoryService.pagedResult().pageSize" [disabled]="inventoryService.loading()" (paginationChange)="changePagination($event)"></app-table-pagination>
 
     <!-- Pagination -->
-    <div *ngIf="inventoryService.pagedResult().totalPages > 1" class="pagination-bar">
-      <span class="pagination-info">
-        แสดงรายการที่ {{ (inventoryService.pagedResult().page - 1) * inventoryService.pagedResult().pageSize + 1 }} ถึง
-        {{ Math.min(inventoryService.pagedResult().page * inventoryService.pagedResult().pageSize, inventoryService.pagedResult().totalCount) }}
-        จากทั้งหมด {{ inventoryService.pagedResult().totalCount }} รายการ
-      </span>
-      <div class="pagination-buttons">
-        <button
-          [disabled]="inventoryService.pagedResult().page <= 1"
-          (click)="search(inventoryService.pagedResult().page - 1)"
-          class="page-btn"
-        >
-          ก่อนหน้า
-        </button>
-        <span class="current-page">{{ inventoryService.pagedResult().page }} / {{ inventoryService.pagedResult().totalPages }}</span>
-        <button
-          [disabled]="inventoryService.pagedResult().page >= inventoryService.pagedResult().totalPages"
-          (click)="search(inventoryService.pagedResult().page + 1)"
-          class="page-btn"
-        >
-          ถัดไป
-        </button>
-      </div>
-    </div>
+
   </div>
 
   <!-- Image Lightbox Modal -->

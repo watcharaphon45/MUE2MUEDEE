@@ -14,6 +14,7 @@ export class CatalogService {
   readonly items = signal<PublicCatalogItem[]>([]);
   readonly filterMeta = signal<PublicCatalogFilterMeta | null>(null);
   readonly totalCount = signal<number>(0);
+  readonly currentPage = signal(1);
   readonly isLoading = signal<boolean>(false);
   readonly errorMessage = signal<string | null>(null);
 
@@ -49,6 +50,7 @@ export class CatalogService {
           this.items.set(data.items);
           this.filterMeta.set(data.filterMeta);
           this.totalCount.set(data.totalCount);
+          this.currentPage.set(data.currentPage);
           this.isLoading.set(false);
         },
         error: (err) => {

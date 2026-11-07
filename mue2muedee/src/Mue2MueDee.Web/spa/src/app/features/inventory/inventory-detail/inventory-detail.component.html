@@ -273,25 +273,26 @@
           <div class="cost-items-section">
             <h3 class="section-title">รายการบันทึกต้นทุนย่อย (Itemized Costs)</h3>
             <div class="table-responsive" *ngIf="(inventoryService.costBreakdown()?.costItems?.length || 0) > 0">
-              <table class="data-table">
+              <div class="app-table-scroll">
+                <table class="app-table data-table">
                 <thead>
                   <tr>
-                    <th>วันที่เกิดค่าใช้จ่าย</th>
-                    <th>ประเภทต้นทุน</th>
-                    <th>รายละเอียด / รายการ</th>
-                    <th>ผู้บันทึก</th>
-                    <th class="text-right">จำนวนเงิน (บาท)</th>
-                    <th class="text-center">จัดการ</th>
+                    <th class="table-date">วันที่เกิดค่าใช้จ่าย</th>
+                    <th class="table-compact">ประเภทต้นทุน</th>
+                    <th class="table-text">รายละเอียด / รายการ</th>
+                    <th class="table-text">ผู้บันทึก</th>
+                    <th class="table-money text-right">จำนวนเงิน (บาท)</th>
+                    <th class="table-actions text-center">จัดการ</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let c of inventoryService.costBreakdown()?.costItems">
-                    <td>{{ c.incurredAt | date:'d MMM yyyy, HH:mm' }}</td>
-                    <td><span class="cost-type-pill">{{ c.costTypeName }}</span></td>
-                    <td>{{ c.description || '-' }}</td>
-                    <td>{{ c.createdBy || 'ระบบ' }}</td>
-                    <td class="text-right font-bold">฿{{ c.amount | number:'1.2-2' }}</td>
-                    <td class="text-center">
+                  <tr *ngFor="let c of costsPager.pagedItems()">
+                    <td class="table-date">{{ c.incurredAt | date:'d MMM yyyy, HH:mm' }}</td>
+                    <td class="table-compact"><span class="cost-type-pill">{{ c.costTypeName }}</span></td>
+                    <td class="table-text">{{ c.description || '-' }}</td>
+                    <td class="table-text">{{ c.createdBy || 'ระบบ' }}</td>
+                    <td class="table-money text-right font-bold">฿{{ c.amount | number:'1.2-2' }}</td>
+                    <td class="table-actions text-center">
                       <button type="button" class="btn-delete-small" (click)="deleteCostItem(c.id)" title="ลบรายการนี้">
                         ลบ
                       </button>
@@ -299,6 +300,8 @@
                   </tr>
                 </tbody>
               </table>
+              </div>
+              <app-table-pagination #costsPager [items]="inventoryService.costBreakdown()?.costItems ?? []" label="รายการต้นทุน"></app-table-pagination>
             </div>
 
             <div *ngIf="(inventoryService.costBreakdown()?.costItems?.length || 0) === 0" class="empty-hint">
@@ -395,30 +398,33 @@
           <div class="price-history-section">
             <h3 class="section-title">ประวัติการปรับราคาขาย (Price Change History)</h3>
             <div class="table-responsive" *ngIf="inventoryService.priceHistories().length > 0">
-              <table class="data-table">
+              <div class="app-table-scroll">
+                <table class="app-table data-table">
                 <thead>
                   <tr>
-                    <th>วันเวลาที่ปรับ</th>
-                    <th>ราคาเดิม</th>
-                    <th>ราคาใหม่</th>
-                    <th>ส่วนต่าง</th>
-                    <th>เหตุผลการปรับราคา</th>
-                    <th>ผู้ดำเนินการ</th>
+                    <th class="table-date">วันเวลาที่ปรับ</th>
+                    <th class="table-money">ราคาเดิม</th>
+                    <th class="table-money">ราคาใหม่</th>
+                    <th class="table-money">ส่วนต่าง</th>
+                    <th class="table-text">เหตุผลการปรับราคา</th>
+                    <th class="table-text">ผู้ดำเนินการ</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let h of inventoryService.priceHistories()">
-                    <td>{{ h.changedAt | date:'d MMM yyyy, HH:mm' }}</td>
-                    <td class="font-mono">฿{{ h.oldPrice | number:'1.0-0' }}</td>
-                    <td class="font-mono font-bold text-blue-600">฿{{ h.newPrice | number:'1.0-0' }}</td>
-                    <td [class.text-green-600]="h.priceDifference > 0" [class.text-rose-600]="h.priceDifference < 0">
+                  <tr *ngFor="let h of pricesPager.pagedItems()">
+                    <td class="table-date">{{ h.changedAt | date:'d MMM yyyy, HH:mm' }}</td>
+                    <td class="table-money font-mono">฿{{ h.oldPrice | number:'1.0-0' }}</td>
+                    <td class="table-money font-mono font-bold text-blue-600">฿{{ h.newPrice | number:'1.0-0' }}</td>
+                    <td class="table-money" [class.text-green-600]="h.priceDifference > 0" [class.text-rose-600]="h.priceDifference < 0">
                       {{ h.priceDifference > 0 ? '+' : '' }}฿{{ h.priceDifference | number:'1.0-0' }}
                     </td>
-                    <td>{{ h.reason || '-' }}</td>
-                    <td>{{ h.changedBy }}</td>
+                    <td class="table-text">{{ h.reason || '-' }}</td>
+                    <td class="table-text">{{ h.changedBy }}</td>
                   </tr>
                 </tbody>
               </table>
+              </div>
+              <app-table-pagination #pricesPager [items]="inventoryService.priceHistories()" label="ประวัติราคา"></app-table-pagination>
             </div>
 
             <div *ngIf="inventoryService.priceHistories().length === 0" class="empty-hint">

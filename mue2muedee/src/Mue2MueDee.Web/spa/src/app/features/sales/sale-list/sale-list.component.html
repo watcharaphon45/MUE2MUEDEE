@@ -66,35 +66,36 @@
 
   <!-- Sales Orders Table Card -->
   <div class="card table-card">
-    <table class="sales-table">
+    <div class="app-table-scroll">
+      <table class="app-table sales-table">
       <thead>
         <tr>
-          <th>เลขที่บิลขาย</th>
-          <th>วันที่ขาย</th>
-          <th>ลูกค้า</th>
-          <th>รายการสินค้า (Serial Number)</th>
-          <th class="text-right">ยอดสุทธิ (บาท)</th>
-          <th class="text-right">กำไรจริง (Profit)</th>
-          <th class="text-center">สถานะ</th>
-          <th class="text-center">จัดการ</th>
+          <th class="table-code">เลขที่บิลขาย</th>
+          <th class="table-date">วันที่ขาย</th>
+          <th class="table-text">ลูกค้า</th>
+          <th class="table-text">รายการสินค้า (Serial Number)</th>
+          <th class="table-money text-right">ยอดสุทธิ (บาท)</th>
+          <th class="table-money text-right">กำไรจริง (Profit)</th>
+          <th class="table-compact text-center">สถานะ</th>
+          <th class="table-actions text-center">จัดการ</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let so of saleService.pagedResult().items">
-          <td>
+          <td class="table-code">
             <a [routerLink]="['/sales', so.id]" class="so-link font-mono">
               {{ so.saleNumber }}
             </a>
           </td>
-          <td>
+          <td class="table-date">
             <div class="date-text">{{ so.saleDate | date:'d MMM yyyy' }}</div>
             <div class="time-text">{{ so.saleDate | date:'HH:mm' }}</div>
           </td>
-          <td>
+          <td class="table-text">
             <div class="customer-name-bold">{{ so.customerName || 'ลูกค้าหน้าร้าน' }}</div>
             <div *ngIf="so.customerPhone" class="customer-phone">{{ so.customerPhone }}</div>
           </td>
-          <td>
+          <td class="table-text">
             <div class="items-summary-list">
               <div *ngFor="let item of so.items" class="sold-item-snippet">
                 <span class="item-name">{{ item.productModelName }}</span>
@@ -102,19 +103,19 @@
               </div>
             </div>
           </td>
-          <td class="text-right font-mono font-bold text-gray-900">
+          <td class="table-money text-right font-mono font-bold text-gray-900">
             ฿{{ so.netAmount | number:'1.2-2' }}
           </td>
-          <td class="text-right font-mono">
+          <td class="table-money text-right font-mono">
             <span class="profit-badge" [class.profit-positive]="so.totalGrossProfit > 0">
               +฿{{ so.totalGrossProfit | number:'1.0-0' }}
               <small>({{ so.totalMarginPercentage }}%)</small>
             </span>
           </td>
-          <td class="text-center">
+          <td class="table-compact text-center">
             <app-status-badge [status]="so.statusName"></app-status-badge>
           </td>
-          <td class="text-center">
+          <td class="table-actions text-center">
             <a [routerLink]="['/sales', so.id]" class="btn-detail-link">
               ดูรายละเอียด
             </a>
@@ -122,6 +123,8 @@
         </tr>
       </tbody>
     </table>
+    </div>
+    <app-table-pagination label="ประวัติขาย" [totalCount]="saleService.pagedResult().totalCount" [page]="saleService.pagedResult().page" [pageSize]="saleService.pagedResult().pageSize" [disabled]="saleService.loading()" (paginationChange)="changePagination($event)"></app-table-pagination>
 
     <div *ngIf="saleService.pagedResult().items.length === 0" class="empty-state">
       <div class="empty-icon">📄</div>

@@ -1,3 +1,5 @@
+import { TablePaginationComponent } from '../../../shared/components/table-pagination/table-pagination.component';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -26,6 +28,7 @@ export type MasterTab = 'products' | 'brands' | 'categories' | 'grades' | 'custo
   selector: 'app-master-data-hub',
   standalone: true,
   imports: [
+    TablePaginationComponent,
     CommonModule,
     ReactiveFormsModule,
     TextboxComponent,
@@ -45,6 +48,7 @@ export class MasterDataHubComponent implements OnInit {
 
   activeTab = signal<MasterTab>('products');
   searchTerm = new FormControl('');
+  private readonly searchText = toSignal(this.searchTerm.valueChanges, { initialValue: '' });
 
   // Modals & Submissions
   showModal = signal<boolean>(false);
@@ -74,6 +78,8 @@ export class MasterDataHubComponent implements OnInit {
   // Filters for Products Tab
   productBrandFilter = new FormControl('');
   productCategoryFilter = new FormControl('');
+  private readonly selectedBrand = toSignal(this.productBrandFilter.valueChanges, { initialValue: '' });
+  private readonly selectedCategory = toSignal(this.productCategoryFilter.valueChanges, { initialValue: '' });
 
   // Category Types Options
   readonly categoryTypeOptions: SelectOption[] = [
@@ -149,30 +155,30 @@ export class MasterDataHubComponent implements OnInit {
 
   // Filtered Lists for Display
   filteredBrands = computed(() => {
-    const q = (this.searchTerm.value || '').trim().toLowerCase();
+    const q = (this.searchText() || '').trim().toLowerCase();
     const list = this.masterDataService.brands();
     if (!q) return list;
     return list.filter(b => b.name.toLowerCase().includes(q) || (b.description && b.description.toLowerCase().includes(q)));
   });
 
   filteredCategories = computed(() => {
-    const q = (this.searchTerm.value || '').trim().toLowerCase();
+    const q = (this.searchText() || '').trim().toLowerCase();
     const list = this.masterDataService.categories();
     if (!q) return list;
     return list.filter(c => c.name.toLowerCase().includes(q) || c.typeName.toLowerCase().includes(q));
   });
 
   filteredGrades = computed(() => {
-    const q = (this.searchTerm.value || '').trim().toLowerCase();
+    const q = (this.searchText() || '').trim().toLowerCase();
     const list = this.masterDataService.conditionGrades();
     if (!q) return list;
     return list.filter(g => g.gradeCode.toLowerCase().includes(q) || g.gradeName.toLowerCase().includes(q));
   });
 
   filteredProducts = computed(() => {
-    const q = (this.searchTerm.value || '').trim().toLowerCase();
-    const brandId = this.productBrandFilter.value;
-    const catId = this.productCategoryFilter.value;
+    const q = (this.searchText() || '').trim().toLowerCase();
+    const brandId = this.selectedBrand();
+    const catId = this.selectedCategory();
     let list = this.masterDataService.products();
 
     if (brandId) {
@@ -193,7 +199,7 @@ export class MasterDataHubComponent implements OnInit {
   });
 
   filteredCustomers = computed(() => {
-    const q = (this.searchTerm.value || '').trim().toLowerCase();
+    const q = (this.searchText() || '').trim().toLowerCase();
     const list = this.masterDataService.customers();
     if (!q) return list;
     return list.filter(c =>

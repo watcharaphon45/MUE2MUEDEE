@@ -1,3 +1,4 @@
+import { TablePaginationComponent } from '../../../shared/components/table-pagination/table-pagination.component';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -8,7 +9,7 @@ import { TextboxComponent } from '../../../shared/components';
 @Component({
   selector: 'app-super-admin-stores',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TextboxComponent],
+  imports: [TablePaginationComponent, CommonModule, ReactiveFormsModule, TextboxComponent],
   templateUrl: './super-admin-stores.component.html',
   styleUrl: './super-admin-stores.component.css'
 })

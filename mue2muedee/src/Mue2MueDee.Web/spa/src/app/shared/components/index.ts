@@ -9,3 +9,4 @@ export * from './image-uploader/image-uploader.component';
 export * from './multi-image-uploader/multi-image-uploader.component';
 export * from './barcode/barcode.component';
 export * from './qrcode/qrcode.component';
+export * from './table-pagination/table-pagination.component';

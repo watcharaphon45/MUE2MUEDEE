@@ -4,11 +4,12 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CatalogService } from '../catalog.service';
 import { PublicCatalogItem, PublicStoreInfo } from '../catalog.models';
+import { TablePaginationComponent, TablePageChange } from '../../../shared/components/table-pagination/table-pagination.component';
 
 @Component({
   selector: 'app-storefront',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, TablePaginationComponent],
   templateUrl: './storefront.component.html',
   styleUrl: './storefront.component.css'
 })
@@ -22,6 +23,12 @@ export class StorefrontComponent implements OnInit {
   readonly selectedCategoryId = signal<string>('');
   readonly selectedGradeId = signal<string>('');
   readonly sortBy = signal<string>('newest');
+  readonly tablePageSize = signal(50);
+
+  changePagination(change: TablePageChange): void {
+    this.tablePageSize.set(change.pageSize);
+    this.loadCatalog(change.page);
+  }
 
   // Modals & Gallery
   readonly selectedItem = signal<PublicCatalogItem | null>(null);
@@ -47,7 +54,7 @@ export class StorefrontComponent implements OnInit {
     });
   }
 
-  loadCatalog(): void {
+  loadCatalog(page: number = 1): void {
     const code = this.storeCode();
     if (!code) return;
 
@@ -57,7 +64,8 @@ export class StorefrontComponent implements OnInit {
       categoryId: this.selectedCategoryId() || undefined,
       conditionGradeId: this.selectedGradeId() || undefined,
       sortBy: this.sortBy(),
-      pageSize: 50
+      page,
+      pageSize: this.tablePageSize()
     }).subscribe();
   }
 

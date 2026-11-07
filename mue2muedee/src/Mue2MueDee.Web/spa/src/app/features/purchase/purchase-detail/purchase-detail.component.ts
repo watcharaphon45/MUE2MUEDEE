@@ -1,3 +1,4 @@
+import { TablePaginationComponent } from '../../../shared/components/table-pagination/table-pagination.component';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -15,6 +16,7 @@ import {
   selector: 'app-purchase-detail',
   standalone: true,
   imports: [
+    TablePaginationComponent,
     CommonModule,
     RouterLink,
     ReactiveFormsModule,

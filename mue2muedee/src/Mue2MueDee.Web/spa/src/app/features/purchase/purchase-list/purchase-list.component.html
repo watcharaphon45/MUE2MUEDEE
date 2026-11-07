@@ -123,38 +123,40 @@
       <span>กำลังโหลดข้อมูลใบรับซื้อ...</span>
     </div>
 
-    <table class="data-table">
+    <div class="app-table-scroll">
+
+      <table class="app-table data-table">
       <thead>
         <tr>
-          <th>เลขที่ใบรับซื้อ</th>
-          <th>วันที่</th>
-          <th>ลูกค้าผู้ขาย</th>
-          <th>รายการสินค้าในบิล</th>
-          <th class="text-right">ราคารับซื้อสูงสุด (Max Buy)</th>
-          <th class="text-right">ราคาเสนอซื้อ (Offer)</th>
-          <th class="text-right">ราคาตกลง (Agreed)</th>
-          <th>สถานะ</th>
-          <th class="text-center">การจัดการ</th>
+          <th class="table-code">เลขที่ใบรับซื้อ</th>
+          <th class="table-date">วันที่</th>
+          <th class="table-text">ลูกค้าผู้ขาย</th>
+          <th class="table-text">รายการสินค้าในบิล</th>
+          <th class="table-money text-right">ราคารับซื้อสูงสุด (Max Buy)</th>
+          <th class="table-money text-right">ราคาเสนอซื้อ (Offer)</th>
+          <th class="table-money text-right">ราคาตกลง (Agreed)</th>
+          <th class="table-compact">สถานะ</th>
+          <th class="table-actions text-center">การจัดการ</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let po of purchaseService.pagedResult().items" class="table-row">
-          <td>
+          <td class="table-code">
             <div class="po-cell">
               <span class="po-badge">{{ po.poNumber }}</span>
               <span *ngIf="po.needsApproval" class="approval-tag">รออนุมัติ</span>
             </div>
           </td>
-          <td>
+          <td class="table-date">
             <span class="date-text">{{ po.purchaseDate | date:'d MMM yyyy, HH:mm' }}</span>
           </td>
-          <td>
+          <td class="table-text">
             <div class="customer-cell">
               <span class="customer-name">{{ po.customerName }}</span>
               <span class="customer-phone">{{ po.customerPhone }}</span>
             </div>
           </td>
-          <td>
+          <td class="table-text">
             <div class="items-cell">
               <span class="items-count font-medium">{{ po.items.length }} ชิ้น</span>
               <span *ngIf="po.items.length > 0" class="items-preview">
@@ -162,19 +164,19 @@
               </span>
             </div>
           </td>
-          <td class="text-right font-medium text-gray-700">
+          <td class="table-money text-right font-medium text-gray-700">
             ฿{{ po.totalMaxBuyPrice | number:'1.2-2' }}
           </td>
-          <td class="text-right font-semibold" [class.text-rose-600]="po.needsApproval">
+          <td class="table-money text-right font-semibold" [class.text-rose-600]="po.needsApproval">
             ฿{{ po.totalOfferedPrice | number:'1.2-2' }}
           </td>
-          <td class="text-right font-bold text-emerald-600">
+          <td class="table-money text-right font-bold text-emerald-600">
             ฿{{ po.totalAgreedPrice | number:'1.2-2' }}
           </td>
-          <td>
+          <td class="table-compact">
             <app-status-badge [status]="po.statusName"></app-status-badge>
           </td>
-          <td class="text-center">
+          <td class="table-actions text-center">
             <a [routerLink]="['/purchase', po.id]" class="action-btn" title="ดูรายละเอียดและประเมิน">
               <svg class="action-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -194,29 +196,10 @@
         </tr>
       </tbody>
     </table>
+    </div>
+    <app-table-pagination label="ใบรับซื้อ" [totalCount]="purchaseService.pagedResult().totalCount" [page]="purchaseService.pagedResult().page" [pageSize]="purchaseService.pagedResult().pageSize" [disabled]="purchaseService.loading()" (paginationChange)="changePagination($event)"></app-table-pagination>
 
     <!-- Pagination -->
-    <div *ngIf="purchaseService.pagedResult().totalPages > 1" class="pagination-bar">
-      <span class="pagination-info">
-        แสดงหน้าที่ {{ purchaseService.pagedResult().page }} จาก {{ purchaseService.pagedResult().totalPages }} หน้า (ทั้งหมด {{ purchaseService.pagedResult().totalCount }} ใบ)
-      </span>
-      <div class="pagination-buttons">
-        <button
-          [disabled]="purchaseService.pagedResult().page <= 1"
-          (click)="search(purchaseService.pagedResult().page - 1)"
-          class="page-btn"
-        >
-          ก่อนหน้า
-        </button>
-        <span class="current-page">{{ purchaseService.pagedResult().page }}</span>
-        <button
-          [disabled]="purchaseService.pagedResult().page >= purchaseService.pagedResult().totalPages"
-          (click)="search(purchaseService.pagedResult().page + 1)"
-          class="page-btn"
-        >
-          ถัดไป
-        </button>
-      </div>
-    </div>
+
   </div>
 </div>

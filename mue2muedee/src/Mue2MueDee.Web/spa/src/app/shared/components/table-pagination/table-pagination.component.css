@@ -1,0 +1,21 @@
+:host { display: block; min-width: 0; }
+.table-pagination { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem; padding: .8rem 1rem; border-top: 1px solid #e2e8f0; background: #fff; color: #64748b; font-size: .7rem; }
+.page-range { font-variant-numeric: tabular-nums; }
+.page-controls, .page-size, .page-buttons { display: flex; align-items: center; gap: .35rem; }
+.page-controls { gap: .85rem; flex-wrap: wrap; }
+.page-size { gap: .5rem; }
+.page-size app-select { width: 100px; }
+button { min-width: 30px; height: 32px; padding: 0 .45rem; border: 1px solid #e2e8f0; border-radius: 7px; background: #fff; color: #475569; cursor: pointer; font: inherit; }
+button:hover:enabled { background: #f0f9ff; border-color: #7dd3fc; color: #0369a1; }
+button.active { background: #0284c7; border-color: #0284c7; color: #fff; font-weight: 600; }
+button:disabled { opacity: .4; cursor: default; }
+button:focus-visible { outline: 2px solid #0284c7; outline-offset: 2px; }
+.page-summary { display: none; padding: 0 .3rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+@media (max-width: 640px) {
+  .table-pagination { padding: .75rem; }
+  .page-controls { width: 100%; justify-content: space-between; gap: .4rem; }
+  .page-number { display: none; }
+  .page-summary { display: inline; }
+  button { min-width: 27px; }
+}
+@media print { :host { display: none !important; } }

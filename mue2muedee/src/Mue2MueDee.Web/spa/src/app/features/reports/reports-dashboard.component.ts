@@ -1,3 +1,4 @@
+import { TablePaginationComponent } from '../../shared/components/table-pagination/table-pagination.component';
 import { businessDateInput, apiDateBoundary } from '../../core/models/business-date';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -14,7 +15,7 @@ type PresetPeriod = 'today' | 'week' | 'month' | 'last30' | 'custom';
 @Component({
   selector: 'app-reports-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, StatusBadgeComponent, DatepickerComponent],
+  imports: [TablePaginationComponent, CommonModule, FormsModule, RouterLink, StatusBadgeComponent, DatepickerComponent],
   templateUrl: './reports-dashboard.component.html',
   styleUrl: './reports-dashboard.component.css'
 })

@@ -49,58 +49,64 @@
       <!-- Sold Items Table -->
       <div class="card">
         <h2 class="card-title">รายการสินค้าที่ขาย ({{ so.items.length }} ชิ้น)</h2>
-        <table class="items-table">
+        <div class="app-table-scroll">
+          <table class="app-table items-table">
           <thead>
             <tr>
-              <th>สินค้า / รายการ</th>
-              <th>Serial Number</th>
-              <th>เกรด</th>
-              <th>รับประกัน</th>
-              <th class="text-right">ราคาตั้ง</th>
-              <th class="text-right">ส่วนลด</th>
-              <th class="text-right">ยอดสุทธิ</th>
+              <th class="table-text">สินค้า / รายการ</th>
+              <th class="table-code">Serial Number</th>
+              <th class="table-compact">เกรด</th>
+              <th class="table-compact">รับประกัน</th>
+              <th class="table-money text-right">ราคาตั้ง</th>
+              <th class="table-money text-right">ส่วนลด</th>
+              <th class="table-money text-right">ยอดสุทธิ</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let item of so.items">
-              <td>
+            <tr *ngFor="let item of itemsPager.pagedItems()">
+              <td class="table-text">
                 <div class="item-title-bold">{{ item.productModelName }}</div>
                 <div class="item-sku-sub font-mono">{{ item.sku }}</div>
               </td>
-              <td class="font-mono font-bold">{{ item.serialNumber }}</td>
-              <td><span class="grade-badge">{{ item.conditionGradeCode }}</span></td>
-              <td>{{ item.warrantyDays }} วัน</td>
-              <td class="text-right font-mono">฿{{ item.unitPrice | number:'1.2-2' }}</td>
-              <td class="text-right font-mono text-rose-600">-฿{{ item.discount | number:'1.2-2' }}</td>
-              <td class="text-right font-mono font-bold">฿{{ item.subTotal | number:'1.2-2' }}</td>
+              <td class="table-code font-mono font-bold">{{ item.serialNumber }}</td>
+              <td class="table-compact"><span class="grade-badge">{{ item.conditionGradeCode }}</span></td>
+              <td class="table-compact">{{ item.warrantyDays }} วัน</td>
+              <td class="table-money text-right font-mono">฿{{ item.unitPrice | number:'1.2-2' }}</td>
+              <td class="table-money text-right font-mono text-rose-600">-฿{{ item.discount | number:'1.2-2' }}</td>
+              <td class="table-money text-right font-mono font-bold">฿{{ item.subTotal | number:'1.2-2' }}</td>
             </tr>
           </tbody>
         </table>
+        </div>
+        <app-table-pagination #itemsPager [items]="so.items" label="รายการสินค้าที่ขาย"></app-table-pagination>
       </div>
 
       <!-- Payments Table -->
       <div class="card">
         <h2 class="card-title">การชำระเงิน (Payments)</h2>
-        <table class="items-table">
+        <div class="app-table-scroll">
+          <table class="app-table items-table">
           <thead>
             <tr>
-              <th>วันที่ชำระ</th>
-              <th>ช่องทาง</th>
-              <th>เลขที่อ้างอิง / สลิป</th>
-              <th>หมายเหตุ</th>
-              <th class="text-right">จำนวนเงิน</th>
+              <th class="table-date">วันที่ชำระ</th>
+              <th class="table-compact">ช่องทาง</th>
+              <th class="table-code">เลขที่อ้างอิง / สลิป</th>
+              <th class="table-text">หมายเหตุ</th>
+              <th class="table-money text-right">จำนวนเงิน</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let p of so.payments">
-              <td>{{ p.paidAt | date:'d MMM yyyy, HH:mm' }}</td>
-              <td><span class="method-badge">{{ p.paymentMethodName }}</span></td>
-              <td class="font-mono">{{ p.referenceNumber || '-' }}</td>
-              <td>{{ p.notes || '-' }}</td>
-              <td class="text-right font-mono font-bold text-emerald-600">฿{{ p.amount | number:'1.2-2' }}</td>
+            <tr *ngFor="let p of paymentsPager.pagedItems()">
+              <td class="table-date">{{ p.paidAt | date:'d MMM yyyy, HH:mm' }}</td>
+              <td class="table-compact"><span class="method-badge">{{ p.paymentMethodName }}</span></td>
+              <td class="table-code font-mono">{{ p.referenceNumber || '-' }}</td>
+              <td class="table-text">{{ p.notes || '-' }}</td>
+              <td class="table-money text-right font-mono font-bold text-emerald-600">฿{{ p.amount | number:'1.2-2' }}</td>
             </tr>
           </tbody>
         </table>
+        </div>
+        <app-table-pagination #paymentsPager [items]="so.payments" label="รายการชำระเงิน"></app-table-pagination>
       </div>
     </div>
 

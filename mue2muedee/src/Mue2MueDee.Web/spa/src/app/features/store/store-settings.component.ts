@@ -1,3 +1,4 @@
+import { TablePaginationComponent } from '../../shared/components/table-pagination/table-pagination.component';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
@@ -17,6 +18,7 @@ import {
   selector: 'app-store-settings',
   standalone: true,
   imports: [
+    TablePaginationComponent,
     CommonModule, 
     ReactiveFormsModule,
     TextboxComponent,

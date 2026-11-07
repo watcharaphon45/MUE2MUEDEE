@@ -111,26 +111,29 @@
       <!-- Payments Table -->
       <div *ngIf="po.payments.length > 0" class="card">
         <h2 class="card-title">ประวัติการจ่ายเงินให้ลูกค้า (Payments)</h2>
-        <table class="payment-table">
+        <div class="app-table-scroll">
+          <table class="app-table payment-table">
           <thead>
             <tr>
-              <th>วันที่ชำระ</th>
-              <th>ช่องทาง</th>
-              <th>เลขที่อ้างอิง/สลิป</th>
-              <th>หมายเหตุ</th>
-              <th class="text-right">จำนวนเงิน</th>
+              <th class="table-date">วันที่ชำระ</th>
+              <th class="table-compact">ช่องทาง</th>
+              <th class="table-code">เลขที่อ้างอิง/สลิป</th>
+              <th class="table-text">หมายเหตุ</th>
+              <th class="table-money text-right">จำนวนเงิน</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let p of po.payments">
-              <td>{{ p.paidAt | date:'d MMM yyyy, HH:mm' }}</td>
-              <td><span class="method-badge">{{ p.paymentMethodName }}</span></td>
-              <td class="font-mono">{{ p.referenceNumber || '-' }}</td>
-              <td>{{ p.notes || '-' }}</td>
-              <td class="text-right font-bold text-emerald-600">฿{{ p.amount | number:'1.2-2' }}</td>
+            <tr *ngFor="let p of paymentsPager.pagedItems()">
+              <td class="table-date">{{ p.paidAt | date:'d MMM yyyy, HH:mm' }}</td>
+              <td class="table-compact"><span class="method-badge">{{ p.paymentMethodName }}</span></td>
+              <td class="table-code font-mono">{{ p.referenceNumber || '-' }}</td>
+              <td class="table-text">{{ p.notes || '-' }}</td>
+              <td class="table-money text-right font-bold text-emerald-600">฿{{ p.amount | number:'1.2-2' }}</td>
             </tr>
           </tbody>
         </table>
+        </div>
+        <app-table-pagination #paymentsPager [items]="po.payments" label="ประวัติจ่ายเงิน"></app-table-pagination>
       </div>
     </div>
 

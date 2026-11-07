@@ -1,0 +1,19 @@
+<nav class="table-pagination" [attr.aria-label]="'แบ่งหน้า ' + label()">
+  <span class="page-range" aria-live="polite">แสดง {{ rangeStart() }}–{{ rangeEnd() }} จาก {{ count() }} รายการ</span>
+  <div class="page-controls">
+    <div class="page-size">
+      <span>ต่อหน้า</span>
+      <app-select [formControl]="sizeControl" [options]="sizeOptions" [searchable]="false" [clearable]="false" [overlay]="true" placeholder="จำนวนแถว"></app-select>
+    </div>
+    <div class="page-buttons">
+      <button type="button" (click)="changePage(1)" [disabled]="disabled() || currentPage() === 1" aria-label="หน้าแรก" title="หน้าแรก">«</button>
+      <button type="button" (click)="changePage(currentPage() - 1)" [disabled]="disabled() || currentPage() === 1" aria-label="หน้าก่อนหน้า" title="หน้าก่อนหน้า">‹</button>
+      @for (number of visiblePages(); track number) {
+        <button type="button" class="page-number" [class.active]="number === currentPage()" [attr.aria-current]="number === currentPage() ? 'page' : null" [attr.aria-label]="'หน้า ' + number" [disabled]="disabled()" (click)="changePage(number)">{{ number }}</button>
+      }
+      <span class="page-summary">{{ currentPage() }} / {{ totalPages() }}</span>
+      <button type="button" (click)="changePage(currentPage() + 1)" [disabled]="disabled() || currentPage() === totalPages()" aria-label="หน้าถัดไป" title="หน้าถัดไป">›</button>
+      <button type="button" (click)="changePage(totalPages())" [disabled]="disabled() || currentPage() === totalPages()" aria-label="หน้าสุดท้าย" title="หน้าสุดท้าย">»</button>
+    </div>
+  </div>
+</nav>

@@ -9,6 +9,7 @@ import {
   forwardRef
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { OverlayModule, ConnectedPosition } from '@angular/cdk/overlay';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 
 export interface SelectOption {
@@ -20,7 +21,7 @@ export interface SelectOption {
 @Component({
   selector: 'app-select',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, OverlayModule],
   templateUrl: './select.component.html',
   styleUrl: './select.component.css',
   providers: [
@@ -43,6 +44,11 @@ export class SelectComponent implements ControlValueAccessor {
   @Input() clearable: boolean = true;
   @Input() searchable: boolean = true;
   @Input() panelClass: string = '';
+  @Input() overlay: boolean = false;
+  readonly overlayPositions: ConnectedPosition[] = [
+    { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top', offsetY: 6 },
+    { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom', offsetY: -6 }
+  ];
 
   @Input() set value(val: any) {
     this.writeValue(val);

@@ -1,3 +1,4 @@
+import { TablePaginationComponent } from '../../../shared/components/table-pagination/table-pagination.component';
 import {
   Component,
   OnInit,
@@ -45,6 +46,7 @@ interface PaymentEntry {
   selector: 'app-pos',
   standalone: true,
   imports: [
+    TablePaginationComponent,
     CommonModule,
     RouterLink,
     FormsModule,
@@ -86,6 +88,7 @@ export class PosComponent implements OnInit, OnDestroy {
 
   // Cart
   cartItems = signal<CartItem[]>([]);
+  readonly cartItemKey = (item: CartItem): string => item.inventoryItem.id;
 
   // Customer Form
   customerForm = new FormGroup({

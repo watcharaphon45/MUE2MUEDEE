@@ -1,3 +1,4 @@
+import { TablePaginationComponent, TablePageChange } from '../../../shared/components/table-pagination/table-pagination.component';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -10,6 +11,7 @@ import { StatusBadgeComponent, DatepickerComponent } from '../../../shared/compo
   selector: 'app-sale-list',
   standalone: true,
   imports: [
+    TablePaginationComponent,
     CommonModule,
     RouterLink,
     ReactiveFormsModule,
@@ -20,6 +22,13 @@ import { StatusBadgeComponent, DatepickerComponent } from '../../../shared/compo
   styleUrl: './sale-list.component.css'
 })
 export class SaleListComponent implements OnInit {
+  readonly tablePageSize = signal(25);
+
+  changePagination(change: TablePageChange): void {
+    this.tablePageSize.set(change.pageSize);
+    this.loadData(change.page);
+  }
+
   protected readonly saleService = inject(SaleService);
 
   searchControl = new FormControl('');
@@ -41,17 +50,17 @@ export class SaleListComponent implements OnInit {
     this.endDateControl.valueChanges.subscribe(() => this.loadData());
   }
 
-  loadData(): void {
+  loadData(page: number = 1): void {
     const s = this.statusFilter.value;
     const status = s && s !== 'ALL' ? (parseInt(s, 10) as SaleStatus) : undefined;
 
     this.saleService.loadSales({
       search: this.searchControl.value || undefined,
       status,
-      startDate: this.startDateControl.value ? new Date(this.startDateControl.value + 'T00:00:00Z').toISOString() : undefined,
-      endDate: this.endDateControl.value ? new Date(this.endDateControl.value + 'T23:59:59Z').toISOString() : undefined,
-      page: 1,
-      pageSize: 25
+      startDate: this.startDateControl.value || undefined,
+      endDate: this.endDateControl.value || undefined,
+      page,
+      pageSize: this.tablePageSize()
     }).subscribe();
   }
 }

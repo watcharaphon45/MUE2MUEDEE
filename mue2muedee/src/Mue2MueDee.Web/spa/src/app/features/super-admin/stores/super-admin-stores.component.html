@@ -119,23 +119,24 @@
       </div>
     } @else {
       <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse text-xs">
+        <div class="app-table-scroll">
+          <table class="app-table w-full text-left border-collapse text-xs">
           <thead>
             <tr class="border-b border-slate-200/80 bg-slate-50/70 text-slate-500 font-semibold uppercase text-[11px] tracking-wider">
-              <th class="py-3 px-4">ร้านค้า & รหัส</th>
-              <th class="py-3 px-4">เจ้าของร้าน (Owner)</th>
-              <th class="py-3 px-4">ข้อมูลติดต่อร้าน</th>
-              <th class="py-3 px-4 text-center">ผู้ใช้ในร้าน</th>
-              <th class="py-3 px-4">วันที่สร้าง</th>
-              <th class="py-3 px-4 text-center">สถานะ</th>
-              <th class="py-3 px-4 text-center">การจัดการ</th>
+              <th class="table-text py-3 px-4">ร้านค้า & รหัส</th>
+              <th class="table-text py-3 px-4">เจ้าของร้าน (Owner)</th>
+              <th class="table-text py-3 px-4">ข้อมูลติดต่อร้าน</th>
+              <th class="table-number py-3 px-4 text-center">ผู้ใช้ในร้าน</th>
+              <th class="table-date py-3 px-4">วันที่สร้าง</th>
+              <th class="table-compact py-3 px-4 text-center">สถานะ</th>
+              <th class="table-actions py-3 px-4 text-center">การจัดการ</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            @for (store of filteredStores(); track store.id) {
+            @for (store of storesPager.pagedItems(); track store.id) {
               <tr class="hover:bg-slate-50/50 transition-colors">
                 <!-- Store Info -->
-                <td class="py-3 px-4">
+                <td class="table-text py-3 px-4">
                   <div class="flex items-center gap-3">
                     <div 
                       class="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-xs shadow-sm shrink-0"
@@ -153,7 +154,7 @@
                 </td>
 
                 <!-- Owner Info -->
-                <td class="py-3 px-4">
+                <td class="table-text py-3 px-4">
                   @if (store.ownerFullName) {
                     <div class="space-y-0.5">
                       <div class="font-semibold text-slate-800 flex items-center gap-1.5">
@@ -175,7 +176,7 @@
                 </td>
 
                 <!-- Store Contact -->
-                <td class="py-3 px-4">
+                <td class="table-text py-3 px-4">
                   <div class="space-y-0.5 text-slate-600">
                     @if (store.phone) {
                       <div class="flex items-center gap-1">
@@ -201,7 +202,7 @@
                 </td>
 
                 <!-- Total Users -->
-                <td class="py-3 px-4 text-center">
+                <td class="table-number py-3 px-4 text-center">
                   <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-medium text-[11px]">
                     <span class="material-icons-outlined text-xs">group</span>
                     <span>{{ store.totalUsersCount }}</span>
@@ -209,12 +210,12 @@
                 </td>
 
                 <!-- Created Date -->
-                <td class="py-3 px-4 text-slate-500 whitespace-nowrap">
+                <td class="table-date py-3 px-4 text-slate-500 whitespace-nowrap">
                   {{ store.createdAt | date:'dd/MM/yyyy HH:mm' }}
                 </td>
 
                 <!-- Status -->
-                <td class="py-3 px-4 text-center">
+                <td class="table-compact py-3 px-4 text-center">
                   <span 
                     class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold"
                     [ngClass]="store.isActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'"
@@ -225,7 +226,7 @@
                 </td>
 
                 <!-- Action Button -->
-                <td class="py-3 px-4 text-center">
+                <td class="table-actions py-3 px-4 text-center">
                   <button
                     type="button"
                     (click)="toggleStatus(store)"
@@ -240,6 +241,8 @@
             }
           </tbody>
         </table>
+        </div>
+        <app-table-pagination #storesPager [items]="filteredStores()" label="ร้านค้าทั้งหมด"></app-table-pagination>
       </div>
     }
   </div>

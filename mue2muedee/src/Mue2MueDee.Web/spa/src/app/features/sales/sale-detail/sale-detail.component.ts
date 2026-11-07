@@ -1,3 +1,4 @@
+import { TablePaginationComponent } from '../../../shared/components/table-pagination/table-pagination.component';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -9,6 +10,7 @@ import { StatusBadgeComponent, TextareaComponent } from '../../../shared/compone
   selector: 'app-sale-detail',
   standalone: true,
   imports: [
+    TablePaginationComponent,
     CommonModule,
     RouterLink,
     ReactiveFormsModule,

@@ -1,3 +1,4 @@
+import { TablePaginationComponent } from '../../../shared/components/table-pagination/table-pagination.component';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -13,6 +14,7 @@ import {
   selector: 'app-customer-list',
   standalone: true,
   imports: [
+    TablePaginationComponent,
     CommonModule,
     ReactiveFormsModule,
     TextboxComponent,

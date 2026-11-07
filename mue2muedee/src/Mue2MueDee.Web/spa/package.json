@@ -6,7 +6,9 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "check:tables": "node scripts/check-table-pagination.cjs",
+    "check:tables:browser": "node scripts/check-table-browser.cjs"
   },
   "private": true,
   "packageManager": "npm@11.12.1",

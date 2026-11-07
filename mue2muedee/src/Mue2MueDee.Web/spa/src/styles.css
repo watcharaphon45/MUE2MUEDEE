@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@angular/cdk/overlay-prebuilt.css";
 
 @layer base {
   :root {
@@ -25,4 +26,28 @@
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+/* Shared table sizing: content determines compact columns; long text can wrap. */
+body .app-table-scroll { display: block; width: 100%; max-width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; }
+body .app-table-scroll > table.app-table { width: 100%; min-width: 100%; table-layout: auto; border-collapse: collapse; }
+body .app-table-scroll > table.app-table :is(th, td) { vertical-align: middle; padding: .7rem .8rem; }
+body .app-table-scroll > table.app-table th { white-space: normal; line-height: 1.5; }
+body .app-table-scroll > table.app-table :is(th, td).table-text { width: auto; min-width: 9rem; max-width: 24rem; white-space: normal; overflow-wrap: anywhere; }
+body .app-table-scroll > table.app-table :is(th, td).table-code { width: 1%; min-width: 7rem; max-width: 17rem; white-space: normal; overflow-wrap: anywhere; }
+body .app-table-scroll > table.app-table :is(th, td).table-money { width: 1%; min-width: 6.5rem; text-align: right; font-variant-numeric: tabular-nums; }
+body .app-table-scroll > table.app-table td.table-money { white-space: nowrap; }
+body .app-table-scroll > table.app-table :is(th, td).table-number { width: 1%; min-width: 4rem; text-align: center; font-variant-numeric: tabular-nums; }
+body .app-table-scroll > table.app-table :is(th, td).table-date { width: 1%; min-width: 7rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+body .app-table-scroll > table.app-table :is(th, td).table-compact { width: 1%; min-width: 4.5rem; white-space: nowrap; }
+body .app-table-scroll > table.app-table :is(th, td).table-actions { width: 1%; min-width: 5rem; white-space: nowrap; }
+body .app-table-scroll > table.app-table :is(th, td).table-check { width: 1%; min-width: 2.5rem; padding-inline: .65rem; }
+body table.app-table .truncate { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+body table.app-table :is(.item-title, .item-cell-title, .item-title-bold, .customer-name, .customer-name-bold) { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+@media (max-width: 640px) {
+  body .app-table-scroll > table.app-table :is(th, td) { padding: .6rem; }
+  body .app-table-scroll > table.app-table :is(th, td).table-text { min-width: 8rem; }
+}
+@media print {
+  body .app-table-scroll { overflow: visible; }
 }

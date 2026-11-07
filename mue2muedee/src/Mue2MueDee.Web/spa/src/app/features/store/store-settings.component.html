@@ -196,38 +196,39 @@
 
       <!-- Users Table -->
       <div class="overflow-x-auto rounded-xl border border-slate-200">
-        <table class="w-full text-left text-xs min-w-[640px]">
+        <div class="app-table-scroll">
+          <table class="app-table w-full text-left text-xs min-w-[640px]">
           <thead class="bg-sky-50/80 text-slate-500 border-b border-slate-200 uppercase tracking-wider font-semibold">
             <tr>
-              <th class="py-3 px-4">ชื่อ - นามสกุล</th>
-              <th class="py-3 px-4">ชื่อผู้ใช้ / อีเมล</th>
-              <th class="py-3 px-4">เบอร์โทรศัพท์</th>
-              <th class="py-3 px-4">ระดับสิทธิ์ (Role)</th>
-              <th class="py-3 px-4">สถานะ</th>
-              <th class="py-3 px-4 text-center">จัดการ</th>
+              <th class="table-text py-3 px-4">ชื่อ - นามสกุล</th>
+              <th class="table-text py-3 px-4">ชื่อผู้ใช้ / อีเมล</th>
+              <th class="table-text py-3 px-4">เบอร์โทรศัพท์</th>
+              <th class="table-compact py-3 px-4">ระดับสิทธิ์ (Role)</th>
+              <th class="table-compact py-3 px-4">สถานะ</th>
+              <th class="table-actions py-3 px-4 text-center">จัดการ</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-200/80">
-            @for (user of usersList(); track user.userId) {
+            @for (user of usersPager.pagedItems(); track user.userId) {
               <tr class="hover:bg-slate-100/30 transition-colors">
-                <td class="py-3 px-4 font-medium text-slate-700 flex items-center gap-2">
+                <td class="table-text py-3 px-4 font-medium text-slate-700 flex items-center gap-2">
                   <div class="w-7 h-7 rounded-lg bg-sky-500/20 text-sky-700 flex items-center justify-center font-bold text-xs">
                     {{ user.fullName?.charAt(0) || user.username?.charAt(0) || 'U' }}
                   </div>
                   <span>{{ user.fullName || user.username }}</span>
                 </td>
-                <td class="py-3 px-4 text-slate-600">
+                <td class="table-text py-3 px-4 text-slate-600">
                   <div>{{ user.username }}</div>
                   <div class="text-[10px] text-slate-500">{{ user.email }}</div>
                 </td>
-                <td class="py-3 px-4 text-slate-600">{{ user.phoneNumber || '-' }}</td>
-                <td class="py-3 px-4">
+                <td class="table-text py-3 px-4 text-slate-600">{{ user.phoneNumber || '-' }}</td>
+                <td class="table-compact py-3 px-4">
                   <app-status-badge [status]="user.role"></app-status-badge>
                 </td>
-                <td class="py-3 px-4">
+                <td class="table-compact py-3 px-4">
                   <app-status-badge [status]="user.isActive ? 'ACTIVE' : 'INACTIVE'"></app-status-badge>
                 </td>
-                <td class="py-3 px-4 text-center">
+                <td class="table-actions py-3 px-4 text-center">
                   @if (authService.isOwner()) {
                     <button
                       type="button"
@@ -247,6 +248,8 @@
             }
           </tbody>
         </table>
+        </div>
+        <app-table-pagination #usersPager [items]="usersList()" label="ผู้ใช้ร้าน"></app-table-pagination>
       </div>
 
       <!-- Role Permissions Overview Card -->

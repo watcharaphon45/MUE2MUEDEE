@@ -1,3 +1,4 @@
+import { TablePaginationComponent, TablePageChange } from '../../../shared/components/table-pagination/table-pagination.component';
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -17,6 +18,7 @@ import { StickerDesignerModalComponent } from '../sticker-designer-modal/sticker
   selector: 'app-inventory-list',
   standalone: true,
   imports: [
+    TablePaginationComponent,
     CommonModule,
     RouterLink,
     ReactiveFormsModule,
@@ -30,6 +32,14 @@ import { StickerDesignerModalComponent } from '../sticker-designer-modal/sticker
   styleUrl: './inventory-list.component.css'
 })
 export class InventoryListComponent implements OnInit {
+  readonly tablePageSize = signal(15);
+
+  changePagination(change: TablePageChange): void {
+    this.clearSelection();
+    this.tablePageSize.set(change.pageSize);
+    this.search(change.page);
+  }
+
   protected readonly inventoryService = inject(InventoryService);
   protected readonly masterDataService = inject(MasterDataService);
   protected readonly Math = Math;
@@ -170,7 +180,7 @@ export class InventoryListComponent implements OnInit {
       minPrice: val.minPrice || undefined,
       maxPrice: val.maxPrice || undefined,
       page,
-      pageSize: 15
+      pageSize: this.tablePageSize()
     }).subscribe();
   }
 
