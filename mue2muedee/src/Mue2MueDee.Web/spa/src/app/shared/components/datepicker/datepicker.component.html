@@ -1,9 +1,9 @@
 <div class="space-y-1.5 relative datepicker-component-root w-full min-w-0 max-w-full" [class.z-40]="isOpen">
   <!-- Label -->
   @if (label) {
-    <label class="block text-xs font-medium text-slate-600 truncate max-w-full">
+    <label [attr.for]="fieldId" class="block text-xs font-medium text-slate-600 truncate max-w-full">
       {{ label }}
-      @if (required) {
+      @if (isRequired) {
         <span class="text-rose-600 font-bold ml-0.5">*</span>
       }
     </label>
@@ -12,12 +12,12 @@
   <!-- Date Input Trigger Container -->
   <div class="relative w-full min-w-0 max-w-full">
     <div
-      #triggerContainer
+      #triggerContainer [id]="fieldId" [attr.aria-invalid]="!!validationMessage" [attr.aria-describedby]="validationMessage ? errorId : null" [attr.aria-required]="isRequired"
       (click)="toggleCalendar($event)"
       [ngClass]="{
-        'border-rose-500 ring-2 ring-rose-500/20': !!errorMessage,
-        'border-sky-500 ring-2 ring-sky-500/20': isOpen && !errorMessage,
-        'border-slate-300/80 hover:border-slate-400': !isOpen && !errorMessage && !disabled,
+        'border-rose-500 ring-2 ring-rose-500/20': !!validationMessage,
+        'border-sky-500 ring-2 ring-sky-500/20': isOpen && !validationMessage,
+        'border-slate-300/80 hover:border-slate-400': !isOpen && !validationMessage && !disabled,
         'opacity-60 cursor-not-allowed bg-sky-50/40 border-slate-200': disabled,
         'bg-white cursor-pointer': !disabled,
         'pl-10': !!icon,
@@ -279,10 +279,10 @@
   </div>
 
   <!-- Error Message or Hint -->
-  @if (errorMessage) {
-    <p class="text-[11px] text-rose-600 flex items-center gap-1 min-w-0 truncate">
+  @if (validationMessage) {
+    <p [id]="errorId" role="status" aria-live="polite" class="text-[11px] text-rose-600 flex items-center gap-1 min-w-0">
       <span class="material-icons-outlined text-xs flex-shrink-0">error</span>
-      <span class="truncate">{{ errorMessage }}</span>
+      <span>{{ validationMessage }}</span>
     </p>
   } @else if (hint) {
     <p class="text-[11px] text-slate-500 min-w-0 truncate">{{ hint }}</p>

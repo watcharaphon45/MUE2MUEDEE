@@ -1,6 +1,7 @@
 import { Component, forwardRef, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { FormField } from '../../forms/form-field';
 
 @Component({
   selector: 'app-textbox',
@@ -16,13 +17,10 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
     }
   ]
 })
-export class TextboxComponent implements ControlValueAccessor {
-  @Input() label?: string;
+export class TextboxComponent extends FormField implements ControlValueAccessor {
   @Input() placeholder: string = '';
   @Input() type: string = 'text';
   @Input() icon?: string;
-  @Input() required: boolean = false;
-  @Input() errorMessage?: string | null;
   @Input() hint?: string;
   @Input() disabled: boolean = false;
   @Input() value: string = '';

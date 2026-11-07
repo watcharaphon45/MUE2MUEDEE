@@ -11,6 +11,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { FormField } from '../../forms/form-field';
 import { ApiResponse } from '../../../core/models/api-response.model';
 
 interface UploadResponse {
@@ -33,15 +34,12 @@ interface UploadResponse {
     }
   ]
 })
-export class ImageUploaderComponent implements ControlValueAccessor {
+export class ImageUploaderComponent extends FormField implements ControlValueAccessor {
   private readonly http = inject(HttpClient);
 
-  @Input() label?: string;
   @Input() placeholder: string = 'วาง URL รูปภาพ หรือคลิกเพื่ออัปโหลด';
-  @Input() required: boolean = false;
   @Input() disabled: boolean = false;
   @Input() hint?: string;
-  @Input() errorMessage?: string | null;
 
   @Output() imageSelected = new EventEmitter<string>();
 

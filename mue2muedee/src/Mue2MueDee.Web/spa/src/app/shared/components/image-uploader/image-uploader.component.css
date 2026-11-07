@@ -17,3 +17,9 @@
 .animate-fadeIn {
   animation: fadeIn 0.15s ease-out forwards;
 }
+
+:host(.field-invalid) .image-field-box, :host(.field-invalid) .image-field-box:focus-within {
+  border-color: #f43f5e;
+  box-shadow: 0 0 0 1px #f43f5e;
+}
+:host [role=status] { overflow-wrap: anywhere; }

@@ -233,6 +233,7 @@ export class PurchaseWizardComponent implements OnInit {
       this.step1Form.markAllAsTouched();
       this.step2Form.markAllAsTouched();
       this.step3Form.markAllAsTouched();
+      this.currentStep.set(this.step1Form.invalid ? 1 : this.step2Form.invalid ? 2 : 3);
       return;
     }
 

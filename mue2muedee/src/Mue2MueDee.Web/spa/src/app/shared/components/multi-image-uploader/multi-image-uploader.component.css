@@ -152,3 +152,9 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }
 }
+
+:host(.field-invalid) .mi-grid, :host(.field-invalid) .mi-grid:focus-within {
+  border-color: #f43f5e;
+  box-shadow: 0 0 0 1px #f43f5e;
+}
+:host [role=status] { overflow-wrap: anywhere; }

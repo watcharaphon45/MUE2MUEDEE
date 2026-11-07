@@ -1,0 +1,12 @@
+<form [formGroup]="form" (ngSubmit)="form.markAllAsTouched()">
+  <app-textbox formControlName="text" label="ชื่อ" [errorMessage]="explicitError()"></app-textbox>
+  <app-number formControlName="amount" label="จำนวนเงิน"></app-number>
+  <app-textarea formControlName="notes" label="หมายเหตุ"></app-textarea>
+  <app-select formControlName="selection" label="รายการ" [options]="[{ value: 'one', label: 'หนึ่ง' }]"></app-select>
+  <app-datepicker formControlName="date" label="วันที่"></app-datepicker>
+  <app-checkbox formControlName="accepted" label="ยอมรับเงื่อนไข"></app-checkbox>
+  <app-image-uploader formControlName="image" label="รูปภาพ"></app-image-uploader>
+  <app-multi-image-uploader formControlName="images" label="รูปสินค้า"></app-multi-image-uploader>
+  <button type="submit">บันทึก</button>
+</form>
+<app-textbox [formControl]="standalone" label="อีเมล"></app-textbox>

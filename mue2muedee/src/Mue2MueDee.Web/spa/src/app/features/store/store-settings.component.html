@@ -164,7 +164,7 @@
           <div class="flex justify-end pt-4 border-t border-slate-200">
             <button 
               type="submit" 
-              [disabled]="saving() || storeForm.invalid"
+              [disabled]="saving()"
               class="px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white text-xs font-semibold shadow-md shadow-sky-600/30 flex items-center gap-2 cursor-pointer">
               <span class="material-icons-outlined text-sm">save</span>
               <span>บันทึกการเปลี่ยนแปลง</span>
@@ -350,7 +350,7 @@
 
           <div class="flex justify-end gap-2 pt-3 border-t border-slate-200">
             <button type="button" (click)="showAddUserModal.set(false)" class="px-3.5 py-2 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer">ยกเลิก</button>
-            <button type="submit" [disabled]="addUserForm.invalid" class="px-4 py-2 rounded-lg bg-sky-600 text-white font-medium hover:bg-sky-500 disabled:opacity-50 cursor-pointer">บันทึก</button>
+            <button type="submit" class="px-4 py-2 rounded-lg bg-sky-600 text-white font-medium hover:bg-sky-500 disabled:opacity-50 cursor-pointer">บันทึก</button>
           </div>
         </form>
       </div>
@@ -414,7 +414,7 @@
             </button>
             <button 
               type="submit" 
-              [disabled]="editRoleForm.invalid || updatingRole()" 
+              [disabled]="updatingRole()"
               class="px-4 py-2 rounded-lg bg-sky-600 text-white font-medium hover:bg-sky-500 disabled:opacity-50 cursor-pointer text-xs flex items-center gap-1.5"
             >
               @if (updatingRole()) {

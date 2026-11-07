@@ -48,6 +48,16 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<SalePayment> SalePayments => Set<SalePayment>();
     public DbSet<StickerTemplate> StickerTemplates => Set<StickerTemplate>();
 
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        base.ConfigureConventions(configurationBuilder);
+
+        // Npgsql requires offset zero for timestamptz, including query parameters.
+        // EF also applies this conversion to nullable DateTimeOffset properties.
+        configurationBuilder.Properties<DateTimeOffset>()
+            .HaveConversion<UtcDateTimeOffsetConverter>();
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

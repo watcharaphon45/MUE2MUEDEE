@@ -1,6 +1,7 @@
-import { Component, forwardRef, Input } from '@angular/core';
+import { Component, forwardRef, Input, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { AbstractControl, ControlValueAccessor, NG_VALIDATORS, NG_VALUE_ACCESSOR, ValidationErrors, Validator, Validators } from '@angular/forms';
+import { FormField } from '../../forms/form-field';
 
 @Component({
   selector: 'app-number',
@@ -13,10 +14,15 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
       provide: NG_VALUE_ACCESSOR,
       useExisting: forwardRef(() => NumberComponent),
       multi: true
+    },
+    {
+      provide: NG_VALIDATORS,
+      useExisting: forwardRef(() => NumberComponent),
+      multi: true
     }
   ]
 })
-export class NumberComponent implements ControlValueAccessor {
+export class NumberComponent extends FormField implements ControlValueAccessor, Validator, OnChanges {
   /**
    * If true or passed as attribute `<app-number currency>`, formats as financial money (THB, decimals, commas).
    * If omitted, accepts strict integer / numeric input.
@@ -29,14 +35,11 @@ export class NumberComponent implements ControlValueAccessor {
   }
   private _currency: boolean = false;
 
-  @Input() label?: string;
   @Input() placeholder?: string;
   @Input() prefix: string = '฿';
   @Input() icon?: string;
   @Input() min?: number;
   @Input() max?: number;
-  @Input() required: boolean = false;
-  @Input() errorMessage?: string | null;
   @Input() hint?: string;
   @Input() disabled: boolean = false;
 
@@ -46,6 +49,16 @@ export class NumberComponent implements ControlValueAccessor {
 
   onChange: (val: number | null) => void = () => {};
   onTouched: () => void = () => {};
+  private onValidatorChange: () => void = () => {};
+
+  validate(control: AbstractControl): ValidationErrors | null {
+    const minError = this.min === undefined ? null : Validators.min(Number(this.min))(control);
+    const maxError = this.max === undefined ? null : Validators.max(Number(this.max))(control);
+    return minError || maxError;
+  }
+
+  registerOnValidatorChange(fn: () => void): void { this.onValidatorChange = fn; }
+  ngOnChanges(): void { this.onValidatorChange(); }
 
   writeValue(val: any): void {
     if (val !== null && val !== undefined && !isNaN(Number(val))) {
@@ -90,10 +103,7 @@ export class NumberComponent implements ControlValueAccessor {
     if (raw === '' || raw === '.') {
       this.numericValue = null;
     } else {
-      let num = Number(raw);
-      if (this.min !== undefined && num < this.min) num = this.min;
-      if (this.max !== undefined && num > this.max) num = this.max;
-      this.numericValue = num;
+      this.numericValue = Number(raw);
     }
 
     this.onChange(this.numericValue);

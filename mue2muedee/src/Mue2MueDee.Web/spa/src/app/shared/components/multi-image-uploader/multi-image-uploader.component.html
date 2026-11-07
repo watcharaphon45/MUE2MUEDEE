@@ -2,7 +2,7 @@
   <!-- Label & Actions -->
   <div class="flex items-center justify-between">
     @if (label) {
-      <label class="block text-xs font-medium text-slate-600 truncate">
+      <label [attr.for]="fieldId" class="block text-xs font-medium text-slate-600 truncate">
         {{ label }}
         <span class="text-slate-400 font-normal ml-1">({{ images.length }} รูป)</span>
       </label>
@@ -29,6 +29,10 @@
   <!-- Grid -->
   <div
     class="mi-grid"
+    [id]="fieldId"
+    [attr.aria-invalid]="!!validationMessage || !!uploadError"
+    [attr.aria-describedby]="validationMessage || uploadError ? errorId : null"
+    [class.border-rose-500]="!!validationMessage || !!uploadError"
     (dragover)="onDragOver($event)"
     (dragleave)="onDragLeave($event)"
     (drop)="onDrop($event)"
@@ -103,11 +107,11 @@
   }
 
   @if (uploadError) {
-    <p class="text-[11px] text-rose-600 flex items-center gap-1">
+    <p [id]="errorId" role="status" aria-live="polite" class="text-[11px] text-rose-600 flex items-center gap-1">
       <span class="material-icons-outlined text-xs">error</span>{{ uploadError }}
     </p>
-  } @else if (errorMessage) {
-    <p class="text-[11px] text-rose-600">{{ errorMessage }}</p>
+  } @else if (validationMessage) {
+    <p [id]="errorId" role="status" aria-live="polite" class="text-[11px] text-rose-600">{{ validationMessage }}</p>
   } @else {
     <p class="text-[11px] text-slate-400">
       {{ hint || 'ลากรูปมาวางได้หลายไฟล์ • ลากรูปเพื่อเรียงลำดับ • รูปแรกคือรูปปกที่แสดงหน้าร้าน' }}

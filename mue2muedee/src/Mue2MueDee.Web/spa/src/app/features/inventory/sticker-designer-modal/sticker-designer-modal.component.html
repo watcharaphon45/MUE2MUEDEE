@@ -311,13 +311,13 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
               <div>
                 <label class="block text-xs font-medium text-slate-700 mb-1">ชื่อรูปแบบ (Template Name):</label>
-                <input
+                <input [class.field-invalid]="!!fieldError(templateName.control)" [attr.aria-invalid]="!!fieldError(templateName.control)" [attr.aria-describedby]="fieldError(templateName.control) ? 'sticker-templateName-error' : null"
                   type="text"
-                  [ngModel]="templateName()"
-                  (ngModelChange)="templateName.set($event)"
+                  [formControl]="templateName.control"
                   class="w-full text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg focus:ring-1 focus:ring-sky-500"
                   placeholder="เช่น ม้วนคู่ 35x25mm หน้าร้าน"
                 />
+@if (fieldError(templateName.control); as message) {<p id="sticker-templateName-error" role="status" class="field-error">{{ message }}</p>}
               </div>
               <div>
                 <label class="block text-xs font-medium text-slate-700 mb-1">ประเภทกระดาษ / เครื่องพิมพ์:</label>
@@ -342,38 +342,38 @@
               <div class="grid grid-cols-3 gap-2.5">
                 <div>
                   <label class="block text-[11px] font-medium text-slate-600 mb-0.5">จำนวนคอลัมน์ (Cols):</label>
-                  <input
+                  <input [class.field-invalid]="!!fieldError(columnsCount.control)" [attr.aria-invalid]="!!fieldError(columnsCount.control)" [attr.aria-describedby]="fieldError(columnsCount.control) ? 'sticker-columnsCount-error' : null"
                     type="number"
                     min="1"
                     max="6"
-                    [ngModel]="columnsCount()"
-                    (ngModelChange)="columnsCount.set(+$event || 1)"
+                    [formControl]="columnsCount.control"
                     class="w-full text-xs px-2 py-1 bg-white border border-slate-300 rounded-lg"
                   />
+@if (fieldError(columnsCount.control); as message) {<p id="sticker-columnsCount-error" role="status" class="field-error">{{ message }}</p>}
                 </div>
                 <div>
                   <label class="block text-[11px] font-medium text-slate-600 mb-0.5">ความกว้างสติ๊กเกอร์ (mm):</label>
-                  <input
+                  <input [class.field-invalid]="!!fieldError(labelWidthMm.control)" [attr.aria-invalid]="!!fieldError(labelWidthMm.control)" [attr.aria-describedby]="fieldError(labelWidthMm.control) ? 'sticker-labelWidthMm-error' : null"
                     type="number"
                     min="10"
                     max="150"
                     step="0.5"
-                    [ngModel]="labelWidthMm()"
-                    (ngModelChange)="labelWidthMm.set(+$event || 10)"
+                    [formControl]="labelWidthMm.control"
                     class="w-full text-xs px-2 py-1 bg-white border border-slate-300 rounded-lg"
                   />
+@if (fieldError(labelWidthMm.control); as message) {<p id="sticker-labelWidthMm-error" role="status" class="field-error">{{ message }}</p>}
                 </div>
                 <div>
                   <label class="block text-[11px] font-medium text-slate-600 mb-0.5">ความยาวสติ๊กเกอร์ (mm):</label>
-                  <input
+                  <input [class.field-invalid]="!!fieldError(labelHeightMm.control)" [attr.aria-invalid]="!!fieldError(labelHeightMm.control)" [attr.aria-describedby]="fieldError(labelHeightMm.control) ? 'sticker-labelHeightMm-error' : null"
                     type="number"
                     min="10"
                     max="150"
                     step="0.5"
-                    [ngModel]="labelHeightMm()"
-                    (ngModelChange)="labelHeightMm.set(+$event || 10)"
+                    [formControl]="labelHeightMm.control"
                     class="w-full text-xs px-2 py-1 bg-white border border-slate-300 rounded-lg"
                   />
+@if (fieldError(labelHeightMm.control); as message) {<p id="sticker-labelHeightMm-error" role="status" class="field-error">{{ message }}</p>}
                 </div>
               </div>
 
@@ -381,38 +381,38 @@
               <div class="grid grid-cols-2 gap-2.5 pt-1">
                 <div>
                   <label class="block text-[11px] font-medium text-slate-600 mb-0.5">หน้ากว้างกระดาษ/ม้วน (mm):</label>
-                  <input
+                  <input [class.field-invalid]="!!fieldError(paperWidthMm.control)" [attr.aria-invalid]="!!fieldError(paperWidthMm.control)" [attr.aria-describedby]="fieldError(paperWidthMm.control) ? 'sticker-paperWidthMm-error' : null"
                     type="number"
                     min="20"
                     max="300"
                     step="0.5"
-                    [ngModel]="paperWidthMm()"
-                    (ngModelChange)="paperWidthMm.set(+$event || 50)"
+                    [formControl]="paperWidthMm.control"
                     class="w-full text-xs px-2 py-1 bg-white border border-slate-300 rounded-lg"
                   />
+@if (fieldError(paperWidthMm.control); as message) {<p id="sticker-paperWidthMm-error" role="status" class="field-error">{{ message }}</p>}
                 </div>
                 <div *ngIf="!isContinuousRoll()">
                   <label class="block text-[11px] font-medium text-slate-600 mb-0.5">ความสูงหน้ากระดาษ (mm):</label>
-                  <input
+                  <input [class.field-invalid]="!!fieldError(paperHeightMm.control)" [attr.aria-invalid]="!!fieldError(paperHeightMm.control)" [attr.aria-describedby]="fieldError(paperHeightMm.control) ? 'sticker-paperHeightMm-error' : null"
                     type="number"
                     min="50"
                     max="500"
                     step="0.5"
-                    [ngModel]="paperHeightMm() ?? 297"
-                    (ngModelChange)="paperHeightMm.set(+$event || 297)"
+                    [formControl]="paperHeightMm.control"
                     class="w-full text-xs px-2 py-1 bg-white border border-slate-300 rounded-lg"
                   />
+@if (fieldError(paperHeightMm.control); as message) {<p id="sticker-paperHeightMm-error" role="status" class="field-error">{{ message }}</p>}
                 </div>
                 <div *ngIf="!isContinuousRoll()">
                   <label class="block text-[11px] font-medium text-slate-600 mb-0.5">จำนวนแถวต่อหน้า (Rows):</label>
-                  <input
+                  <input [class.field-invalid]="!!fieldError(rowsCount.control)" [attr.aria-invalid]="!!fieldError(rowsCount.control)" [attr.aria-describedby]="fieldError(rowsCount.control) ? 'sticker-rowsCount-error' : null"
                     type="number"
                     min="1"
                     max="20"
-                    [ngModel]="rowsCount() ?? 8"
-                    (ngModelChange)="rowsCount.set(+$event || 8)"
+                    [formControl]="rowsCount.control"
                     class="w-full text-xs px-2 py-1 bg-white border border-slate-300 rounded-lg"
                   />
+@if (fieldError(rowsCount.control); as message) {<p id="sticker-rowsCount-error" role="status" class="field-error">{{ message }}</p>}
                 </div>
               </div>
 
@@ -420,27 +420,27 @@
               <div class="grid grid-cols-2 gap-2.5 pt-1">
                 <div>
                   <label class="block text-[11px] font-medium text-slate-600 mb-0.5">ระยะห่างแนวนอน (H-Gap mm):</label>
-                  <input
+                  <input [class.field-invalid]="!!fieldError(horizontalGapMm.control)" [attr.aria-invalid]="!!fieldError(horizontalGapMm.control)" [attr.aria-describedby]="fieldError(horizontalGapMm.control) ? 'sticker-horizontalGapMm-error' : null"
                     type="number"
                     min="0"
                     max="30"
                     step="0.5"
-                    [ngModel]="horizontalGapMm()"
-                    (ngModelChange)="horizontalGapMm.set(+$event || 0)"
+                    [formControl]="horizontalGapMm.control"
                     class="w-full text-xs px-2 py-1 bg-white border border-slate-300 rounded-lg"
                   />
+@if (fieldError(horizontalGapMm.control); as message) {<p id="sticker-horizontalGapMm-error" role="status" class="field-error">{{ message }}</p>}
                 </div>
                 <div>
                   <label class="block text-[11px] font-medium text-slate-600 mb-0.5">ระยะห่างแนวตั้ง (V-Gap mm):</label>
-                  <input
+                  <input [class.field-invalid]="!!fieldError(verticalGapMm.control)" [attr.aria-invalid]="!!fieldError(verticalGapMm.control)" [attr.aria-describedby]="fieldError(verticalGapMm.control) ? 'sticker-verticalGapMm-error' : null"
                     type="number"
                     min="0"
                     max="30"
                     step="0.5"
-                    [ngModel]="verticalGapMm()"
-                    (ngModelChange)="verticalGapMm.set(+$event || 0)"
+                    [formControl]="verticalGapMm.control"
                     class="w-full text-xs px-2 py-1 bg-white border border-slate-300 rounded-lg"
                   />
+@if (fieldError(verticalGapMm.control); as message) {<p id="sticker-verticalGapMm-error" role="status" class="field-error">{{ message }}</p>}
                 </div>
               </div>
 
@@ -450,51 +450,51 @@
                 <div class="grid grid-cols-4 gap-2">
                   <div>
                     <label class="block text-[10px] text-slate-500">ซ้าย (Left)</label>
-                    <input
+                    <input [class.field-invalid]="!!fieldError(marginLeftMm.control)" [attr.aria-invalid]="!!fieldError(marginLeftMm.control)" [attr.aria-describedby]="fieldError(marginLeftMm.control) ? 'sticker-marginLeftMm-error' : null"
                       type="number"
                       min="0"
                       max="50"
                       step="0.5"
-                      [ngModel]="marginLeftMm()"
-                      (ngModelChange)="marginLeftMm.set(+$event || 0)"
+                      [formControl]="marginLeftMm.control"
                       class="w-full text-xs px-1.5 py-1 bg-white border border-slate-300 rounded-md text-center"
                     />
+@if (fieldError(marginLeftMm.control); as message) {<p id="sticker-marginLeftMm-error" role="status" class="field-error">{{ message }}</p>}
                   </div>
                   <div>
                     <label class="block text-[10px] text-slate-500">ขวา (Right)</label>
-                    <input
+                    <input [class.field-invalid]="!!fieldError(marginRightMm.control)" [attr.aria-invalid]="!!fieldError(marginRightMm.control)" [attr.aria-describedby]="fieldError(marginRightMm.control) ? 'sticker-marginRightMm-error' : null"
                       type="number"
                       min="0"
                       max="50"
                       step="0.5"
-                      [ngModel]="marginRightMm()"
-                      (ngModelChange)="marginRightMm.set(+$event || 0)"
+                      [formControl]="marginRightMm.control"
                       class="w-full text-xs px-1.5 py-1 bg-white border border-slate-300 rounded-md text-center"
                     />
+@if (fieldError(marginRightMm.control); as message) {<p id="sticker-marginRightMm-error" role="status" class="field-error">{{ message }}</p>}
                   </div>
                   <div>
                     <label class="block text-[10px] text-slate-500">บน (Top)</label>
-                    <input
+                    <input [class.field-invalid]="!!fieldError(marginTopMm.control)" [attr.aria-invalid]="!!fieldError(marginTopMm.control)" [attr.aria-describedby]="fieldError(marginTopMm.control) ? 'sticker-marginTopMm-error' : null"
                       type="number"
                       min="0"
                       max="50"
                       step="0.5"
-                      [ngModel]="marginTopMm()"
-                      (ngModelChange)="marginTopMm.set(+$event || 0)"
+                      [formControl]="marginTopMm.control"
                       class="w-full text-xs px-1.5 py-1 bg-white border border-slate-300 rounded-md text-center"
                     />
+@if (fieldError(marginTopMm.control); as message) {<p id="sticker-marginTopMm-error" role="status" class="field-error">{{ message }}</p>}
                   </div>
                   <div>
                     <label class="block text-[10px] text-slate-500">ล่าง (Bottom)</label>
-                    <input
+                    <input [class.field-invalid]="!!fieldError(marginBottomMm.control)" [attr.aria-invalid]="!!fieldError(marginBottomMm.control)" [attr.aria-describedby]="fieldError(marginBottomMm.control) ? 'sticker-marginBottomMm-error' : null"
                       type="number"
                       min="0"
                       max="50"
                       step="0.5"
-                      [ngModel]="marginBottomMm()"
-                      (ngModelChange)="marginBottomMm.set(+$event || 0)"
+                      [formControl]="marginBottomMm.control"
                       class="w-full text-xs px-1.5 py-1 bg-white border border-slate-300 rounded-md text-center"
                     />
+@if (fieldError(marginBottomMm.control); as message) {<p id="sticker-marginBottomMm-error" role="status" class="field-error">{{ message }}</p>}
                   </div>
                 </div>
               </div>
@@ -692,27 +692,27 @@
               <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200">
                 <div *ngIf="codeStyle() !== 'qr_only'">
                   <label class="block text-[11px] font-medium text-slate-600 mb-0.5">ความสูงบาร์โค้ด (mm):</label>
-                  <input
+                  <input [class.field-invalid]="!!fieldError(barcodeHeightMm.control)" [attr.aria-invalid]="!!fieldError(barcodeHeightMm.control)" [attr.aria-describedby]="fieldError(barcodeHeightMm.control) ? 'sticker-barcodeHeightMm-error' : null"
                     type="number"
                     min="3"
                     max="20"
                     step="0.5"
-                    [ngModel]="barcodeHeightMm()"
-                    (ngModelChange)="barcodeHeightMm.set(+$event || 6)"
+                    [formControl]="barcodeHeightMm.control"
                     class="w-full text-xs px-2 py-1 bg-white border border-slate-300 rounded-lg"
                   />
+@if (fieldError(barcodeHeightMm.control); as message) {<p id="sticker-barcodeHeightMm-error" role="status" class="field-error">{{ message }}</p>}
                 </div>
                 <div *ngIf="codeStyle() !== 'barcode_only'">
                   <label class="block text-[11px] font-medium text-slate-600 mb-0.5">ขนาด QR Code (mm):</label>
-                  <input
+                  <input [class.field-invalid]="!!fieldError(qrSizeMm.control)" [attr.aria-invalid]="!!fieldError(qrSizeMm.control)" [attr.aria-describedby]="fieldError(qrSizeMm.control) ? 'sticker-qrSizeMm-error' : null"
                     type="number"
                     min="6"
                     max="30"
                     step="0.5"
-                    [ngModel]="qrSizeMm()"
-                    (ngModelChange)="qrSizeMm.set(+$event || 10)"
+                    [formControl]="qrSizeMm.control"
                     class="w-full text-xs px-2 py-1 bg-white border border-slate-300 rounded-lg"
                   />
+@if (fieldError(qrSizeMm.control); as message) {<p id="sticker-qrSizeMm-error" role="status" class="field-error">{{ message }}</p>}
                 </div>
               </div>
 
@@ -970,16 +970,20 @@
       
       <!-- Copies & Quantity Summary -->
       <div class="flex items-center justify-between sm:justify-start gap-2 sm:gap-3">
-        <div class="flex items-center gap-1.5 sm:gap-2 bg-white px-2 sm:px-2.5 py-1 rounded-xl border border-slate-200">
+        <div class="bg-white px-2 sm:px-2.5 py-1 rounded-xl border border-slate-200">
+          <div class="flex items-center gap-1.5 sm:gap-2">
           <label class="text-xs font-semibold text-slate-700 whitespace-nowrap">จำนวน/รายการ:</label>
-          <input
+          <input [class.field-invalid]="!!fieldError(printCopies.control)" [attr.aria-invalid]="!!fieldError(printCopies.control)" [attr.aria-describedby]="fieldError(printCopies.control) ? 'sticker-printCopies-error' : null"
             type="number"
             min="1"
             max="100"
-            [ngModel]="printCopies()"
-            (ngModelChange)="printCopies.set(+$event || 1)"
+            [formControl]="printCopies.control"
             class="w-12 text-xs font-bold text-center px-1 py-0.5 border border-slate-300 rounded-md"
           />
+          </div>
+          @if (fieldError(printCopies.control); as message) {
+            <p id="sticker-printCopies-error" role="status" class="field-error">{{ message }}</p>
+          }
         </div>
         <span class="text-xs font-semibold text-slate-600 truncate">
           รวมพิมพ์: <strong class="text-sky-700 font-bold">{{ totalStickerQuantity() }} ดวง</strong>
@@ -1011,7 +1015,7 @@
           type="button"
           (click)="print()"
           class="btn-primary flex-1 sm:flex-initial text-xs py-2 px-4 justify-center"
-          [disabled]="isWidthExceeded() || allItems().length === 0"
+          [disabled]="allItems().length === 0"
         >
           <span class="material-icons-outlined text-base">print</span>
           <span>สั่งพิมพ์ ({{ totalStickerQuantity() }} ดวง)</span>

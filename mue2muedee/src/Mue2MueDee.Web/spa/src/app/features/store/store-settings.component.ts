@@ -223,7 +223,12 @@ export class StoreSettingsComponent implements OnInit {
 
   onUpdateRoleSubmit(): void {
     const user = this.selectedUser();
-    if (!user || this.editRoleForm.invalid) return;
+    if (!user || this.updatingRole()) return;
+    if (this.editRoleForm.invalid) {
+      this.editRoleForm.markAllAsTouched();
+      this.notifications.validation();
+      return;
+    }
 
     this.updatingRole.set(true);
     const { role, isActive } = this.editRoleForm.value;

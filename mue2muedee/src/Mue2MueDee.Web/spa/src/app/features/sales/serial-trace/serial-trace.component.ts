@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { SaleService } from '../sale.service';
+import { TextboxComponent } from '../../../shared/components/textbox/textbox.component';
 
 @Component({
   selector: 'app-serial-trace',
@@ -10,7 +11,8 @@ import { SaleService } from '../sale.service';
   imports: [
     CommonModule,
     RouterLink,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    TextboxComponent
   ],
   templateUrl: './serial-trace.component.html',
   styleUrl: './serial-trace.component.css'
@@ -32,7 +34,11 @@ export class SerialTraceComponent implements OnInit {
 
   searchTrace(): void {
     const val = this.serialControl.value?.trim();
-    if (!val) return;
+    if (!val) {
+      this.serialControl.setErrors({ required: true });
+      this.serialControl.markAsTouched();
+      return;
+    }
 
     this.hasSearched.set(true);
     this.saleService.getSerialTrace(val).subscribe();

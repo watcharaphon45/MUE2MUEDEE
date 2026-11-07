@@ -2,6 +2,7 @@ import { Component, ElementRef, Input, ViewChild, forwardRef, inject } from '@an
 import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { FormField } from '../../forms/form-field';
 import { ApiResponse } from '../../../core/models/api-response.model';
 
 interface UploadResponse {
@@ -28,13 +29,11 @@ interface UploadResponse {
     }
   ]
 })
-export class MultiImageUploaderComponent implements ControlValueAccessor {
+export class MultiImageUploaderComponent extends FormField implements ControlValueAccessor {
   private readonly http = inject(HttpClient);
 
-  @Input() label?: string;
   @Input() hint?: string;
   @Input() disabled = false;
-  @Input() errorMessage?: string | null;
 
   @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
 

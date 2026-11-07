@@ -19,16 +19,14 @@
   <div class="search-card">
     <form (ngSubmit)="searchTrace()" class="search-form">
       <div class="input-col">
-        <label class="search-label">ระบุ Serial Number ของกล้องหรือเลนส์ที่ต้องการตรวจสอบ:</label>
-        <input
-          type="text"
+        <app-textbox
+          label="Serial Number ของกล้องหรือเลนส์ที่ต้องการตรวจสอบ"
           [formControl]="serialControl"
           placeholder="เช่น SN-SONY-7788, 3820194, 2109482..."
           class="serial-input"
-          autofocus
-        />
+        ></app-textbox>
       </div>
-      <button type="submit" class="btn-search" [disabled]="saleService.loading() || !serialControl.value">
+      <button type="submit" class="btn-search" [disabled]="saleService.loading()">
         <span *ngIf="saleService.loading()">กำลังสืบค้น...</span>
         <span *ngIf="!saleService.loading()">สืบค้นประวัติสินค้า</span>
       </button>

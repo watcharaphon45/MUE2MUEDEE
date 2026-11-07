@@ -1,3 +1,5 @@
+import { formValue } from '../../../shared/forms/form-value';
+import { validationMessage } from '../../../shared/forms/validation-message';
 import {
   Component,
   input,
@@ -6,10 +8,11 @@ import {
   OnInit,
   computed,
   signal,
+  effect,
   ChangeDetectionStrategy
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { AbstractControl, FormsModule, ReactiveFormsModule, FormGroup, Validators } from '@angular/forms';
 import JsBarcode from 'jsbarcode';
 import QRCode from 'qrcode';
 import { InventoryItem } from '../inventory.models';
@@ -24,10 +27,19 @@ import {
 import { BarcodeComponent } from '../../../shared/components/barcode/barcode.component';
 import { QrcodeComponent } from '../../../shared/components/qrcode/qrcode.component';
 
+const FIELD_LABELS: Record<string, string> = {
+  templateName: 'ชื่อรูปแบบ', columnsCount: 'จำนวนคอลัมน์', rowsCount: 'จำนวนแถว',
+  labelWidthMm: 'ความกว้างสติ๊กเกอร์', labelHeightMm: 'ความสูงสติ๊กเกอร์',
+  paperWidthMm: 'ความกว้างกระดาษ', paperHeightMm: 'ความสูงกระดาษ',
+  horizontalGapMm: 'ช่องว่างแนวนอน', verticalGapMm: 'ช่องว่างแนวตั้ง',
+  marginLeftMm: 'ขอบซ้าย', marginRightMm: 'ขอบขวา', marginTopMm: 'ขอบบน', marginBottomMm: 'ขอบล่าง',
+  barcodeHeightMm: 'ความสูงบาร์โค้ด', qrSizeMm: 'ขนาด QR Code', printCopies: 'จำนวนสำเนา'
+};
+
 @Component({
   selector: 'app-sticker-designer-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, BarcodeComponent, QrcodeComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, BarcodeComponent, QrcodeComponent],
   templateUrl: './sticker-designer-modal.component.html',
   styleUrl: './sticker-designer-modal.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -80,27 +92,27 @@ export class StickerDesignerModalComponent implements OnInit {
 
   // Current Template Identity
   currentTemplateId = signal<string | null>(null);
-  templateName = signal<string>('ม้วนเดี่ยวมาตรฐาน (50x30 mm)');
+  templateName = formValue<string>('ม้วนเดี่ยวมาตรฐาน (50x30 mm)', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(150)]);
   templateDescription = signal<string>('');
   isDefault = signal<boolean>(false);
 
   // Paper & Dimension Settings
   isContinuousRoll = signal<boolean>(true);
-  paperWidthMm = signal<number>(50);
-  paperHeightMm = signal<number | null>(null);
+  paperWidthMm = formValue<number>(50, [Validators.required, Validators.min(20), Validators.max(300)]);
+  paperHeightMm = formValue<number | null>(null, [Validators.required, Validators.min(50), Validators.max(500)]);
 
-  labelWidthMm = signal<number>(50);
-  labelHeightMm = signal<number>(30);
+  labelWidthMm = formValue<number>(50, [Validators.required, Validators.min(10), Validators.max(150)]);
+  labelHeightMm = formValue<number>(30, [Validators.required, Validators.min(10), Validators.max(150)]);
 
-  columnsCount = signal<number>(1);
-  rowsCount = signal<number | null>(null);
-  horizontalGapMm = signal<number>(0);
-  verticalGapMm = signal<number>(2);
+  columnsCount = formValue<number>(1, [Validators.required, Validators.min(1), Validators.max(6), Validators.pattern(/^\d+$/)]);
+  rowsCount = formValue<number | null>(null, [Validators.required, Validators.min(1), Validators.max(20), Validators.pattern(/^\d+$/)]);
+  horizontalGapMm = formValue<number>(0, [Validators.required, Validators.min(0), Validators.max(30)]);
+  verticalGapMm = formValue<number>(2, [Validators.required, Validators.min(0), Validators.max(30)]);
 
-  marginTopMm = signal<number>(0);
-  marginBottomMm = signal<number>(0);
-  marginLeftMm = signal<number>(0);
-  marginRightMm = signal<number>(0);
+  marginTopMm = formValue<number>(0, [Validators.required, Validators.min(0), Validators.max(50)]);
+  marginBottomMm = formValue<number>(0, [Validators.required, Validators.min(0), Validators.max(50)]);
+  marginLeftMm = formValue<number>(0, [Validators.required, Validators.min(0), Validators.max(50)]);
+  marginRightMm = formValue<number>(0, [Validators.required, Validators.min(0), Validators.max(50)]);
 
   // Content Visibility Signals
   showStoreLogo = signal<boolean>(true);
@@ -122,14 +134,41 @@ export class StickerDesignerModalComponent implements OnInit {
   // Barcode & QR Code Settings
   codeStyle = signal<'barcode_qr' | 'barcode_only' | 'qr_only'>('barcode_qr');
   encodeValue = signal<'serial' | 'sku'>('serial');
-  barcodeHeightMm = signal<number>(6);
+  barcodeHeightMm = formValue<number>(6, [Validators.required, Validators.min(3), Validators.max(20)]);
   barcodeWidthRatio = signal<number>(1.2);
-  qrSizeMm = signal<number>(10);
+  qrSizeMm = formValue<number>(10, [Validators.required, Validators.min(6), Validators.max(30)]);
   showBarcodeText = signal<boolean>(false);
 
   // Print controls
   previewZoom = signal<number>(1.4);
-  printCopies = signal<number>(1);
+  printCopies = formValue<number>(1, [Validators.required, Validators.min(1), Validators.max(100), Validators.pattern(/^\d+$/)]);
+
+  protected fieldError(control: AbstractControl, label?: string): string | null {
+    const name = Object.entries(this.settingsForm.controls).find(([, field]) => field === control)?.[0];
+    label ??= name ? FIELD_LABELS[name] : undefined;
+    return validationMessage(control, label) ||
+      (control === this.paperWidthMm.control && control.touched && this.isWidthExceeded()
+        ? 'ความกว้างกระดาษไม่พอสำหรับสติ๊กเกอร์และระยะขอบที่กำหนด' : null);
+  }
+  readonly settingsForm = new FormGroup({
+    templateName: this.templateName.control,
+    columnsCount: this.columnsCount.control,
+    labelWidthMm: this.labelWidthMm.control,
+    labelHeightMm: this.labelHeightMm.control,
+    paperWidthMm: this.paperWidthMm.control,
+    paperHeightMm: this.paperHeightMm.control,
+    rowsCount: this.rowsCount.control,
+    horizontalGapMm: this.horizontalGapMm.control,
+    verticalGapMm: this.verticalGapMm.control,
+    marginLeftMm: this.marginLeftMm.control,
+    marginRightMm: this.marginRightMm.control,
+    marginTopMm: this.marginTopMm.control,
+    marginBottomMm: this.marginBottomMm.control,
+    barcodeHeightMm: this.barcodeHeightMm.control,
+    qrSizeMm: this.qrSizeMm.control,
+    printCopies: this.printCopies.control
+  });
+
   statusMessage = signal<string | null>(null);
   errorMessage = signal<string | null>(null);
 
@@ -152,6 +191,41 @@ export class StickerDesignerModalComponent implements OnInit {
     const itemCount = this.allItems().length || 1;
     return itemCount * Math.max(1, this.printCopies());
   });
+
+  constructor() {
+    effect(() => {
+      const isRoll = this.isContinuousRoll();
+      for (const [control, fallback] of [[this.paperHeightMm.control, 297], [this.rowsCount.control, 8]] as const) {
+        if (isRoll) control.disable();
+        else {
+          if (control.value === null) control.setValue(fallback);
+          control.enable();
+        }
+      }
+      const codeStyle = this.codeStyle();
+      if (codeStyle === 'qr_only') this.barcodeHeightMm.control.disable();
+      else this.barcodeHeightMm.control.enable();
+      if (codeStyle === 'barcode_only') this.qrSizeMm.control.disable();
+      else this.qrSizeMm.control.enable();
+    });
+  }
+
+  private validateSettings(): boolean {
+    this.settingsForm.markAllAsTouched();
+    if (this.settingsForm.invalid) {
+      this.activeTab.set(this.barcodeHeightMm.control.invalid || this.qrSizeMm.control.invalid ? 'codes' : 'layout');
+      this.mobileActiveView.set('settings');
+      this.errorMessage.set('กรุณาแก้ไขข้อมูลในช่องที่แสดงกรอบแดง');
+      return false;
+    }
+    if (this.isWidthExceeded()) {
+      this.activeTab.set('layout');
+      this.mobileActiveView.set('settings');
+      this.errorMessage.set('ความกว้างรวมของสติ๊กเกอร์เกินขนาดหน้ากว้างกระดาษ กรุณาปรับลดขนาดหรือระยะขอบ');
+      return false;
+    }
+    return true;
+  }
 
   ngOnInit(): void {
     this.loadTemplatesAndApplyDefault();
@@ -229,6 +303,8 @@ export class StickerDesignerModalComponent implements OnInit {
     this.qrSizeMm.set(t.qrSizeMm);
     this.showBarcodeText.set(t.showBarcodeText);
 
+    this.settingsForm.markAsUntouched();
+    this.settingsForm.markAsPristine();
     this.clearMessages();
   }
 
@@ -311,10 +387,7 @@ export class StickerDesignerModalComponent implements OnInit {
 
   // Template CRUD Operations
   saveTemplate(): void {
-    if (this.isWidthExceeded()) {
-      this.errorMessage.set('ความกว้างรวมของสติ๊กเกอร์เกินขนาดหน้ากว้างกระดาษ กรุณาปรับลดขนาดหรือระยะขอบ');
-      return;
-    }
+    if (!this.validateSettings()) return;
 
     const payload: CreateStickerTemplateRequest = {
       name: this.templateName().trim(),
@@ -475,6 +548,7 @@ export class StickerDesignerModalComponent implements OnInit {
 
   // Calibration test sheet generation & print
   async printCalibrationSheet(): Promise<void> {
+    if (!this.validateSettings()) return;
     const cols = Math.max(1, this.columnsCount());
     const labelW = this.labelWidthMm();
     const labelH = this.labelHeightMm();
@@ -596,6 +670,7 @@ export class StickerDesignerModalComponent implements OnInit {
 
   // Multi-column and multi-item printing engine
   async print(): Promise<void> {
+    if (!this.validateSettings()) return;
     const itemsList = this.allItems();
     if (itemsList.length === 0) return;
 

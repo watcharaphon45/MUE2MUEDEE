@@ -280,6 +280,11 @@ export class PosComponent implements OnInit, OnDestroy {
 
   async submitSale(): Promise<void> {
     if (this.isSubmitting()) return;
+    if (this.customerForm.invalid) {
+      this.customerForm.markAllAsTouched();
+      this.notifications.validation();
+      return;
+    }
     if (this.cartItems().length === 0) {
       this.errorMessage.set('กรุณาเลือกสินค้าลงตะกร้าก่อนทำการขาย');
       this.notifications.warning(this.errorMessage()!);

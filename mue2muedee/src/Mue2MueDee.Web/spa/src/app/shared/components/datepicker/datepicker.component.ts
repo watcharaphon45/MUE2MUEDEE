@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
+import { FormField } from '../../forms/form-field';
 
 export interface CalendarDay {
   date: Date;
@@ -49,12 +50,9 @@ const THAI_MONTHS_FULL = [
     }
   ]
 })
-export class DatepickerComponent implements OnInit, ControlValueAccessor {
-  @Input() label?: string;
+export class DatepickerComponent extends FormField implements OnInit, ControlValueAccessor {
   @Input() placeholder: string = 'เลือกวันที่...';
-  @Input() required: boolean = false;
   @Input() disabled: boolean = false;
-  @Input() errorMessage?: string | null;
   @Input() hint?: string;
   @Input() icon: string = 'calendar_today';
   @Input() clearable: boolean = true;
@@ -92,9 +90,10 @@ export class DatepickerComponent implements OnInit, ControlValueAccessor {
   onChange: (val: string) => void = () => {};
   onTouched: () => void = () => {};
 
-  constructor(private readonly elementRef: ElementRef) {}
+  constructor(private readonly elementRef: ElementRef) { super(); }
 
-  ngOnInit(): void {
+  override ngOnInit(): void {
+    super.ngOnInit();
     this.initViewDate();
     this.generateCalendarDays();
   }

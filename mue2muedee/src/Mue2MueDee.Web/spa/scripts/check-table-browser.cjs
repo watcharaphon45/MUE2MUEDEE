@@ -236,6 +236,69 @@ function api(url) {
       ['catalog', '/shop/AUDIT']
     ];
     const results = [];
+    if (selectedView === 'validation') {
+      const cases = [
+        ['login', '/login', 'app-login', 'c.onSubmit()'],
+        ['inventory-create', '/inventory/new', 'app-inventory-form', 'c.onSubmit()'],
+        ...['brands', 'categories', 'grades', 'products', 'customers'].map(tab =>
+          [`master-${tab}`, `/master-data?tab=${tab}`, 'app-master-data-hub', 'c.openCreateModal(); c.submitForm()']),
+        ['customer-create', '/customers', 'app-customer-list', 'c.openCreate(); c.onSubmit()'],
+        ['store-create', '/super-admin/stores', 'app-super-admin-stores', 'c.openCreateModal(); c.onSubmit()'],
+        ['store-settings', '/settings', 'app-store-settings', "c.storeForm.controls.name.setValue(''); c.onSaveStore()"],
+        ['store-user', '/settings', 'app-store-settings', "c.activeTab.set('users'); c.showAddUserModal.set(true); c.onAddUserSubmit()"],
+        ['purchase-customer', '/purchase/new', 'app-purchase-wizard', 'c.goToStep(2)'],
+        ['purchase-product', '/purchase/new', 'app-purchase-wizard', `c.step1Form.controls.customerId.setValue('${id(0)}'); c.currentStep.set(2); c.goToStep(3)`],
+        ['purchase-price', '/purchase/new', 'app-purchase-wizard', `c.step1Form.controls.customerId.setValue('${id(0)}'); c.step2Form.patchValue({productId:'${id(0)}',serialNumber:'TEST',conditionGradeId:'${id(0)}'},{emitEvent:false}); c.step3Form.controls.expectedSalePrice.setValue(null); c.currentStep.set(3); c.createAndSubmitPO()`],
+        ['purchase-payment', `/purchase/${id(0)}`, 'app-purchase-detail', 'c.openPayment(); c.paymentForm.controls.amount.setValue(0); c.submitPayment()'],
+        ['sale-cancel', `/sales/${id(0)}`, 'app-sale-detail', 'c.openCancel(); c.submitCancel()'],
+        ['pos-customer', '/sales/pos', 'app-pos', `c.cartItems.set([{inventoryItem:${JSON.stringify(rows[0])},unitPrice:1000,discount:0,subTotal:1000,grossProfit:250,marginPercentage:25,warrantyDays:30}]); c.customerForm.controls.customerName.setValue(''); c.submitSale()`],
+        ['pos-payment', '/sales/pos', 'app-pos', `c.cartItems.set([{inventoryItem:${JSON.stringify(rows[0])},unitPrice:1000,discount:0,subTotal:1000,grossProfit:250,marginPercentage:25,warrantyDays:30}]); c.paymentForm.controls.amount.setValue(0); c.addPayment()`],
+        ['serial-trace', '/sales/trace', 'app-serial-trace', 'c.searchTrace()'],
+        ['inventory-cost', `/inventory/${id(0)}`, 'app-inventory-detail', 'c.openAddCost(); c.submitAddCostItem()'],
+        ['inventory-price', `/inventory/${id(0)}`, 'app-inventory-detail', 'c.openUpdatePrice(); c.updatePriceForm.controls.newPrice.setValue(0); c.submitUpdatePrice()'],
+        ['inventory-status', `/inventory/${id(0)}`, 'app-inventory-detail', "c.openChangeStatus(); c.statusForm.controls.newStatus.setValue(''); c.submitChangeStatus()"]
+      ];
+      for (const width of [1440, 390]) {
+        await send('Emulation.setDeviceMetricsOverride', { width, height: 960, deviceScaleFactor: 1, mobile: width < 600 });
+        for (const [name, route, selector, action] of cases) {
+          const previousLoad = completedLoads;
+          await send('Page.navigate', { url: origin + route });
+          await until(() => completedLoads > previousLoad, name + ' document');
+          await until(() => evaluate(`!!window.ng && !!document.querySelector('${selector}') && !!ng.getComponent(document.querySelector('${selector}'))`), name + ' component');
+          await until(() => evaluate("!document.querySelector('.loading-card')"), name + ' data');
+          await sleep(100);
+          const before = mutations.length;
+          await evaluate(`(()=>{const c=ng.getComponent(document.querySelector('${selector}')); ${action}; ng.applyChanges(c);})()`);
+          await until(() => evaluate("!!document.querySelector('.field-invalid')"), name + ' field validation');
+          // Wait for the field's border-color transition before reading computed styles.
+          await sleep(350);
+          const fields = await evaluate(`(()=>{
+            return [...document.querySelectorAll('.field-invalid')].filter(e=>e.getClientRects().length).map(e=>{
+              const input=e.querySelector('[aria-invalid=true]');
+              const error=e.querySelector('[role=status]');
+              const border=e.querySelector('.select-trigger-container,.datepicker-trigger-container')||input;
+              return {tag:e.tagName, borderElement:border?.className, message:error?.textContent.trim(), linked:!!input&&input.getAttribute('aria-describedby')===error?.id,
+                border: border&&getComputedStyle(border).borderColor, below:!!input&&!!error&&error.getBoundingClientRect().top>=input.getBoundingClientRect().bottom-2};
+            });
+          })()`);
+          assert(fields.length > 0, name + ' has no visible invalid fields');
+          for (const field of fields) {
+            assert(field.message && field.linked && field.below, name + ' missing linked error below field: ' + JSON.stringify(field));
+            assert.equal(field.border, 'rgb(244, 63, 94)', name + ' missing red border: ' + JSON.stringify(field));
+          }
+          assert.equal(mutations.length, before, name + ' sent an invalid form to the API');
+          assert(await evaluate('document.documentElement.scrollWidth<=innerWidth+2'), name + ' overflow');
+          const screenshot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
+          fs.writeFileSync(path.join(output, `validation-${name}-${width}.png`), Buffer.from(screenshot.data, 'base64'));
+          console.log(`validation ${name} ${width}px: ${fields.length} field errors and red borders passed`);
+          results.push({ name, width, fields });
+        }
+      }
+      assert.equal(errors.length, 0, errors.join('\n'));
+      assert.equal(missing.length, 0, missing.join('\n'));
+      fs.writeFileSync(path.join(output, 'validation-results.json'), JSON.stringify(results, null, 2));
+      return;
+    }
     for (const width of [1440, 390]) {
       await send('Emulation.setDeviceMetricsOverride', { width, height: 960, deviceScaleFactor: 1, mobile: width < 600 });
       for (const [name, route, selector, action] of views.filter(([name]) => !selectedView || selectedView.split(',').includes(name))) {

@@ -14,3 +14,9 @@ input {
   height: 38px;
   box-sizing: border-box;
 }
+
+:host(.field-invalid) [aria-invalid=true], :host(.field-invalid) [aria-invalid=true]:focus-within {
+  border-color: #f43f5e;
+  box-shadow: 0 0 0 1px #f43f5e;
+}
+:host [role=status] { overflow-wrap: anywhere; }

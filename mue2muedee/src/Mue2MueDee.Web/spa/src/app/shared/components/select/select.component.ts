@@ -11,6 +11,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { OverlayModule, ConnectedPosition } from '@angular/cdk/overlay';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
+import { FormField } from '../../forms/form-field';
 
 export interface SelectOption {
   value: any;
@@ -32,12 +33,9 @@ export interface SelectOption {
     }
   ]
 })
-export class SelectComponent implements ControlValueAccessor {
-  @Input() label?: string;
+export class SelectComponent extends FormField implements ControlValueAccessor {
   @Input() placeholder: string = 'กรุณาเลือก...';
   @Input() options: SelectOption[] = [];
-  @Input() required: boolean = false;
-  @Input() errorMessage?: string | null;
   @Input() hint?: string;
   @Input() disabled: boolean = false;
   @Input() icon?: string;
@@ -71,7 +69,7 @@ export class SelectComponent implements ControlValueAccessor {
   onChange: (val: any) => void = () => {};
   onTouched: () => void = () => {};
 
-  constructor(private readonly elementRef: ElementRef) {}
+  constructor(private readonly elementRef: ElementRef) { super(); }
 
   // ControlValueAccessor Implementation
   writeValue(val: any): void {

@@ -1,3 +1,9 @@
 :host {
   display: block;
 }
+
+:host(.field-invalid) .checkbox-box, :host(.field-invalid) .checkbox-box:focus-within {
+  border-color: #f43f5e;
+  box-shadow: 0 0 0 1px #f43f5e;
+}
+:host [role=status] { overflow-wrap: anywhere; }

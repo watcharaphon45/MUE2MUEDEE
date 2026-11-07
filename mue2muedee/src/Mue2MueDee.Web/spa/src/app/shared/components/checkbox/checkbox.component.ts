@@ -1,6 +1,7 @@
 import { Component, forwardRef, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { FormField } from '../../forms/form-field';
 
 @Component({
   selector: 'app-checkbox',
@@ -16,8 +17,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
     }
   ]
 })
-export class CheckboxComponent implements ControlValueAccessor {
-  @Input() label?: string;
+export class CheckboxComponent extends FormField implements ControlValueAccessor {
   @Input() description?: string;
   @Input() disabled: boolean = false;
 

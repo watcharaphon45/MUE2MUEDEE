@@ -1,6 +1,6 @@
-<label class="flex items-start gap-3 cursor-pointer group select-none" [class.opacity-60]="disabled" [class.cursor-not-allowed]="disabled">
+<label [attr.for]="fieldId" class="flex items-start gap-3 cursor-pointer group select-none" [class.opacity-60]="disabled" [class.cursor-not-allowed]="disabled">
   <div class="relative flex items-center justify-center mt-0.5">
-    <input
+    <input [id]="fieldId" [attr.aria-invalid]="!!validationMessage" [attr.aria-describedby]="validationMessage ? errorId : null" [attr.aria-required]="isRequired"
       type="checkbox"
       [checked]="checked"
       [disabled]="disabled"
@@ -8,7 +8,7 @@
       (blur)="onBlur()"
       class="peer sr-only"
     />
-    <div class="w-4 h-4 rounded-md border border-slate-300 bg-sky-50 peer-checked:bg-sky-600 peer-checked:border-sky-600 transition-colors flex items-center justify-center">
+    <div class="checkbox-box w-4 h-4 rounded-md border border-slate-300 bg-sky-50 peer-checked:bg-sky-600 peer-checked:border-sky-600 transition-colors flex items-center justify-center">
       @if (checked) {
         <span class="material-icons-outlined text-slate-800 text-[14px] leading-none font-bold">check</span>
       }
@@ -28,3 +28,6 @@
     </div>
   }
 </label>
+@if (validationMessage) {
+  <p [id]="errorId" role="status" aria-live="polite" class="mt-1.5 text-[11px] text-rose-600">{{ validationMessage }}</p>
+}
