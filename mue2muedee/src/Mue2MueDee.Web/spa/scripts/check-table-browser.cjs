@@ -23,7 +23,7 @@ const rows = Array.from({ length: 61 }, (_, index) => ({
   ownerFullName: `เจ้าของร้านตัวอย่าง ${index + 1}`, ownerUsername: `owner${index + 1}`, ownerEmail: `owner${index + 1}@example.test`, ownerPhoneNumber: '0812345678',
   description: index % 5 === 0 ? 'รายละเอียดสินค้าตัวอย่างที่มีข้อความยาว เพื่อทดสอบการตัดบรรทัดให้พอดีกับคอลัมน์โดยไม่ซ่อนข้อมูลที่จำเป็น' : 'ข้อมูลตัวอย่าง',
   notes: 'หมายเหตุทดสอบ', accessories: 'กล่อง แบตเตอรี่ และสายคล้อง', defects: 'ไม่มีตำหนิสำคัญ',
-  status: 3, statusName: 'พร้อมขาย', isActive: true, role: 'Owner', userCount: 12, productCount: 25, sourcedItemCount: 4, inventoryCount: 5, sortOrder: index + 1,
+  status: 3, statusName: 'พร้อมขาย', isActive: true, role: 'Owner', userCount: 12, totalUsersCount: 12, productCount: 25, sourcedItemCount: 4, inventoryCount: 5, sortOrder: index + 1,
   purchaseCost: 50000, actualCost: 51500, sellingPrice: index % 7 === 0 ? 1234567.89 : 64900,
   defaultSellingPrice: 64900, expectedProfit: 13400, expectedMarginPercent: 20.65,
   expectedSalePrice: 64900, estimatedRepairCost: 1000, estimatedCleaningCost: 500, maxBuyPrice: 54000, offeredPrice: 50000, agreedPrice: 50000,
@@ -146,7 +146,7 @@ function api(url) {
     const results = [];
     for (const width of [1440, 390]) {
       await send('Emulation.setDeviceMetricsOverride', { width, height: 960, deviceScaleFactor: 1, mobile: width < 600 });
-      for (const [name, route, selector, action] of views.filter(([name]) => !selectedView || name === selectedView)) {
+      for (const [name, route, selector, action] of views.filter(([name]) => !selectedView || selectedView.split(',').includes(name))) {
         const previousLoad = completedLoads;
         await send('Page.navigate', { url: origin + route });
         await until(() => completedLoads > previousLoad, name + ' document load');
@@ -165,6 +165,34 @@ function api(url) {
         const state = await evaluate(`(()=>({ width:innerWidth, documentWidth:document.documentElement.scrollWidth, tables:[...document.querySelectorAll('table.app-table')].filter(t=>t.getClientRects().length).map(t=>({rows:t.querySelectorAll('tbody tr').length,scroll:t.parentElement.scrollWidth>t.parentElement.clientWidth})),ranges:[...document.querySelectorAll('.page-range')].map(e=>e.textContent.trim()) }))()`);
         assert(state.documentWidth <= width + 2, `${name} overflows viewport at ${width}: ${state.documentWidth}`);
         for (const table of state.tables) assert(table.rows <= 25, `${name} did not paginate rows`);
+        if (name === 'purchase') {
+          const layout = await evaluate(`(()=>{
+            const customer=document.querySelector('td.purchase-customer');
+            const items=document.querySelector('td.purchase-items');
+            return {customerWidth:customer.getBoundingClientRect().width,itemsWidth:items.getBoundingClientRect().width,
+              previewWraps:getComputedStyle(items.querySelector('.items-preview')).whiteSpace!=='nowrap'};
+          })()`);
+          assert(layout.customerWidth >= 238, 'Purchase customer column is squeezed');
+          assert(layout.itemsWidth >= 270 && layout.previewWraps, 'Purchase item details are clipped');
+          await evaluate("document.querySelector('table.data-table').scrollIntoView({block:'start'})");
+          const tableScreenshot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
+          fs.writeFileSync(path.join(output, `purchase-columns-${width}.png`), Buffer.from(tableScreenshot.data, 'base64'));
+        }
+        if (name === 'stores') {
+          const layout = await evaluate(`(()=>{
+            const store=document.querySelector('td.store-column');
+            const owner=document.querySelector('td.owner-column');
+            const username=owner.querySelector('.owner-username').getBoundingClientRect();
+            const email=owner.querySelector('.owner-email').getBoundingClientRect();
+            return {storeWidth:store.getBoundingClientRect().width,ownerWidth:owner.getBoundingClientRect().width,separateLines:email.top>=username.bottom};
+          })()`);
+          assert(layout.storeWidth >= 270, 'Store name column is squeezed');
+          assert(layout.ownerWidth >= 254, 'Store owner column is squeezed');
+          assert(layout.separateLines, 'Owner username and email overlap');
+          await evaluate("document.querySelector('table.stores-table').scrollIntoView({block:'start'})");
+          const tableScreenshot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
+          fs.writeFileSync(path.join(output, `stores-columns-${width}.png`), Buffer.from(tableScreenshot.data, 'base64'));
+        }
         if (name === 'inventory') {
           const layout = await evaluate(`(()=>{
             const cell=document.querySelector('td.inventory-product');
@@ -188,6 +216,29 @@ function api(url) {
         await until(() => evaluate("document.querySelector('.page-range')?.textContent.includes('แสดง 1–10')"), name + ' page size reset');
         const screenshot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
         fs.writeFileSync(path.join(output, `${name}-${width}.png`), Buffer.from(screenshot.data, 'base64'));
+        if (name === 'purchase-detail') {
+          await evaluate("(()=>{const c=ng.getComponent(document.querySelector('app-purchase-detail'));c.purchaseService.selectedOrder.update(po=>({...po,status:4,payments:[]}));ng.applyChanges(c);})()");
+          await evaluate("document.querySelector('.action-buttons .btn-primary').click()");
+          await until(() => evaluate("!!document.querySelector('.modal-dialog')"), 'purchase payment dialog');
+          assert(await evaluate("(()=>{const r=document.querySelector('.modal-dialog').getBoundingClientRect();return r.top>=0 && r.bottom<=innerHeight && document.documentElement.scrollWidth<=innerWidth+2;})()"), 'Purchase payment dialog is clipped');
+          const modalScreenshot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
+          fs.writeFileSync(path.join(output, `purchase-payment-${width}.png`), Buffer.from(modalScreenshot.data, 'base64'));
+          await evaluate("document.querySelector('.modal-close').click()");
+        }
+        if (name === 'stores') {
+          await evaluate("document.getElementById('btn-open-create-store-modal').click()");
+          await until(() => evaluate("!!document.querySelector('.store-modal-panel')"), 'create store dialog');
+          await sleep(300);
+          assert(await evaluate(`(()=>{
+            const panel=document.querySelector('.store-modal-panel');const r=panel.getBoundingClientRect();
+            const password=panel.querySelector('input[type=password]');
+            return r.top>=0 && r.bottom<=innerHeight && panel.scrollHeight>=panel.clientHeight && password.value==='';
+          })()`), 'Create store dialog is clipped or has a predefined password');
+          await evaluate("document.querySelector('.store-modal-panel').scrollTop=10000");
+          const modalScreenshot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
+          fs.writeFileSync(path.join(output, `stores-modal-${width}.png`), Buffer.from(modalScreenshot.data, 'base64'));
+          await evaluate("document.querySelector('[aria-label=\"ปิดหน้าต่างสร้างร้านค้า\"]').click()");
+        }
         results.push({ name, width, ...state });
         console.log(`${name} ${width}px: pagination and layout passed`);
       }

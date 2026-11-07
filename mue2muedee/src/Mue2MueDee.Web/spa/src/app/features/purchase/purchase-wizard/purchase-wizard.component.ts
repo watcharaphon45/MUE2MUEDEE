@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { finalize, of, switchMap, tap } from 'rxjs';
 import { PurchaseService } from '../purchase.service';
 import { MasterDataService } from '../../master-data/master-data.service';
 import {
@@ -9,7 +10,9 @@ import {
   InspectionItemResult,
   InspectionTemplate,
   PurchaseOrder,
-  PaymentMethod
+  PaymentMethod,
+  MakeOfferRequest,
+  SaveInspectionItemRequest
 } from '../purchase.models';
 import {
   TextboxComponent,
@@ -50,6 +53,9 @@ export class PurchaseWizardComponent implements OnInit {
   inspectionAnswers = signal<Map<string, { result: InspectionItemResult; notes: string }>>(new Map());
 
   createdPO = signal<PurchaseOrder | null>(null);
+  readonly hasPendingSubmission = signal(false);
+  private pendingOffer: MakeOfferRequest | null = null;
+  private pendingInspection: SaveInspectionItemRequest[] = [];
 
   // Forms for each step
   step1Form = new FormGroup({
@@ -59,25 +65,25 @@ export class PurchaseWizardComponent implements OnInit {
 
   step2Form = new FormGroup({
     productId: new FormControl('', [Validators.required]),
-    serialNumber: new FormControl('', [Validators.required]),
+    serialNumber: new FormControl('', [Validators.required, Validators.pattern(/\S/)]),
     conditionGradeId: new FormControl('', [Validators.required]),
-    shutterCount: new FormControl<number | null>(null),
+    shutterCount: new FormControl<number | null>(null, [Validators.min(0)]),
     accessories: new FormControl(''),
     defects: new FormControl('')
   });
 
   step3Form = new FormGroup({
     expectedSalePrice: new FormControl<number | null>(null, [Validators.required, Validators.min(0)]),
-    estimatedRepairCost: new FormControl<number>(0),
-    estimatedCleaningCost: new FormControl<number>(0),
-    missingAccessoriesDeduction: new FormControl<number>(0),
-    offeredPrice: new FormControl<number | null>(null, [Validators.required, Validators.min(0)]),
+    estimatedRepairCost: new FormControl<number>(0, [Validators.min(0)]),
+    estimatedCleaningCost: new FormControl<number>(0, [Validators.min(0)]),
+    missingAccessoriesDeduction: new FormControl<number>(0, [Validators.min(0)]),
+    offeredPrice: new FormControl<number | null>(null, [Validators.required, Validators.min(0.01)]),
     offerNotes: new FormControl('')
   });
 
   paymentForm = new FormGroup({
     paymentMethod: new FormControl<string>(PaymentMethod.BankTransfer.toString(), [Validators.required]),
-    amount: new FormControl<number | null>(null, [Validators.required, Validators.min(1)]),
+    amount: new FormControl<number | null>(null, [Validators.required, Validators.min(0.01)]),
     referenceNumber: new FormControl(''),
     notes: new FormControl('')
   });
@@ -195,14 +201,15 @@ export class PurchaseWizardComponent implements OnInit {
   // --- Wizard Navigation ---
 
   goToStep(step: number): void {
+    if (this.isSubmitting() || this.createdPO()) return;
     this.errorMessage.set(null);
 
-    if (step === 2 && this.step1Form.invalid) {
+    if (step >= 2 && this.step1Form.invalid) {
       this.step1Form.markAllAsTouched();
       return;
     }
 
-    if (step === 3 && this.step2Form.invalid) {
+    if (step >= 3 && this.step2Form.invalid) {
       this.step2Form.markAllAsTouched();
       return;
     }
@@ -213,7 +220,10 @@ export class PurchaseWizardComponent implements OnInit {
   // --- Submit Final PO in Step 3 ---
 
   createAndSubmitPO(): void {
-    if (this.step3Form.invalid) {
+    if (this.isSubmitting() || this.createdPO()) return;
+    if (this.step1Form.invalid || this.step2Form.invalid || this.step3Form.invalid) {
+      this.step1Form.markAllAsTouched();
+      this.step2Form.markAllAsTouched();
       this.step3Form.markAllAsTouched();
       return;
     }
@@ -224,6 +234,10 @@ export class PurchaseWizardComponent implements OnInit {
     const s1 = this.step1Form.getRawValue();
     const s2 = this.step2Form.getRawValue();
     const s3 = this.step3Form.getRawValue();
+    this.pendingOffer = { totalOfferedPrice: s3.offeredPrice!, notes: s3.offerNotes || undefined };
+    this.pendingInspection = Array.from(this.inspectionAnswers().entries()).map(([templateItemId, answer]) => ({
+      templateItemId, result: answer.result, notes: answer.notes || undefined
+    }));
 
     // 1. Create Purchase Order with item
     this.purchaseService.createOrder({
@@ -233,7 +247,7 @@ export class PurchaseWizardComponent implements OnInit {
         productId: s2.productId!,
         serialNumber: s2.serialNumber!.trim(),
         conditionGradeId: s2.conditionGradeId!,
-        shutterCount: s2.shutterCount || undefined,
+        shutterCount: s2.shutterCount ?? undefined,
         accessories: s2.accessories || undefined,
         defects: s2.defects || undefined,
         expectedSalePrice: s3.expectedSalePrice!,
@@ -245,35 +259,10 @@ export class PurchaseWizardComponent implements OnInit {
     }).subscribe({
       next: po => {
         this.createdPO.set(po);
-        const itemId = po.items[0]?.id;
-
-        // 2. Save Inspection Results
-        if (itemId && this.inspectionAnswers().size > 0) {
-          const resultsList = Array.from(this.inspectionAnswers().entries()).map(([tid, ans]) => ({
-            templateItemId: tid,
-            result: ans.result,
-            notes: ans.notes || undefined
-          }));
-
-          this.purchaseService.saveInspection(po.id, itemId, resultsList).subscribe();
-        }
-
-        // 3. Make offer to set offered status
-        this.purchaseService.makeOffer(po.id, {
-          totalOfferedPrice: s3.offeredPrice!,
-          notes: s3.offerNotes || undefined
-        }).subscribe({
-          next: updatedPo => {
-            this.createdPO.set(updatedPo);
-            this.paymentForm.controls.amount.setValue(updatedPo.totalOfferedPrice);
-            this.isSubmitting.set(false);
-            this.currentStep.set(4); // Advance to finalize step
-          },
-          error: () => {
-            this.isSubmitting.set(false);
-            this.currentStep.set(4);
-          }
-        });
+        this.hasPendingSubmission.set(true);
+        this.currentStep.set(4);
+        this.isSubmitting.set(false);
+        this.completeSubmission();
       },
       error: err => {
         this.isSubmitting.set(false);
@@ -282,9 +271,33 @@ export class PurchaseWizardComponent implements OnInit {
     });
   }
 
+  completeSubmission(): void {
+    const po = this.createdPO();
+    const offer = this.pendingOffer;
+    if (this.isSubmitting() || !po || !offer || !this.hasPendingSubmission()) return;
+    this.isSubmitting.set(true);
+    this.errorMessage.set(null);
+    const inspection = this.pendingInspection.length > 0 && po.items[0]
+      ? this.purchaseService.saveInspection(po.id, po.items[0].id, this.pendingInspection)
+      : of(po);
+    inspection.pipe(
+      tap(updated => this.createdPO.set(updated)),
+      switchMap(() => this.purchaseService.makeOffer(po.id, offer)),
+      finalize(() => this.isSubmitting.set(false))
+    ).subscribe({
+      next: updated => {
+        this.createdPO.set(updated);
+        this.hasPendingSubmission.set(false);
+        this.paymentForm.controls.amount.setValue(updated.totalOfferedPrice);
+      },
+      error: err => this.errorMessage.set(err.error?.message ?? 'บันทึกผลตรวจหรือเสนอราคาไม่สำเร็จ กรุณาลองใหม่กับใบรับซื้อเดิม')
+    });
+  }
+
   // --- Step 4 Actions ---
 
   approveOverMax(): void {
+    if (this.isSubmitting() || this.hasPendingSubmission()) return;
     const po = this.createdPO();
     if (!po) return;
 
@@ -302,6 +315,7 @@ export class PurchaseWizardComponent implements OnInit {
   }
 
   acceptOffer(): void {
+    if (this.isSubmitting() || this.hasPendingSubmission()) return;
     const po = this.createdPO();
     if (!po) return;
 
@@ -320,6 +334,7 @@ export class PurchaseWizardComponent implements OnInit {
   }
 
   rejectOffer(): void {
+    if (this.isSubmitting() || this.hasPendingSubmission()) return;
     const po = this.createdPO();
     if (!po) return;
 
@@ -337,6 +352,7 @@ export class PurchaseWizardComponent implements OnInit {
   }
 
   submitPayment(): void {
+    if (this.isSubmitting() || this.hasPendingSubmission()) return;
     const po = this.createdPO();
     if (!po || this.paymentForm.invalid) {
       this.paymentForm.markAllAsTouched();
@@ -366,6 +382,7 @@ export class PurchaseWizardComponent implements OnInit {
   }
 
   receiveToStock(): void {
+    if (this.isSubmitting() || this.hasPendingSubmission()) return;
     const po = this.createdPO();
     if (!po) return;
 

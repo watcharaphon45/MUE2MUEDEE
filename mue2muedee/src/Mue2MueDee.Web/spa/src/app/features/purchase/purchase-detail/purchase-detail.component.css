@@ -457,7 +457,9 @@
   border-radius: 0.75rem;
   width: 100%;
   max-width: 500px;
-  overflow: hidden;
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .modal-header {

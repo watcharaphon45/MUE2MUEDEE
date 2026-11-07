@@ -40,7 +40,7 @@ export class PurchaseDetailComponent implements OnInit {
 
   paymentForm = new FormGroup({
     paymentMethod: new FormControl<string>(PaymentMethod.BankTransfer.toString(), [Validators.required]),
-    amount: new FormControl<number | null>(null, [Validators.required, Validators.min(1)]),
+    amount: new FormControl<number | null>(null, [Validators.required, Validators.min(0.01)]),
     referenceNumber: new FormControl(''),
     notes: new FormControl('')
   });
@@ -67,11 +67,13 @@ export class PurchaseDetailComponent implements OnInit {
     this.purchaseService.getOrderById(id).subscribe({
       next: po => {
         this.paymentForm.controls.amount.setValue(po.totalAgreedPrice || po.totalOfferedPrice);
-      }
+      },
+      error: () => {}
     });
   }
 
   approvePurchase(): void {
+    if (this.isSubmitting()) return;
     this.isSubmitting.set(true);
     this.purchaseService.approvePurchase(this.poId()).subscribe({
       next: () => {
@@ -86,6 +88,7 @@ export class PurchaseDetailComponent implements OnInit {
   }
 
   acceptOffer(): void {
+    if (this.isSubmitting()) return;
     this.isSubmitting.set(true);
     this.purchaseService.acceptOffer(this.poId()).subscribe({
       next: () => {
@@ -100,6 +103,7 @@ export class PurchaseDetailComponent implements OnInit {
   }
 
   rejectOffer(): void {
+    if (this.isSubmitting()) return;
     this.isSubmitting.set(true);
     this.purchaseService.rejectOffer(this.poId()).subscribe({
       next: () => {
@@ -114,8 +118,11 @@ export class PurchaseDetailComponent implements OnInit {
   }
 
   openPayment(): void {
+    if (this.isSubmitting()) return;
+    this.feedback.set(null);
     const po = this.purchaseService.selectedOrder();
     if (po) {
+      this.paymentForm.reset({ paymentMethod: PaymentMethod.BankTransfer.toString(), referenceNumber: '', notes: '' });
       this.paymentForm.controls.amount.setValue(this.remainingPayment(po));
     }
     this.showPaymentModal.set(true);
@@ -126,10 +133,12 @@ export class PurchaseDetailComponent implements OnInit {
   }
 
   closePayment(): void {
+    if (this.isSubmitting()) return;
     this.showPaymentModal.set(false);
   }
 
   submitPayment(): void {
+    if (this.isSubmitting()) return;
     if (this.paymentForm.invalid) {
       this.paymentForm.markAllAsTouched();
       return;
@@ -157,6 +166,7 @@ export class PurchaseDetailComponent implements OnInit {
   }
 
   receiveToStock(): void {
+    if (this.isSubmitting()) return;
     this.isSubmitting.set(true);
     this.purchaseService.receiveToStock(this.poId()).subscribe({
       next: () => {

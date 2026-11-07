@@ -272,10 +272,35 @@
 .items-preview {
   font-size: 0.75rem;
   color: #6b7280;
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+:host .app-table-scroll > table.data-table :is(th, td).purchase-number {
+  min-width: 10rem;
+}
+
+:host .app-table-scroll > table.data-table :is(th, td).purchase-customer {
+  min-width: 15rem;
+  max-width: 22rem;
+}
+
+:host .app-table-scroll > table.data-table :is(th, td).purchase-items {
+  min-width: 17rem;
+  max-width: 24rem;
+}
+
+.load-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #fecaca;
+  border-radius: 0.75rem;
+  color: #b91c1c;
+  background: #fef2f2;
 }
 
 .action-btn {

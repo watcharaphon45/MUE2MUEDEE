@@ -41,12 +41,14 @@ export class PurchaseListComponent implements OnInit {
 
   readonly statusOptions = [
     { value: '', label: 'ทุกสถานะ' },
+    { value: PurchaseStatus.Draft.toString(), label: 'ฉบับร่าง' },
     { value: PurchaseStatus.Appraising.toString(), label: 'กำลังตรวจสภาพ/ประเมินราคา' },
     { value: PurchaseStatus.Offered.toString(), label: 'เสนอราคาแล้ว' },
     { value: PurchaseStatus.Accepted.toString(), label: 'ลูกค้าตกลงรับข้อเสนอ' },
     { value: PurchaseStatus.Paid.toString(), label: 'ชำระเงินแล้ว' },
     { value: PurchaseStatus.Received.toString(), label: 'รับเข้าคลังแล้ว' },
-    { value: PurchaseStatus.Rejected.toString(), label: 'ลูกค้ายกเลิก/ปฏิเสธ' }
+    { value: PurchaseStatus.Rejected.toString(), label: 'ลูกค้ายกเลิก/ปฏิเสธ' },
+    { value: PurchaseStatus.Cancelled.toString(), label: 'ยกเลิกใบรับซื้อ' }
   ];
 
   filterForm = new FormGroup({
@@ -69,7 +71,7 @@ export class PurchaseListComponent implements OnInit {
       toDate: val.toDate || undefined,
       page,
       pageSize: this.tablePageSize()
-    }).subscribe();
+    }).subscribe({ error: () => {} });
   }
 
   resetFilters(): void {

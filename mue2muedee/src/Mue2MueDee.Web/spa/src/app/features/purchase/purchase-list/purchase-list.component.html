@@ -24,7 +24,7 @@
         </svg>
       </div>
       <div>
-        <span class="metric-label">ใบรับซื้อทั้งหมด</span>
+        <span class="metric-label">ใบรับซื้อตามตัวกรอง</span>
         <h3 class="metric-value">{{ purchaseService.pagedResult().totalCount }} <span class="metric-unit">ใบ</span></h3>
       </div>
     </div>
@@ -36,7 +36,7 @@
         </svg>
       </div>
       <div>
-        <span class="metric-label">กำลังตรวจสภาพ / ประเมิน</span>
+        <span class="metric-label">กำลังตรวจสภาพ / ประเมิน (หน้านี้)</span>
         <h3 class="metric-value text-amber-600">{{ pendingAppraisals }} <span class="metric-unit">รายการ</span></h3>
       </div>
     </div>
@@ -48,7 +48,7 @@
         </svg>
       </div>
       <div>
-        <span class="metric-label">รออนุมัติราคาพิเศษ (Owner)</span>
+        <span class="metric-label">รออนุมัติราคาพิเศษ (หน้านี้)</span>
         <h3 class="metric-value text-rose-600">{{ needsApprovalCount }} <span class="metric-unit">รายการ</span></h3>
       </div>
     </div>
@@ -117,6 +117,10 @@
   </div>
 
   <!-- Data Table -->
+  <div *ngIf="purchaseService.errorMessage()" class="load-error" role="alert">
+    <span>{{ purchaseService.errorMessage() }}</span>
+    <button type="button" class="btn-secondary" (click)="search(purchaseService.pagedResult().page)">ลองใหม่</button>
+  </div>
   <div class="table-container">
     <div *ngIf="purchaseService.loading()" class="loading-overlay">
       <div class="spinner"></div>
@@ -128,10 +132,10 @@
       <table class="app-table data-table">
       <thead>
         <tr>
-          <th class="table-code">เลขที่ใบรับซื้อ</th>
+          <th class="table-code purchase-number">เลขที่ใบรับซื้อ</th>
           <th class="table-date">วันที่</th>
-          <th class="table-text">ลูกค้าผู้ขาย</th>
-          <th class="table-text">รายการสินค้าในบิล</th>
+          <th class="table-text purchase-customer">ลูกค้าผู้ขาย</th>
+          <th class="table-text purchase-items">รายการสินค้าในบิล</th>
           <th class="table-money text-right">ราคารับซื้อสูงสุด (Max Buy)</th>
           <th class="table-money text-right">ราคาเสนอซื้อ (Offer)</th>
           <th class="table-money text-right">ราคาตกลง (Agreed)</th>
@@ -141,7 +145,7 @@
       </thead>
       <tbody>
         <tr *ngFor="let po of purchaseService.pagedResult().items" class="table-row">
-          <td class="table-code">
+          <td class="table-code purchase-number">
             <div class="po-cell">
               <span class="po-badge">{{ po.poNumber }}</span>
               <span *ngIf="po.needsApproval" class="approval-tag">รออนุมัติ</span>
@@ -150,13 +154,13 @@
           <td class="table-date">
             <span class="date-text">{{ po.purchaseDate | date:'d MMM yyyy, HH:mm' }}</span>
           </td>
-          <td class="table-text">
+          <td class="table-text purchase-customer">
             <div class="customer-cell">
               <span class="customer-name">{{ po.customerName }}</span>
               <span class="customer-phone">{{ po.customerPhone }}</span>
             </div>
           </td>
-          <td class="table-text">
+          <td class="table-text purchase-items">
             <div class="items-cell">
               <span class="items-count font-medium">{{ po.items.length }} ชิ้น</span>
               <span *ngIf="po.items.length > 0" class="items-preview">
@@ -186,7 +190,7 @@
           </td>
         </tr>
 
-        <tr *ngIf="purchaseService.pagedResult().items.length === 0 && !purchaseService.loading()">
+        <tr *ngIf="purchaseService.pagedResult().items.length === 0 && !purchaseService.loading() && !purchaseService.errorMessage()">
           <td colspan="9" class="empty-state">
             <svg class="empty-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />

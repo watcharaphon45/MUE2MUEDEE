@@ -25,7 +25,7 @@
         ✓ ลูกค้าตกลง (Accept)
       </button>
 
-      <button *ngIf="(po.status === 4 || po.status === 6 || po.status === 7) && remainingPayment(po) > 0" type="button" class="btn-primary" (click)="openPayment()">
+      <button *ngIf="(po.status === 4 || po.status === 6 || po.status === 7) && remainingPayment(po) > 0" type="button" class="btn-primary" (click)="openPayment()" [disabled]="isSubmitting()">
         ฿ จ่ายเงินให้ลูกค้า (Record Payment)
       </button>
 
@@ -36,6 +36,11 @@
   </div>
 
   <!-- Feedback Alert -->
+  <div *ngIf="purchaseService.loading()" class="card" role="status">กำลังโหลดใบรับซื้อ...</div>
+  <div *ngIf="purchaseService.errorMessage()" class="alert-box alert-error" role="alert">
+    <span>{{ purchaseService.errorMessage() }}</span>
+    <button type="button" class="btn-secondary" (click)="loadDetails(poId())">ลองใหม่</button>
+  </div>
   <div *ngIf="feedback()" class="alert-box" [class.alert-success]="feedback()?.type === 'success'" [class.alert-error]="feedback()?.type === 'error'">
     <span>{{ feedback()?.text }}</span>
     <button type="button" (click)="feedback.set(null)" class="alert-close">&times;</button>
@@ -76,7 +81,7 @@
               <div class="item-meta">
                 <span>Serial Number: <strong class="font-mono">{{ item.serialNumber }}</strong></span>
                 <span>• เกรด: <strong>{{ item.conditionGradeCode }}</strong> ({{ item.conditionGradeName }})</span>
-                <span *ngIf="item.shutterCount">• ชัตเตอร์: {{ item.shutterCount | number }} sc</span>
+                <span *ngIf="item.shutterCount != null">• ชัตเตอร์: {{ item.shutterCount | number }} sc</span>
               </div>
             </div>
             <div *ngIf="item.inventoryItemId" class="received-badge">
@@ -172,14 +177,15 @@
   </div>
 
   <!-- Modal: Record Payment -->
-  <div *ngIf="showPaymentModal()" class="modal-backdrop">
+  <div *ngIf="showPaymentModal()" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="purchase-payment-title">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3 class="modal-title">บันทึกการจ่ายเงินให้ลูกค้า</h3>
-        <button type="button" class="modal-close" (click)="closePayment()">&times;</button>
+        <h3 id="purchase-payment-title" class="modal-title">บันทึกการจ่ายเงินให้ลูกค้า</h3>
+        <button type="button" class="modal-close" (click)="closePayment()" [disabled]="isSubmitting()" aria-label="ปิดหน้าต่างจ่ายเงิน">&times;</button>
       </div>
 
       <form [formGroup]="paymentForm" (ngSubmit)="submitPayment()" class="modal-body">
+        <div *ngIf="feedback()?.type === 'error'" class="alert-box alert-error" role="alert">{{ feedback()?.text }}</div>
         <app-select
           label="ช่องทางการจ่ายเงิน *"
           [options]="paymentMethodOptions"
@@ -205,7 +211,7 @@
         ></app-textbox>
 
         <div class="modal-footer">
-          <button type="button" class="btn-secondary" (click)="closePayment()">ยกเลิก</button>
+          <button type="button" class="btn-secondary" (click)="closePayment()" [disabled]="isSubmitting()">ยกเลิก</button>
           <button type="submit" class="btn-primary" [disabled]="isSubmitting()">
             <span *ngIf="isSubmitting()">กำลังบันทึก...</span>
             <span *ngIf="!isSubmitting()">ยืนยันการจ่ายเงิน</span>

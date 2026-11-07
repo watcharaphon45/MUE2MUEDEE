@@ -320,9 +320,16 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
       <div>
-        <h3 class="success-title">เปิดใบรับซื้อสำเร็จ! เลขที่: {{ po.poNumber }}</h3>
+        <h3 class="success-title">{{ hasPendingSubmission() ? 'สร้างใบรับซื้อแล้ว รอบันทึกผลตรวจและเสนอราคา' : 'เปิดใบรับซื้อสำเร็จ!' }} เลขที่: {{ po.poNumber }}</h3>
         <p class="success-subtitle">สถานะปัจจุบัน: {{ po.statusName }} • ยอดเสนอซื้อ: ฿{{ po.totalOfferedPrice | number:'1.2-2' }}</p>
       </div>
+    </div>
+
+    <div *ngIf="hasPendingSubmission()" class="stage-card">
+      <p class="stage-desc">ดำเนินการต่อกับใบรับซื้อ {{ po.poNumber }} โดยใช้ข้อมูลเดิม</p>
+      <button type="button" class="btn-primary" (click)="completeSubmission()" [disabled]="isSubmitting()">
+        {{ isSubmitting() ? 'กำลังบันทึกผลตรวจและเสนอราคา...' : 'ลองบันทึกผลตรวจและเสนอราคาอีกครั้ง' }}
+      </button>
     </div>
 
     <!-- Need Approval Alert -->

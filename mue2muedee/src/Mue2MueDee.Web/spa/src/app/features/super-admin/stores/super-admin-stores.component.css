@@ -1,5 +1,36 @@
 :host {
   display: block;
+  min-width: 0;
+}
+
+:host .app-table-scroll > table.stores-table :is(th, td).store-column {
+  min-width: 17rem;
+  max-width: 24rem;
+}
+
+:host .app-table-scroll > table.stores-table :is(th, td).owner-column {
+  min-width: 16rem;
+  max-width: 22rem;
+}
+
+:host .app-table-scroll > table.stores-table :is(th, td).contact-column {
+  min-width: 15rem;
+  max-width: 22rem;
+}
+
+.stores-table .material-icons-outlined {
+  flex-shrink: 0;
+}
+
+.stores-table button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.store-modal-panel {
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 @keyframes fadeIn {
