@@ -65,7 +65,6 @@ public class ExceptionHandlingMiddleware
                 _logger.LogError(exception, "Unhandled Exception: {Message}", exception.Message);
                 statusCode = HttpStatusCode.InternalServerError;
                 message = "เกิดข้อผิดพลาดในเซิร์ฟเวอร์ (Internal Server Error)";
-                errors.Add(exception.Message);
                 break;
         }
 

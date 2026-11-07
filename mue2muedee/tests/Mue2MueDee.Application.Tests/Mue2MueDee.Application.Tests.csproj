@@ -22,6 +22,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Mue2MueDee.Application\Mue2MueDee.Application.csproj" />
     <ProjectReference Include="..\..\src\Mue2MueDee.Infrastructure\Mue2MueDee.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Mue2MueDee.Web\Mue2MueDee.Web.csproj" />
   </ItemGroup>
 
 </Project>

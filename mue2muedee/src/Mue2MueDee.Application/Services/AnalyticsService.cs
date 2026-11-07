@@ -14,15 +14,19 @@ public class AnalyticsService : IAnalyticsService
     private readonly IApplicationDbContext _context;
     private readonly ICurrentStore _currentStore;
     private readonly IPricingService _pricingService;
+    private readonly TimeProvider _timeProvider;
+    private static readonly TimeSpan BusinessOffset = TimeSpan.FromHours(7);
 
     public AnalyticsService(
         IApplicationDbContext context,
         ICurrentStore currentStore,
-        IPricingService pricingService)
+        IPricingService pricingService,
+        TimeProvider? timeProvider = null)
     {
         _context = context;
         _currentStore = currentStore;
         _pricingService = pricingService;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     private Guid RequireStoreId()
@@ -43,9 +47,10 @@ public class AnalyticsService : IAnalyticsService
     {
         var storeId = RequireStoreId();
         var isAuthorized = IsFinancialAuthorized();
-        var now = DateTimeOffset.UtcNow;
-        var startOfToday = new DateTimeOffset(now.Year, now.Month, now.Day, 0, 0, 0, TimeSpan.Zero);
-        var startOfMonth = new DateTimeOffset(now.Year, now.Month, 1, 0, 0, 0, TimeSpan.Zero);
+        var now = _timeProvider.GetUtcNow();
+        var businessNow = now.ToOffset(BusinessOffset);
+        var startOfToday = new DateTimeOffset(businessNow.Year, businessNow.Month, businessNow.Day, 0, 0, 0, BusinessOffset).ToUniversalTime();
+        var startOfMonth = new DateTimeOffset(businessNow.Year, businessNow.Month, 1, 0, 0, 0, BusinessOffset).ToUniversalTime();
 
         // Inventory status counts
         var inventoryItems = await _context.InventoryItems
@@ -65,10 +70,10 @@ public class AnalyticsService : IAnalyticsService
         var pendingInspection = inventoryItems.Count(i => i.Status == InventoryStatus.PendingInspection);
         var repairCount = inventoryItems.Count(i => i.Status == InventoryStatus.Repair);
         var reservedCount = inventoryItems.Count(i => i.Status == InventoryStatus.Reserved);
-        var totalActive = inventoryItems.Count(i => i.Status != InventoryStatus.Sold);
+        var totalActive = inventoryItems.Count(i => i.Status != InventoryStatus.Sold && i.Status != InventoryStatus.WrittenOff);
 
         // Aging counts (for unsold items)
-        var unsoldItems = inventoryItems.Where(i => i.Status != InventoryStatus.Sold).ToList();
+        var unsoldItems = inventoryItems.Where(i => i.Status != InventoryStatus.Sold && i.Status != InventoryStatus.WrittenOff).ToList();
         var agingOver60 = unsoldItems.Count(i => (now - i.ReceivedAt).TotalDays >= 61);
         var agingOver90 = unsoldItems.Count(i => (now - i.ReceivedAt).TotalDays >= 91);
         var agingOver120 = unsoldItems.Count(i => (now - i.ReceivedAt).TotalDays >= 121);
@@ -194,7 +199,7 @@ public class AnalyticsService : IAnalyticsService
             .Include(i => i.Product)
                 .ThenInclude(p => p.Category)
             .Include(i => i.ConditionGrade)
-            .Where(i => i.StoreId == storeId && i.Status != InventoryStatus.Sold)
+            .Where(i => i.StoreId == storeId && i.Status != InventoryStatus.Sold && i.Status != InventoryStatus.WrittenOff)
             .OrderByDescending(i => i.ReceivedAt)
             .ToListAsync();
 
@@ -479,7 +484,7 @@ public class AnalyticsService : IAnalyticsService
 
         // Daily trend
         var dailyTrend = orders
-            .GroupBy(o => o.SaleDate.Date)
+            .GroupBy(o => o.SaleDate.ToOffset(BusinessOffset).Date)
             .Select(g => new DailySalesTrendDto(
                 DateString: g.Key.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture),
                 Date: g.Key,
@@ -518,6 +523,12 @@ public class AnalyticsService : IAnalyticsService
         );
     }
 
+    private static string CsvCell(object? value)
+    {
+        var text = Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty;
+        return "\"" + text.Replace("\"", "\"\"") + "\"";
+    }
+
     public async Task<byte[]> ExportSalesReportCsvAsync(SalesReportQuery query)
     {
         var report = await GetSalesReportAsync(query);
@@ -541,9 +552,7 @@ public class AnalyticsService : IAnalyticsService
             sb.AppendLine("เลขที่บิล,วันที่ขาย,ลูกค้า,จำนวนชิ้น,ช่องทางชำระ,ยอดขายสุทธิ(฿),กำไรขั้นต้น(฿),มาร์จิ้น(%),สถานะ");
             foreach (var o in report.Orders)
             {
-                var profitStr = o.GrossProfit.HasValue ? o.GrossProfit.Value.ToString("F2") : "0.00";
-                var marginStr = o.MarginPercentage.HasValue ? o.MarginPercentage.Value.ToString("F2") : "0.00";
-                sb.AppendLine($"\"{o.OrderNumber}\",\"{o.OrderDate:dd/MM/yyyy HH:mm}\",\"{o.CustomerName}\",{o.ItemCount},\"{o.PaymentMethods}\",{o.NetAmount:F2},{profitStr},{marginStr},\"{o.Status}\"");
+                sb.AppendLine(string.Join(",", new object?[] { o.OrderNumber, o.OrderDate.ToOffset(BusinessOffset).ToString("dd/MM/yyyy HH:mm"), o.CustomerName, o.ItemCount, o.PaymentMethods, o.NetAmount, o.GrossProfit, o.MarginPercentage, o.Status }.Select(CsvCell)));
             }
         }
         else
@@ -551,7 +560,7 @@ public class AnalyticsService : IAnalyticsService
             sb.AppendLine("เลขที่บิล,วันที่ขาย,ลูกค้า,จำนวนชิ้น,ช่องทางชำระ,ยอดขายสุทธิ(฿),สถานะ");
             foreach (var o in report.Orders)
             {
-                sb.AppendLine($"\"{o.OrderNumber}\",\"{o.OrderDate:dd/MM/yyyy HH:mm}\",\"{o.CustomerName}\",{o.ItemCount},\"{o.PaymentMethods}\",{o.NetAmount:F2},\"{o.Status}\"");
+                sb.AppendLine(string.Join(",", new object?[] { o.OrderNumber, o.OrderDate.ToOffset(BusinessOffset).ToString("dd/MM/yyyy HH:mm"), o.CustomerName, o.ItemCount, o.PaymentMethods, o.NetAmount, o.Status }.Select(CsvCell)));
             }
         }
 
@@ -581,10 +590,10 @@ public class AnalyticsService : IAnalyticsService
         sb.AppendLine("ช่วงอายุสต็อก,จำนวน(ชิ้น),ส่วนลดอายุสต็อก(%),มูลค่าราคาขาย(฿)" + (report.IsFinancialVisible ? ",มูลค่าต้นทุน(฿)" : ""));
         foreach (var b in report.Buckets)
         {
-            var line = $"\"{b.Label}\",{b.Count},{b.DiscountPercentage}%,{b.TotalSalesValue:F2}";
+            var line = string.Join(",", new object?[] { b.Label, b.Count, b.DiscountPercentage, b.TotalSalesValue }.Select(CsvCell));
             if (report.IsFinancialVisible)
             {
-                line += $",{b.TotalCost:F2}";
+                line += "," + CsvCell(b.TotalCost);
             }
             sb.AppendLine(line);
         }
@@ -596,7 +605,7 @@ public class AnalyticsService : IAnalyticsService
             sb.AppendLine("SKU,Serial Number,แบรนด์,หมวดหมู่,รุ่นสินค้า,เกรดสภาพ,วันที่รับเข้า,อายุในคลัง(วัน),ช่วงอายุ,ต้นทุนจริง(฿),ราคาขายปัจจุบัน(฿),ราคาแนะนำระบายสต็อก(฿),สถานะ");
             foreach (var item in report.AgingItems)
             {
-                sb.AppendLine($"\"{item.Sku}\",\"{item.SerialNumber ?? "-"}\",\"{item.BrandName}\",\"{item.CategoryName}\",\"{item.ModelName}\",\"{item.ConditionGrade}\",\"{item.ReceivedAt:dd/MM/yyyy}\",{item.DaysInStock},\"{item.AgingBucket}\",{item.ActualCost:F2},{item.CurrentSellingPrice:F2},{item.RecommendedClearancePrice:F2},\"{item.Status}\"");
+                sb.AppendLine(string.Join(",", new object?[] { item.Sku, item.SerialNumber ?? "-", item.BrandName, item.CategoryName, item.ModelName, item.ConditionGrade, item.ReceivedAt.ToOffset(BusinessOffset).ToString("dd/MM/yyyy"), item.DaysInStock, item.AgingBucket, item.ActualCost, item.CurrentSellingPrice, item.RecommendedClearancePrice, item.Status }.Select(CsvCell)));
             }
         }
         else
@@ -604,7 +613,7 @@ public class AnalyticsService : IAnalyticsService
             sb.AppendLine("SKU,Serial Number,แบรนด์,หมวดหมู่,รุ่นสินค้า,เกรดสภาพ,วันที่รับเข้า,อายุในคลัง(วัน),ช่วงอายุ,ราคาขายปัจจุบัน(฿),ราคาแนะนำระบายสต็อก(฿),สถานะ");
             foreach (var item in report.AgingItems)
             {
-                sb.AppendLine($"\"{item.Sku}\",\"{item.SerialNumber ?? "-"}\",\"{item.BrandName}\",\"{item.CategoryName}\",\"{item.ModelName}\",\"{item.ConditionGrade}\",\"{item.ReceivedAt:dd/MM/yyyy}\",{item.DaysInStock},\"{item.AgingBucket}\",{item.CurrentSellingPrice:F2},{item.RecommendedClearancePrice:F2},\"{item.Status}\"");
+                sb.AppendLine(string.Join(",", new object?[] { item.Sku, item.SerialNumber ?? "-", item.BrandName, item.CategoryName, item.ModelName, item.ConditionGrade, item.ReceivedAt.ToOffset(BusinessOffset).ToString("dd/MM/yyyy"), item.DaysInStock, item.AgingBucket, item.CurrentSellingPrice, item.RecommendedClearancePrice, item.Status }.Select(CsvCell)));
             }
         }
 

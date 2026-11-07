@@ -77,8 +77,8 @@ export class NumberComponent implements ControlValueAccessor {
       // Allow numbers and one decimal point
       raw = raw.replace(/[^0-9.]/g, '');
       const parts = raw.split('.');
-      if (parts.length > 2) {
-        raw = parts[0] + '.' + parts.slice(1).join('');
+      if (parts.length > 1) {
+        raw = parts[0] + '.' + parts.slice(1).join('').slice(0, 2);
       }
     } else {
       // Strictly digits

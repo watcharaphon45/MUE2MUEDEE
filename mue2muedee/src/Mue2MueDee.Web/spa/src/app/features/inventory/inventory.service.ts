@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, tap, map } from 'rxjs';
 import { ApiResponse } from '../../core/models/api-response.model';
+import { numericEnumValue } from '../../core/models/api-enums';
 import {
   InventoryItem,
   CreateInventoryItemRequest,
@@ -16,8 +17,13 @@ import {
   AddCostItemRequest,
   PriceHistory,
   UpdatePriceRequest,
-  PricingRecommendation
+  PricingRecommendation,
+  InventoryStatus
 } from './inventory.models';
+
+export function normalizeInventoryItem(item: InventoryItem): InventoryItem {
+  return { ...item, status: numericEnumValue(item.status, InventoryStatus) };
+}
 
 @Injectable({
   providedIn: 'root'
@@ -61,7 +67,7 @@ export class InventoryService {
     if (filter.maxPrice !== undefined) params = params.set('maxPrice', filter.maxPrice.toString());
 
     return this.http.get<ApiResponse<PagedResult<InventoryItem>>>(this.baseUrl, { params }).pipe(
-      map(res => res.data),
+      map(res => ({ ...res.data, items: res.data.items.map(normalizeInventoryItem) })),
       tap({
         next: result => {
           this.pagedResult.set(result);
@@ -77,8 +83,10 @@ export class InventoryService {
 
   getItemById(id: string): Observable<InventoryItem> {
     this.loading.set(true);
+    this.selectedItem.set(null);
+    this.errorMessage.set(null);
     return this.http.get<ApiResponse<InventoryItem>>(`${this.baseUrl}/${id}`).pipe(
-      map(res => res.data),
+      map(res => normalizeInventoryItem(res.data)),
       tap({
         next: item => {
           this.selectedItem.set(item);
@@ -94,7 +102,7 @@ export class InventoryService {
 
   createItem(req: CreateInventoryItemRequest): Observable<InventoryItem> {
     return this.http.post<ApiResponse<InventoryItem>>(this.baseUrl, req).pipe(
-      map(res => res.data),
+      map(res => normalizeInventoryItem(res.data)),
       tap(created => {
         this.pagedResult.update(p => ({
           ...p,
@@ -107,7 +115,7 @@ export class InventoryService {
 
   updateItem(id: string, req: UpdateInventoryItemRequest): Observable<InventoryItem> {
     return this.http.put<ApiResponse<InventoryItem>>(`${this.baseUrl}/${id}`, req).pipe(
-      map(res => res.data),
+      map(res => normalizeInventoryItem(res.data)),
       tap(updated => {
         this.selectedItem.set(updated);
         this.pagedResult.update(p => ({
@@ -120,7 +128,7 @@ export class InventoryService {
 
   updateImages(id: string, imageUrls: string[]): Observable<InventoryItem> {
     return this.http.put<ApiResponse<InventoryItem>>(`${this.baseUrl}/${id}/images`, { imageUrls }).pipe(
-      map(res => res.data),
+      map(res => normalizeInventoryItem(res.data)),
       tap(updated => {
         this.selectedItem.set(updated);
         this.pagedResult.update(p => ({
@@ -133,7 +141,7 @@ export class InventoryService {
 
   adjustCost(id: string, req: AdjustCostRequest): Observable<InventoryItem> {
     return this.http.post<ApiResponse<InventoryItem>>(`${this.baseUrl}/${id}/adjust-cost`, req).pipe(
-      map(res => res.data),
+      map(res => normalizeInventoryItem(res.data)),
       tap(updated => {
         this.selectedItem.set(updated);
         this.pagedResult.update(p => ({
@@ -146,7 +154,7 @@ export class InventoryService {
 
   updateStatus(id: string, req: UpdateStatusRequest): Observable<InventoryItem> {
     return this.http.post<ApiResponse<InventoryItem>>(`${this.baseUrl}/${id}/status`, req).pipe(
-      map(res => res.data),
+      map(res => normalizeInventoryItem(res.data)),
       tap(updated => {
         this.selectedItem.set(updated);
         this.pagedResult.update(p => ({

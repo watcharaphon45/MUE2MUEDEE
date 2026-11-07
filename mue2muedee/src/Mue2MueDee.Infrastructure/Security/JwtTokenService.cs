@@ -19,12 +19,14 @@ public class JwtTokenService : IJwtTokenService
         _configuration = configuration;
     }
 
+    public TimeSpan AccessTokenLifetime => TimeSpan.FromMinutes(
+        int.TryParse(_configuration["Jwt:ExpiryMinutes"], out var minutes) && minutes > 0 ? minutes : 120);
+
     public string GenerateAccessToken(User user, Guid? storeId, StoreRole? role)
     {
         var secretKey = _configuration["Jwt:SecretKey"] ?? "Mue2MueDeeSuperSecretSecurityKey2026!@#$%^&*()_+DefaultKeyForDevOnly";
         var issuer = _configuration["Jwt:Issuer"] ?? "Mue2MueDee";
         var audience = _configuration["Jwt:Audience"] ?? "Mue2MueDeeApp";
-        var expiryMinutes = int.TryParse(_configuration["Jwt:ExpiryMinutes"], out var minutes) ? minutes : 120;
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -59,7 +61,7 @@ public class JwtTokenService : IJwtTokenService
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddMinutes(expiryMinutes),
+            Expires = DateTime.UtcNow.Add(AccessTokenLifetime),
             Issuer = issuer,
             Audience = audience,
             SigningCredentials = credentials

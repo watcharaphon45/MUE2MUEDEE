@@ -139,13 +139,14 @@ public class PurchaseServiceTests
             }
         ));
 
-        // Accept offer
-        await service.AcceptOfferAsync(po.Id);
+        // Offer and accept before recording payment.
+        await service.MakeOfferAsync(po.Id, new MakeOfferRequest(po.TotalOfferedPrice, null));
+        var accepted = await service.AcceptOfferAsync(po.Id);
 
         // Record payment to customer (Bank Transfer)
         await service.RecordPaymentAsync(po.Id, new RecordPurchasePaymentRequest(
             PaymentMethod: PaymentMethod.BankTransfer,
-            Amount: po.TotalAgreedPrice,
+            Amount: accepted.TotalAgreedPrice,
             ReferenceNumber: "SLIP-KBANK-8899",
             ProofUrl: null,
             Notes: "โอนผ่าน K-Plus"
@@ -165,13 +166,78 @@ public class PurchaseServiceTests
         Assert.NotNull(inventoryItem);
         Assert.StartsWith("CAM-", inventoryItem.Sku);
         Assert.Equal("SN-RECEIVE-TEST-99", inventoryItem.SerialNumber);
-        Assert.Equal(po.TotalAgreedPrice, inventoryItem.PurchaseCost);
+        Assert.Equal(accepted.TotalAgreedPrice, inventoryItem.PurchaseCost);
         // Actual cost = AgreedPrice + repair (800) + cleaning (200)
-        Assert.Equal(po.TotalAgreedPrice + 1000m, inventoryItem.ActualCost);
+        Assert.Equal(accepted.TotalAgreedPrice + 1000m, inventoryItem.ActualCost);
+        Assert.Equal(1000m, await context.InventoryCosts.Where(c => c.InventoryItemId == inventoryItem.Id).SumAsync(c => c.Amount));
         Assert.Equal(30000m, inventoryItem.SellingPrice);
         Assert.Equal(InventoryStatus.Available, inventoryItem.Status);
 
         Assert.Single(inventoryItem.StockMovements);
         Assert.Equal(StockMovementType.Receive, inventoryItem.StockMovements.First().MovementType);
+    }
+
+    [Fact]
+    public async Task NegotiatedMultiItemPurchase_AllocatesExactCostsAndDistinctSkus()
+    {
+        var (context, service, _, product, grade, customer) = SetupTestEnvironment();
+        var po = await service.CreatePurchaseOrderAsync(new CreatePurchaseOrderRequest(customer, null,
+            Enumerable.Range(1, 3).Select(i => new CreatePurchaseItemRequest(
+                product, $"MULTI-{i}", grade, null, null, null, 10000m)).ToList()));
+        await service.MakeOfferAsync(po.Id, new MakeOfferRequest(10000.01m, null));
+        var accepted = await service.AcceptOfferAsync(po.Id);
+        Assert.Equal(10000.01m, accepted.Items.Sum(i => i.AgreedPrice));
+
+        var received = await service.ReceiveToStockAsync(po.Id);
+        Assert.Equal(3, received.Items.Select(i => i.GeneratedSku).Distinct().Count());
+        Assert.Equal(10000.01m, await context.InventoryItems.SumAsync(i => i.PurchaseCost));
+        Assert.Equal(3, await context.StockMovements.CountAsync(m => m.MovementType == StockMovementType.Receive));
+        await Assert.ThrowsAsync<AppException>(() => service.ReceiveToStockAsync(po.Id));
+    }
+
+    [Fact]
+    public async Task PartialPayment_RemainsAcceptedAndCanBeCompletedAfterReceiving()
+    {
+        var (_, service, _, product, grade, customer) = SetupTestEnvironment();
+        var po = await service.CreatePurchaseOrderAsync(new CreatePurchaseOrderRequest(customer, null,
+            [new CreatePurchaseItemRequest(product, "PARTIAL", grade, null, null, null, 10000m)]));
+        await service.MakeOfferAsync(po.Id, new MakeOfferRequest(8000m, null));
+        await service.AcceptOfferAsync(po.Id);
+        var partial = await service.RecordPaymentAsync(po.Id,
+            new RecordPurchasePaymentRequest(PaymentMethod.Cash, 3000m, null, null, null));
+        Assert.Equal(PurchaseStatus.Accepted, partial.Status);
+        await service.ReceiveToStockAsync(po.Id);
+        var completed = await service.RecordPaymentAsync(po.Id,
+            new RecordPurchasePaymentRequest(PaymentMethod.Cash, 5000m, null, null, null));
+        Assert.Equal(PurchaseStatus.Received, completed.Status);
+        Assert.Equal(8000m, completed.Payments.Sum(p => p.Amount));
+        await Assert.ThrowsAsync<AppException>(() => service.RecordPaymentAsync(po.Id,
+            new RecordPurchasePaymentRequest(PaymentMethod.Cash, 1m, null, null, null)));
+    }
+
+    [Fact]
+    public async Task Workflow_RejectsAcceptBeforeOfferAndChangesAfterAcceptance()
+    {
+        var (_, service, _, product, grade, customer) = SetupTestEnvironment();
+        var item = new CreatePurchaseItemRequest(product, "WORKFLOW", grade, null, null, null, 10000m);
+        var po = await service.CreatePurchaseOrderAsync(new CreatePurchaseOrderRequest(customer, null, [item]));
+        await Assert.ThrowsAsync<AppException>(() => service.AcceptOfferAsync(po.Id));
+        await service.MakeOfferAsync(po.Id, new MakeOfferRequest(8000m, null));
+        await service.AcceptOfferAsync(po.Id);
+        await Assert.ThrowsAsync<AppException>(() => service.MakeOfferAsync(po.Id, new MakeOfferRequest(9000m, null)));
+        await Assert.ThrowsAsync<AppException>(() => service.AddItemAsync(po.Id, item));
+        await Assert.ThrowsAsync<AppException>(() => service.RejectOfferAsync(po.Id));
+    }
+
+    [Fact]
+    public async Task Create_RejectsDuplicateSerialsBeforeAcceptingThePurchase()
+    {
+        var (context, service, _, product, grade, customer) = SetupTestEnvironment();
+        var item = new CreatePurchaseItemRequest(product, "DUPLICATE", grade, null, null, null, 10000m);
+        var error = await Assert.ThrowsAsync<AppException>(() => service.CreatePurchaseOrderAsync(
+            new CreatePurchaseOrderRequest(customer, null, [item, item])));
+        Assert.Equal(409, error.StatusCode);
+        Assert.Empty(context.InventoryItems);
+        Assert.Empty(context.PurchaseOrders);
     }
 }

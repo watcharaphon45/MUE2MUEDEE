@@ -2,6 +2,8 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, tap, map } from 'rxjs';
 import { ApiResponse } from '../../core/models/api-response.model';
+import { numericEnumValue } from '../../core/models/api-enums';
+import { apiDateBoundary } from '../../core/models/business-date';
 import { PagedResult } from '../inventory/inventory.models';
 import {
   PurchaseOrder,
@@ -12,8 +14,33 @@ import {
   SaveInspectionItemRequest,
   MakeOfferRequest,
   RecordPurchasePaymentRequest,
-  PurchaseQueryFilter
+  PurchaseQueryFilter,
+  PurchaseStatus,
+  InspectionItemResult,
+  PaymentMethod
 } from './purchase.models';
+
+// The API serializes enums as names; components use numeric PurchaseStatus values.
+type PurchaseOrderResponse = Omit<PurchaseOrder, 'status'> & {
+  status: PurchaseStatus | keyof typeof PurchaseStatus;
+};
+
+function normalizeOrder(order: PurchaseOrderResponse): PurchaseOrder {
+  return {
+    ...order,
+    status: numericEnumValue(order.status, PurchaseStatus),
+    items: order.items.map(item => ({
+      ...item,
+      categoryType: numericEnumValue(item.categoryType, CategoryType),
+      inspectionResults: item.inspectionResults.map(result => ({
+        ...result, result: numericEnumValue(result.result, InspectionItemResult)
+      }))
+    })),
+    payments: order.payments.map(payment => ({
+      ...payment, paymentMethod: numericEnumValue(payment.paymentMethod, PaymentMethod)
+    }))
+  };
+}
 
 @Injectable({
   providedIn: 'root'
@@ -48,11 +75,11 @@ export class PurchaseService {
       params = params.set('status', filter.status.toString());
     }
     if (filter.customerId) params = params.set('customerId', filter.customerId);
-    if (filter.fromDate) params = params.set('fromDate', filter.fromDate);
-    if (filter.toDate) params = params.set('toDate', filter.toDate);
+    if (filter.fromDate) params = params.set('fromDate', apiDateBoundary(filter.fromDate));
+    if (filter.toDate) params = params.set('toDate', apiDateBoundary(filter.toDate, true));
 
-    return this.http.get<ApiResponse<PagedResult<PurchaseOrder>>>(this.baseUrl, { params }).pipe(
-      map(res => res.data),
+    return this.http.get<ApiResponse<PagedResult<PurchaseOrderResponse>>>(this.baseUrl, { params }).pipe(
+      map(res => ({ ...res.data, items: res.data.items.map(normalizeOrder) })),
       tap({
         next: result => {
           this.pagedResult.set(result);
@@ -68,8 +95,10 @@ export class PurchaseService {
 
   getOrderById(id: string): Observable<PurchaseOrder> {
     this.loading.set(true);
-    return this.http.get<ApiResponse<PurchaseOrder>>(`${this.baseUrl}/${id}`).pipe(
-      map(res => res.data),
+    this.selectedOrder.set(null);
+    this.errorMessage.set(null);
+    return this.http.get<ApiResponse<PurchaseOrderResponse>>(`${this.baseUrl}/${id}`).pipe(
+      map(res => normalizeOrder(res.data)),
       tap({
         next: order => {
           this.selectedOrder.set(order);
@@ -84,8 +113,8 @@ export class PurchaseService {
   }
 
   createOrder(req: CreatePurchaseOrderRequest): Observable<PurchaseOrder> {
-    return this.http.post<ApiResponse<PurchaseOrder>>(this.baseUrl, req).pipe(
-      map(res => res.data),
+    return this.http.post<ApiResponse<PurchaseOrderResponse>>(this.baseUrl, req).pipe(
+      map(res => normalizeOrder(res.data)),
       tap(created => {
         this.selectedOrder.set(created);
         this.pagedResult.update(p => ({
@@ -98,71 +127,71 @@ export class PurchaseService {
   }
 
   addItem(poId: string, req: CreatePurchaseItemRequest): Observable<PurchaseOrder> {
-    return this.http.post<ApiResponse<PurchaseOrder>>(`${this.baseUrl}/${poId}/items`, req).pipe(
-      map(res => res.data),
+    return this.http.post<ApiResponse<PurchaseOrderResponse>>(`${this.baseUrl}/${poId}/items`, req).pipe(
+      map(res => normalizeOrder(res.data)),
       tap(updated => this.selectedOrder.set(updated))
     );
   }
 
   removeItem(poId: string, itemId: string): Observable<PurchaseOrder> {
-    return this.http.delete<ApiResponse<PurchaseOrder>>(`${this.baseUrl}/${poId}/items/${itemId}`).pipe(
-      map(res => res.data),
+    return this.http.delete<ApiResponse<PurchaseOrderResponse>>(`${this.baseUrl}/${poId}/items/${itemId}`).pipe(
+      map(res => normalizeOrder(res.data)),
       tap(updated => this.selectedOrder.set(updated))
     );
   }
 
   loadInspectionTemplate(categoryType: CategoryType): Observable<InspectionTemplate> {
     return this.http.get<ApiResponse<InspectionTemplate>>(`${this.baseUrl}/inspection-template/${categoryType}`).pipe(
-      map(res => res.data),
+      map(res => ({ ...res.data, categoryType: numericEnumValue(res.data.categoryType, CategoryType) })),
       tap(tpl => this.currentTemplate.set(tpl))
     );
   }
 
   saveInspection(poId: string, itemId: string, results: SaveInspectionItemRequest[]): Observable<PurchaseOrder> {
-    return this.http.post<ApiResponse<PurchaseOrder>>(`${this.baseUrl}/${poId}/items/${itemId}/inspection`, { results }).pipe(
-      map(res => res.data),
+    return this.http.post<ApiResponse<PurchaseOrderResponse>>(`${this.baseUrl}/${poId}/items/${itemId}/inspection`, { results }).pipe(
+      map(res => normalizeOrder(res.data)),
       tap(updated => this.selectedOrder.set(updated))
     );
   }
 
   makeOffer(poId: string, req: MakeOfferRequest): Observable<PurchaseOrder> {
-    return this.http.post<ApiResponse<PurchaseOrder>>(`${this.baseUrl}/${poId}/offer`, req).pipe(
-      map(res => res.data),
+    return this.http.post<ApiResponse<PurchaseOrderResponse>>(`${this.baseUrl}/${poId}/offer`, req).pipe(
+      map(res => normalizeOrder(res.data)),
       tap(updated => this.selectedOrder.set(updated))
     );
   }
 
   approvePurchase(poId: string): Observable<PurchaseOrder> {
-    return this.http.post<ApiResponse<PurchaseOrder>>(`${this.baseUrl}/${poId}/approve`, {}).pipe(
-      map(res => res.data),
+    return this.http.post<ApiResponse<PurchaseOrderResponse>>(`${this.baseUrl}/${poId}/approve`, {}).pipe(
+      map(res => normalizeOrder(res.data)),
       tap(updated => this.selectedOrder.set(updated))
     );
   }
 
   acceptOffer(poId: string): Observable<PurchaseOrder> {
-    return this.http.post<ApiResponse<PurchaseOrder>>(`${this.baseUrl}/${poId}/accept`, {}).pipe(
-      map(res => res.data),
+    return this.http.post<ApiResponse<PurchaseOrderResponse>>(`${this.baseUrl}/${poId}/accept`, {}).pipe(
+      map(res => normalizeOrder(res.data)),
       tap(updated => this.selectedOrder.set(updated))
     );
   }
 
   rejectOffer(poId: string): Observable<PurchaseOrder> {
-    return this.http.post<ApiResponse<PurchaseOrder>>(`${this.baseUrl}/${poId}/reject`, {}).pipe(
-      map(res => res.data),
+    return this.http.post<ApiResponse<PurchaseOrderResponse>>(`${this.baseUrl}/${poId}/reject`, {}).pipe(
+      map(res => normalizeOrder(res.data)),
       tap(updated => this.selectedOrder.set(updated))
     );
   }
 
   recordPayment(poId: string, req: RecordPurchasePaymentRequest): Observable<PurchaseOrder> {
-    return this.http.post<ApiResponse<PurchaseOrder>>(`${this.baseUrl}/${poId}/payments`, req).pipe(
-      map(res => res.data),
+    return this.http.post<ApiResponse<PurchaseOrderResponse>>(`${this.baseUrl}/${poId}/payments`, req).pipe(
+      map(res => normalizeOrder(res.data)),
       tap(updated => this.selectedOrder.set(updated))
     );
   }
 
   receiveToStock(poId: string): Observable<PurchaseOrder> {
-    return this.http.post<ApiResponse<PurchaseOrder>>(`${this.baseUrl}/${poId}/receive`, {}).pipe(
-      map(res => res.data),
+    return this.http.post<ApiResponse<PurchaseOrderResponse>>(`${this.baseUrl}/${poId}/receive`, {}).pipe(
+      map(res => normalizeOrder(res.data)),
       tap(updated => this.selectedOrder.set(updated))
     );
   }

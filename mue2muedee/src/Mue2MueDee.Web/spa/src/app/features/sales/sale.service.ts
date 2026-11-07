@@ -2,14 +2,26 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, tap, map } from 'rxjs';
 import { ApiResponse } from '../../core/models/api-response.model';
+import { numericEnumValue } from '../../core/models/api-enums';
+import { apiDateBoundary } from '../../core/models/business-date';
+import { normalizeInventoryItem } from '../inventory/inventory.service';
 import {
   SaleOrder,
   CreateSaleOrderRequest,
   SaleQueryFilter,
   PagedResult,
-  SerialTrace
+  SerialTrace,
+  SaleStatus,
+  PaymentMethod
 } from './sale.models';
 import { InventoryItem } from '../inventory/inventory.models';
+
+function normalizeSale(sale: SaleOrder): SaleOrder {
+  return {
+    ...sale, status: numericEnumValue(sale.status, SaleStatus),
+    payments: sale.payments.map(p => ({ ...p, paymentMethod: numericEnumValue(p.paymentMethod, PaymentMethod) }))
+  };
+}
 
 @Injectable({
   providedIn: 'root'
@@ -43,11 +55,11 @@ export class SaleService {
     if (filter.status !== undefined && filter.status !== null) {
       params = params.set('status', filter.status.toString());
     }
-    if (filter.startDate) params = params.set('startDate', filter.startDate);
-    if (filter.endDate) params = params.set('endDate', filter.endDate);
+    if (filter.startDate) params = params.set('startDate', apiDateBoundary(filter.startDate));
+    if (filter.endDate) params = params.set('endDate', apiDateBoundary(filter.endDate, true));
 
     return this.http.get<ApiResponse<PagedResult<SaleOrder>>>(this.baseUrl, { params }).pipe(
-      map(res => res.data),
+      map(res => ({ ...res.data, items: res.data.items.map(normalizeSale) })),
       tap({
         next: result => {
           this.pagedResult.set(result);
@@ -63,8 +75,10 @@ export class SaleService {
 
   getSaleById(id: string): Observable<SaleOrder> {
     this.loading.set(true);
+    this.selectedSale.set(null);
+    this.errorMessage.set(null);
     return this.http.get<ApiResponse<SaleOrder>>(`${this.baseUrl}/${id}`).pipe(
-      map(res => res.data),
+      map(res => normalizeSale(res.data)),
       tap({
         next: sale => {
           this.selectedSale.set(sale);
@@ -80,7 +94,7 @@ export class SaleService {
 
   createSale(request: CreateSaleOrderRequest): Observable<SaleOrder> {
     return this.http.post<ApiResponse<SaleOrder>>(this.baseUrl, request).pipe(
-      map(res => res.data),
+      map(res => normalizeSale(res.data)),
       tap(created => {
         this.pagedResult.update(p => ({
           ...p,
@@ -93,7 +107,7 @@ export class SaleService {
 
   cancelSale(id: string, reason: string): Observable<SaleOrder> {
     return this.http.post<ApiResponse<SaleOrder>>(`${this.baseUrl}/${id}/cancel`, { reason }).pipe(
-      map(res => res.data),
+      map(res => normalizeSale(res.data)),
       tap(updated => {
         this.selectedSale.set(updated);
         this.pagedResult.update(p => ({
@@ -130,7 +144,7 @@ export class SaleService {
       .set('pageSize', '10');
 
     return this.http.get<ApiResponse<PagedResult<InventoryItem>>>('/api/inventory', { params }).pipe(
-      map(res => res.data.items)
+      map(res => res.data.items.map(normalizeInventoryItem))
     );
   }
 

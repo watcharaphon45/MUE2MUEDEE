@@ -52,13 +52,11 @@ public class CurrentStore : ICurrentStore
     {
         get
         {
-            var roleClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Role)?.Value
-                         ?? _httpContextAccessor.HttpContext?.User?.FindFirst("role")?.Value;
-
-            if (Enum.TryParse<StoreRole>(roleClaim, true, out var role))
-            {
-                return role;
-            }
+            var claims = _httpContextAccessor.HttpContext?.User?.Claims;
+            if (claims == null) return null;
+            foreach (var claim in claims.Where(c => c.Type == ClaimTypes.Role || c.Type == "role"))
+                if (Enum.TryParse<StoreRole>(claim.Value, true, out var role) && Enum.IsDefined(role))
+                    return role;
             return null;
         }
     }

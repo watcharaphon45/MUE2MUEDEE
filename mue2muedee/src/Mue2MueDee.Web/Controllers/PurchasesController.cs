@@ -77,7 +77,7 @@ public class PurchasesController : ApiControllerBase
         return Success(po, msg);
     }
 
-    [Authorize(Roles = "Owner,Admin")]
+    [Authorize(Roles = "OWNER,ADMIN")]
     [HttpPost("{id:guid}/approve")]
     public async Task<IActionResult> Approve(Guid id)
     {

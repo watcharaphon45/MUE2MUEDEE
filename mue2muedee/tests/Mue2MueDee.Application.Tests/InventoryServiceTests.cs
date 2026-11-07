@@ -27,6 +27,22 @@ public class TestCurrentUser : ICurrentUser
 
 public class InventoryServiceTests
 {
+    [Fact]
+    public async Task SkuSequence_DoesNotReuseDeletedOrGappedNumbers()
+    {
+        var (context, service, store, product, grade) = SetupTestEnvironment();
+        var prefix = $"CAM-{DateTime.UtcNow:yyMM}-";
+        context.InventoryItems.Add(new InventoryItem
+        {
+            StoreId = store, ProductId = product, ConditionGradeId = grade,
+            Sku = $"{prefix}0003", SerialNumber = "OLD", IsDeleted = true
+        });
+        context.SaveChanges();
+        var created = await service.CreateInventoryItemAsync(new CreateInventoryItemRequest(
+            product, "NEW", grade, 100m, null, 200m, null, null, null, null, null, null));
+        Assert.Equal($"{prefix}0004", created.Sku);
+    }
+
     private (ApplicationDbContext Context, InventoryService Service, Guid StoreId, Guid ProductId, Guid GradeId) SetupTestEnvironment()
     {
         var store = new TestCurrentStore();
@@ -90,6 +106,7 @@ public class InventoryServiceTests
         Assert.Equal(45000m, item.ActualCost);
         Assert.Equal(59000m, item.SellingPrice);
         Assert.Equal(14000m, item.ExpectedProfit);
+        Assert.Equal(23.73m, item.ExpectedMarginPercent);
         Assert.Equal(InventoryStatus.Available, item.Status);
 
         var movements = await service.GetStockMovementsAsync(item.Id);

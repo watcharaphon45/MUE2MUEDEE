@@ -19,7 +19,8 @@ builder.Services.AddControllers()
     {
         options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-    });
+    })
+    .ConfigureApiBehaviorOptions(Mue2MueDee.Web.Configuration.ApiResponseDefaults.ConfigureModelValidation);
 
 // OpenAPI
 builder.Services.AddOpenApi();
@@ -60,6 +61,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
+    Mue2MueDee.Web.Configuration.ApiResponseDefaults.ConfigureAuthenticationResponses(options);
     options.RequireHttpsMetadata = false;
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters

@@ -512,6 +512,13 @@ public class StickerTemplateService : IStickerTemplateService
             throw AppException.BadRequest("ขนาดความกว้างและความยาวของดวงสติ๊กเกอร์ต้องมากกว่า 0 มม.");
         }
 
+        if (dto.HorizontalGapMm < 0 || dto.VerticalGapMm < 0 || dto.MarginTopMm < 0 ||
+            dto.MarginBottomMm < 0 || dto.MarginLeftMm < 0 || dto.MarginRightMm < 0)
+            throw AppException.BadRequest("ระยะห่างและระยะขอบสติ๊กเกอร์ต้องไม่ติดลบ");
+
+        if (!dto.IsContinuousRoll && (!dto.RowsCount.HasValue || dto.RowsCount.Value < 1))
+            throw AppException.BadRequest("กระดาษแบบแผ่นต้องมีอย่างน้อย 1 แถว");
+
         if (dto.PaperWidthMm <= 0)
         {
             throw AppException.BadRequest("ความกว้างของหน้ากระดาษหรือม้วนสติ๊กเกอร์ต้องมากกว่า 0 มม.");
@@ -530,6 +537,14 @@ public class StickerTemplateService : IStickerTemplateService
         if (totalContentWidth > dto.PaperWidthMm)
         {
             throw AppException.BadRequest($"ความกว้างรวมของสติ๊กเกอร์และระยะขอบ ({totalContentWidth:N1} mm) เกินขนาดหน้ากว้างกระดาษ ({dto.PaperWidthMm:N1} mm)");
+        }
+
+        if (!dto.IsContinuousRoll)
+        {
+            var height = dto.RowsCount!.Value * dto.LabelHeightMm +
+                (dto.RowsCount.Value - 1) * dto.VerticalGapMm + dto.MarginTopMm + dto.MarginBottomMm;
+            if (height > dto.PaperHeightMm)
+                throw AppException.BadRequest("ความสูงรวมของสติ๊กเกอร์และระยะขอบเกินความสูงหน้ากระดาษ");
         }
     }
 

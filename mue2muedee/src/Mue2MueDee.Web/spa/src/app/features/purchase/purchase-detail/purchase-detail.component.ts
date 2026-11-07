@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PurchaseService } from '../purchase.service';
-import { PaymentMethod } from '../purchase.models';
+import { PaymentMethod, PurchaseOrder } from '../purchase.models';
 import {
   TextboxComponent,
   NumberComponent,
@@ -114,9 +114,13 @@ export class PurchaseDetailComponent implements OnInit {
   openPayment(): void {
     const po = this.purchaseService.selectedOrder();
     if (po) {
-      this.paymentForm.controls.amount.setValue(po.totalAgreedPrice);
+      this.paymentForm.controls.amount.setValue(this.remainingPayment(po));
     }
     this.showPaymentModal.set(true);
+  }
+
+  remainingPayment(po: PurchaseOrder): number {
+    return Math.max(0, Math.round((po.totalAgreedPrice - po.payments.reduce((sum, p) => sum + p.amount, 0)) * 100) / 100);
   }
 
   closePayment(): void {

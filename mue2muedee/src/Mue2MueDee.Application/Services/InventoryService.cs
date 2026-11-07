@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Mue2MueDee.Application.Common;
 using Mue2MueDee.Application.Common.Exceptions;
 using Mue2MueDee.Application.Common.Interfaces;
 using Mue2MueDee.Application.DTOs;
@@ -133,6 +134,10 @@ public class InventoryService : IInventoryService
     {
         var storeId = RequireStoreId();
 
+        if (string.IsNullOrWhiteSpace(request.SerialNumber) || request.PurchaseCost < 0 ||
+            request.ActualCost < 0 || request.SellingPrice < 0 || request.ShutterCount < 0)
+            throw AppException.BadRequest("กรุณาระบุ Serial Number และราคาหรือจำนวนที่ไม่ติดลบ");
+
         var product = await _context.Products
             .Include(p => p.Category)
             .Include(p => p.Brand)
@@ -148,7 +153,7 @@ public class InventoryService : IInventoryService
             throw AppException.NotFound($"ไม่พบเกรดสภาพรหัส {request.ConditionGradeId}");
 
         var serial = request.SerialNumber.Trim();
-        var duplicateSerial = await _context.InventoryItems
+        var duplicateSerial = await _context.InventoryItems.IgnoreQueryFilters()
             .AnyAsync(i => i.StoreId == storeId && i.ProductId == request.ProductId && i.SerialNumber.ToLower() == serial.ToLower());
 
         if (duplicateSerial)
@@ -164,10 +169,10 @@ public class InventoryService : IInventoryService
         // Generate SKU
         var categoryPrefix = GetCategoryPrefix(product.Category.Type);
         var yearMonth = DateTime.UtcNow.ToString("yyMM");
-        var latestCount = await _context.InventoryItems
-            .CountAsync(i => i.StoreId == storeId && i.Sku.StartsWith($"{categoryPrefix}-{yearMonth}-"));
-        var nextSequence = latestCount + 1;
-        var sku = $"{categoryPrefix}-{yearMonth}-{nextSequence:D4}";
+        var prefix = $"{categoryPrefix}-{yearMonth}-";
+        var nextSequence = await SequentialCode.NextAsync(_context.InventoryItems.IgnoreQueryFilters()
+            .Where(i => i.StoreId == storeId).Select(i => i.Sku), prefix);
+        var sku = $"{prefix}{nextSequence:D4}";
 
         var actualCost = request.ActualCost.HasValue && request.ActualCost.Value > 0
             ? request.ActualCost.Value
@@ -250,6 +255,9 @@ public class InventoryService : IInventoryService
     public async Task<InventoryItemDto> UpdateInventoryItemAsync(Guid id, UpdateInventoryItemRequest request)
     {
         var storeId = RequireStoreId();
+
+        if (string.IsNullOrWhiteSpace(request.SerialNumber) || request.SellingPrice < 0 || request.ShutterCount < 0)
+            throw AppException.BadRequest("กรุณาระบุ Serial Number และราคาหรือจำนวนที่ไม่ติดลบ");
         var item = await _context.InventoryItems
             .Include(i => i.Product).ThenInclude(p => p.Brand)
             .Include(i => i.Product).ThenInclude(p => p.Category)
@@ -262,7 +270,7 @@ public class InventoryService : IInventoryService
             throw AppException.NotFound($"ไม่พบรายการสินค้าในคลังรหัส {id}");
 
         var serial = request.SerialNumber.Trim();
-        var duplicateSerial = await _context.InventoryItems
+        var duplicateSerial = await _context.InventoryItems.IgnoreQueryFilters()
             .AnyAsync(i => i.StoreId == storeId && i.Id != id && i.ProductId == item.ProductId && i.SerialNumber.ToLower() == serial.ToLower());
 
         if (duplicateSerial)
@@ -338,6 +346,9 @@ public class InventoryService : IInventoryService
     public async Task<InventoryItemDto> UpdateStatusAsync(Guid id, UpdateInventoryStatusRequest request)
     {
         var storeId = RequireStoreId();
+
+        if (!Enum.IsDefined(request.NewStatus))
+            throw AppException.BadRequest("สถานะสินค้าไม่ถูกต้อง");
         var item = await _context.InventoryItems
             .Include(i => i.Product).ThenInclude(p => p.Brand)
             .Include(i => i.Product).ThenInclude(p => p.Category)
@@ -351,6 +362,10 @@ public class InventoryService : IInventoryService
 
         if (item.Status == request.NewStatus)
             return MapToDto(item);
+
+        if (item.Status == InventoryStatus.Sold && await _context.SaleItems.AnyAsync(si =>
+            si.StoreId == storeId && si.InventoryItemId == id && si.SaleOrder.Status == SaleStatus.Completed))
+            throw AppException.BadRequest("สินค้านี้มีใบขายที่ยังไม่ยกเลิก กรุณายกเลิกใบขายก่อนเปลี่ยนสถานะสินค้า");
 
         var oldStatus = item.Status;
         item.Status = request.NewStatus;
@@ -442,6 +457,10 @@ public class InventoryService : IInventoryService
         if (item.Status == InventoryStatus.Sold)
             throw AppException.BadRequest("ไม่สามารถลบสินค้าที่มีสถานะขายแล้วได้");
 
+        if (await _context.PurchaseItems.AnyAsync(i => i.StoreId == storeId && i.InventoryItemId == id) ||
+            await _context.SaleItems.AnyAsync(i => i.StoreId == storeId && i.InventoryItemId == id))
+            throw AppException.BadRequest("ไม่สามารถลบสินค้าที่มีประวัติรับซื้อหรือขายได้ กรุณาใช้การเปลี่ยนสถานะสินค้า");
+
         _context.InventoryItems.Remove(item);
         await _context.SaveChangesAsync();
     }
@@ -453,8 +472,8 @@ public class InventoryService : IInventoryService
     private static InventoryItemDto MapToDto(InventoryItem i)
     {
         var profit = i.SellingPrice - i.ActualCost;
-        var margin = i.ActualCost > 0
-            ? Math.Round((profit / i.ActualCost) * 100, 2)
+        var margin = i.SellingPrice > 0
+            ? Math.Round((profit / i.SellingPrice) * 100, 2)
             : 0;
 
         var ageDays = (int)(DateTimeOffset.UtcNow - i.ReceivedAt).TotalDays;

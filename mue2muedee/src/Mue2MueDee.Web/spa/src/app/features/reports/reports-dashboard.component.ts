@@ -1,3 +1,4 @@
+import { businessDateInput, apiDateBoundary } from '../../core/models/business-date';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -50,21 +51,21 @@ export class ReportsDashboardComponent implements OnInit {
     const now = new Date();
 
     if (period === 'today') {
-      const todayStr = now.toISOString().slice(0, 10);
+      const todayStr = businessDateInput(now);
       this.startDateInput = todayStr;
       this.endDateInput = todayStr;
     } else if (period === 'week') {
       const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      this.startDateInput = sevenDaysAgo.toISOString().slice(0, 10);
-      this.endDateInput = now.toISOString().slice(0, 10);
+      this.startDateInput = businessDateInput(sevenDaysAgo);
+      this.endDateInput = businessDateInput(now);
     } else if (period === 'month') {
-      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-      this.startDateInput = firstDay.toISOString().slice(0, 10);
-      this.endDateInput = now.toISOString().slice(0, 10);
+      const firstDay = businessDateInput(now).slice(0, 7) + '-01';
+      this.startDateInput = firstDay;
+      this.endDateInput = businessDateInput(now);
     } else if (period === 'last30') {
       const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      this.startDateInput = thirtyDaysAgo.toISOString().slice(0, 10);
-      this.endDateInput = now.toISOString().slice(0, 10);
+      this.startDateInput = businessDateInput(thirtyDaysAgo);
+      this.endDateInput = businessDateInput(now);
     }
 
     this.refreshSales();
@@ -78,10 +79,10 @@ export class ReportsDashboardComponent implements OnInit {
   refreshSales(): void {
     const query: SalesReportQuery = {};
     if (this.startDateInput) {
-      query.startDate = new Date(this.startDateInput + 'T00:00:00Z').toISOString();
+      query.startDate = apiDateBoundary(this.startDateInput);
     }
     if (this.endDateInput) {
-      query.endDate = new Date(this.endDateInput + 'T23:59:59Z').toISOString();
+      query.endDate = apiDateBoundary(this.endDateInput, true);
     }
     this.reportsService.loadSalesReport(query).subscribe();
   }
@@ -89,10 +90,10 @@ export class ReportsDashboardComponent implements OnInit {
   exportSalesCsv(): void {
     const query: SalesReportQuery = {};
     if (this.startDateInput) {
-      query.startDate = new Date(this.startDateInput + 'T00:00:00Z').toISOString();
+      query.startDate = apiDateBoundary(this.startDateInput);
     }
     if (this.endDateInput) {
-      query.endDate = new Date(this.endDateInput + 'T23:59:59Z').toISOString();
+      query.endDate = apiDateBoundary(this.endDateInput, true);
     }
     this.reportsService.downloadSalesReportCsv(query).subscribe();
   }

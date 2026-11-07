@@ -10,6 +10,69 @@ namespace Mue2MueDee.Application.Tests;
 
 public class AnalyticsServiceTests
 {
+    [Fact]
+    public async Task CsvExport_EscapesCustomerQuotesAndUsesInvariantNumbers()
+    {
+        var (context, service, _, storeId) = SetupTestEnvironment();
+        context.SaleOrders.Add(new SaleOrder
+        {
+            StoreId = storeId, SaleNumber = "CSV-1", Status = SaleStatus.Completed,
+            CustomerName = "Somchai \"Camera\", Shop", SaleDate = DateTimeOffset.UtcNow,
+            NetAmount = 100.50m
+        });
+        context.SaveChanges();
+        var previousCulture = System.Globalization.CultureInfo.CurrentCulture;
+        try
+        {
+            System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("fr-FR");
+            var bytes = await service.ExportSalesReportCsvAsync(new SalesReportQuery());
+            var csv = System.Text.Encoding.UTF8.GetString(bytes);
+            Assert.Contains("\"Somchai \"\"Camera\"\", Shop\"", csv);
+            Assert.Contains("\"100.50\"", csv);
+        }
+        finally { System.Globalization.CultureInfo.CurrentCulture = previousCulture; }
+    }
+
+    private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
+    }
+
+    [Fact]
+    public async Task Dashboard_UsesBangkokDayAndMonthBoundaries()
+    {
+        var (context, _, store, storeId) = SetupTestEnvironment();
+        var now = new DateTimeOffset(2026, 10, 31, 18, 0, 0, TimeSpan.Zero); // Nov 1, 01:00 in Bangkok
+        context.SaleOrders.AddRange(
+            new SaleOrder { StoreId = storeId, SaleNumber = "BEFORE", Status = SaleStatus.Completed,
+                SaleDate = now.AddHours(-2), NetAmount = 100m },
+            new SaleOrder { StoreId = storeId, SaleNumber = "TODAY", Status = SaleStatus.Completed,
+                SaleDate = now.AddMinutes(-30), NetAmount = 200m });
+        context.SaveChanges();
+        var service = new AnalyticsService(context, store,
+            new PricingService(context, store, new TestCurrentUser()), new FixedTimeProvider(now));
+        var metrics = await service.GetDashboardMetricsAsync();
+        Assert.Equal(200m, metrics.SalesTodayAmount);
+        Assert.Equal(200m, metrics.SalesThisMonthAmount);
+        Assert.Equal(1, metrics.SalesTodayCount);
+    }
+
+    [Fact]
+    public async Task WrittenOffItems_AreExcludedFromStockValuationAndAging()
+    {
+        var (context, service, _, storeId) = SetupTestEnvironment();
+        context.InventoryItems.Add(new InventoryItem
+        {
+            StoreId = storeId, Status = InventoryStatus.WrittenOff,
+            ActualCost = 5000m, SellingPrice = 6000m, ReceivedAt = DateTimeOffset.UtcNow.AddDays(-150)
+        });
+        context.SaveChanges();
+        var metrics = await service.GetDashboardMetricsAsync();
+        Assert.Equal(0, metrics.TotalActiveStockCount);
+        Assert.Equal(0m, metrics.InventoryCostValue);
+        Assert.Equal(0, metrics.StockAgingOver90DaysCount);
+    }
+
     private (ApplicationDbContext Context, AnalyticsService Service, TestCurrentStore Store, Guid StoreId) SetupTestEnvironment(StoreRole role = StoreRole.Owner)
     {
         var store = new TestCurrentStore { Role = role };

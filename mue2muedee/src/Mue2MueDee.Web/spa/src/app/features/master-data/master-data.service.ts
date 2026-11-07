@@ -1,7 +1,8 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap, map } from 'rxjs';
+import { Observable, tap, map, finalize } from 'rxjs';
 import { ApiResponse } from '../../core/models/api-response.model';
+import { numericEnumValue, categoryTypeValues, customerTypeValues } from '../../core/models/api-enums';
 import {
   Brand,
   Category,
@@ -41,10 +42,10 @@ export class MasterDataService {
   loadBrands(): Observable<Brand[]> {
     this.loading.set(true);
     return this.http.get<ApiResponse<Brand[]>>(`${this.baseUrl}/master-data/brands`).pipe(
+      finalize(() => this.loading.set(false)),
       map(res => res.data),
       tap(data => {
         this.brands.set(data);
-        this.loading.set(false);
       })
     );
   }
@@ -83,17 +84,17 @@ export class MasterDataService {
   loadCategories(): Observable<Category[]> {
     this.loading.set(true);
     return this.http.get<ApiResponse<Category[]>>(`${this.baseUrl}/master-data/categories`).pipe(
-      map(res => res.data),
+      finalize(() => this.loading.set(false)),
+      map(res => res.data.map(item => ({ ...item, type: numericEnumValue(item.type, categoryTypeValues) }))),
       tap(data => {
         this.categories.set(data);
-        this.loading.set(false);
       })
     );
   }
 
   createCategory(req: CreateCategoryRequest): Observable<Category> {
     return this.http.post<ApiResponse<Category>>(`${this.baseUrl}/master-data/categories`, req).pipe(
-      map(res => res.data),
+      map(res => ({ ...res.data, type: numericEnumValue(res.data.type, categoryTypeValues) })),
       tap(newCat => {
         this.categories.update(list => [...list, newCat]);
       })
@@ -102,7 +103,7 @@ export class MasterDataService {
 
   updateCategory(id: string, req: UpdateCategoryRequest): Observable<Category> {
     return this.http.put<ApiResponse<Category>>(`${this.baseUrl}/master-data/categories/${id}`, req).pipe(
-      map(res => res.data),
+      map(res => ({ ...res.data, type: numericEnumValue(res.data.type, categoryTypeValues) })),
       tap(updated => {
         this.categories.update(list => list.map(c => c.id === id ? updated : c));
       })
@@ -125,10 +126,10 @@ export class MasterDataService {
   loadConditionGrades(): Observable<ConditionGrade[]> {
     this.loading.set(true);
     return this.http.get<ApiResponse<ConditionGrade[]>>(`${this.baseUrl}/master-data/condition-grades`).pipe(
+      finalize(() => this.loading.set(false)),
       map(res => res.data),
       tap(data => {
         this.conditionGrades.set(data);
-        this.loading.set(false);
       })
     );
   }
@@ -172,10 +173,10 @@ export class MasterDataService {
     if (search) params['search'] = search;
 
     return this.http.get<ApiResponse<Product[]>>(`${this.baseUrl}/master-data/products`, { params }).pipe(
+      finalize(() => this.loading.set(false)),
       map(res => res.data),
       tap(data => {
         this.products.set(data);
-        this.loading.set(false);
       })
     );
   }
@@ -217,17 +218,17 @@ export class MasterDataService {
     if (search) params['search'] = search;
 
     return this.http.get<ApiResponse<Customer[]>>(`${this.baseUrl}/customers`, { params }).pipe(
-      map(res => res.data),
+      finalize(() => this.loading.set(false)),
+      map(res => res.data.map(item => ({ ...item, customerType: numericEnumValue(item.customerType, customerTypeValues) }))),
       tap(data => {
         this.customers.set(data);
-        this.loading.set(false);
       })
     );
   }
 
   createCustomer(req: CreateCustomerRequest): Observable<Customer> {
     return this.http.post<ApiResponse<Customer>>(`${this.baseUrl}/customers`, req).pipe(
-      map(res => res.data),
+      map(res => ({ ...res.data, customerType: numericEnumValue(res.data.customerType, customerTypeValues) })),
       tap(newCustomer => {
         this.customers.update(list => [newCustomer, ...list]);
       })
@@ -236,7 +237,7 @@ export class MasterDataService {
 
   updateCustomer(id: string, req: UpdateCustomerRequest): Observable<Customer> {
     return this.http.put<ApiResponse<Customer>>(`${this.baseUrl}/customers/${id}`, req).pipe(
-      map(res => res.data),
+      map(res => ({ ...res.data, customerType: numericEnumValue(res.data.customerType, customerTypeValues) })),
       tap(updated => {
         this.customers.update(list => list.map(c => c.id === id ? updated : c));
       })

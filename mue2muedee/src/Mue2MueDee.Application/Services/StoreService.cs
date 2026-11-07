@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Mue2MueDee.Application.Common.Exceptions;
 using Mue2MueDee.Application.Common.Interfaces;
 using Mue2MueDee.Application.DTOs;
 using Mue2MueDee.Domain.Entities;
@@ -96,6 +97,11 @@ public class StoreService : IStoreService
     {
         EnsureStoreOwnerOrAdmin();
 
+        if (!Enum.IsDefined(request.Role))
+            throw AppException.BadRequest("บทบาทผู้ใช้งานไม่ถูกต้อง");
+        if (request.Role == StoreRole.Owner && _currentStore.Role != StoreRole.Owner)
+            throw AppException.Forbidden("เฉพาะเจ้าของร้านเท่านั้นที่สามารถเพิ่มเจ้าของร้านได้");
+
         var emailLower = request.Email.Trim().ToLower();
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == emailLower, ct);
 
@@ -165,6 +171,14 @@ public class StoreService : IStoreService
             .FirstOrDefaultAsync(us => us.StoreId == _currentStore.StoreId!.Value && us.UserId == targetUserId, ct);
 
         if (userStore == null) throw new KeyNotFoundException("ไม่พบผู้ใช้งานในร้านค้านี้");
+
+        if (!Enum.IsDefined(request.Role))
+            throw AppException.BadRequest("บทบาทผู้ใช้งานไม่ถูกต้อง");
+        if (userStore.Role == StoreRole.Owner && userStore.IsActive &&
+            (request.Role != StoreRole.Owner || !request.IsActive) &&
+            !await _context.UserStores.AnyAsync(us => us.StoreId == _currentStore.StoreId!.Value &&
+                us.UserId != targetUserId && us.Role == StoreRole.Owner && us.IsActive && us.User.IsActive, ct))
+            throw AppException.BadRequest("ร้านค้าต้องมีเจ้าของร้านที่ใช้งานได้อย่างน้อย 1 คน");
 
         userStore.Role = request.Role;
         userStore.IsActive = request.IsActive;

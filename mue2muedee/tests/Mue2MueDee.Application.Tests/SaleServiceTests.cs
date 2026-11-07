@@ -11,6 +11,75 @@ namespace Mue2MueDee.Application.Tests;
 
 public class SaleServiceTests
 {
+    [Fact]
+    public async Task SerialTrace_AfterCancellationAndResale_ReportsTheActiveSale()
+    {
+        var (_, service, _, item, _) = SetupTestEnvironment();
+        var request = new CreateSaleOrderRequest(null, "First buyer", null, null,
+            [new CreateSaleItemRequest(item.Id, 29000m, null, null)],
+            [new CreateSalePaymentRequest(PaymentMethod.Cash, 29000m, null, null)]);
+        var first = await service.CreateSaleAsync(request);
+        await service.CancelSaleAsync(first.Id, "First buyer cancelled");
+        var cancelledTrace = await service.GetSerialTraceAsync(item.SerialNumber);
+        Assert.Null(cancelledTrace.SaleNumber);
+        var second = await service.CreateSaleAsync(request with { CustomerName = "Second buyer" });
+        var trace = await service.GetSerialTraceAsync(item.SerialNumber);
+        Assert.Equal(second.SaleNumber, trace.SaleNumber);
+        Assert.Equal("Second buyer", trace.SoldToCustomer);
+    }
+
+    [Fact]
+    public async Task ExcessiveDiscount_DoesNotCreateSaleOrChangeStock()
+    {
+        var (context, service, _, item, _) = SetupTestEnvironment();
+        var request = new CreateSaleOrderRequest(null, null, null, null,
+            [new CreateSaleItemRequest(item.Id, 100m, 200m, 30)],
+            [new CreateSalePaymentRequest(PaymentMethod.Cash, 1m, null, null)]);
+        await Assert.ThrowsAsync<AppException>(() => service.CreateSaleAsync(request));
+        Assert.Equal(InventoryStatus.Available, item.Status);
+        Assert.Empty(context.SaleOrders);
+        Assert.Empty(context.StockMovements);
+    }
+
+    [Fact]
+    public async Task Sale_RejectsCustomerFromAnotherStore()
+    {
+        var (context, service, _, item, _) = SetupTestEnvironment();
+        var foreignCustomer = new Customer { StoreId = Guid.NewGuid(), Name = "Other shop" };
+        context.Customers.Add(foreignCustomer);
+        context.SaveChanges();
+        var error = await Assert.ThrowsAsync<AppException>(() => service.CreateSaleAsync(
+            new CreateSaleOrderRequest(foreignCustomer.Id, null, null, null,
+                [new CreateSaleItemRequest(item.Id, 29000m, null, null)],
+                [new CreateSalePaymentRequest(PaymentMethod.Cash, 29000m, null, null)])));
+        Assert.Equal(404, error.StatusCode);
+        Assert.Equal(InventoryStatus.Available, item.Status);
+    }
+
+    [Theory]
+    [InlineData(InventoryStatus.Repair)]
+    [InlineData(InventoryStatus.WrittenOff)]
+    [InlineData(InventoryStatus.Damaged)]
+    public async Task CannotReserveUnavailableStock(InventoryStatus status)
+    {
+        var (context, service, _, item, _) = SetupTestEnvironment();
+        item.Status = status;
+        context.SaveChanges();
+        await Assert.ThrowsAsync<AppException>(() => service.ReserveItemAsync(item.Id, null, null));
+        Assert.Equal(status, item.Status);
+        Assert.Empty(context.StockMovements);
+    }
+
+    [Fact]
+    public async Task SalesPagination_ClampsInvalidValues()
+    {
+        var (_, service, _, _, _) = SetupTestEnvironment();
+        var result = await service.GetSalesPagedAsync(new SaleQueryFilter(Page: -1, PageSize: 0));
+        Assert.Equal(1, result.Page);
+        Assert.Equal(1, result.PageSize);
+        Assert.Equal(0, result.TotalPages);
+    }
+
     private (ApplicationDbContext Context, SaleService Service, Guid StoreId, InventoryItem Item, Customer Customer) SetupTestEnvironment()
     {
         var store = new TestCurrentStore();

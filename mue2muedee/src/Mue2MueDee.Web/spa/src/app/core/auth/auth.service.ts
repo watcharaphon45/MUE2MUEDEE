@@ -84,9 +84,11 @@ export class AuthService {
     const activeStore = res.availableStores.find(s => s.storeId === res.currentStoreId)
       ?? res.availableStores[0] ?? null;
 
+    this.currentStore.set(activeStore);
     if (activeStore) {
       localStorage.setItem('mue2_current_store', JSON.stringify(activeStore));
-      this.currentStore.set(activeStore);
+    } else {
+      localStorage.removeItem('mue2_current_store');
     }
   }
 

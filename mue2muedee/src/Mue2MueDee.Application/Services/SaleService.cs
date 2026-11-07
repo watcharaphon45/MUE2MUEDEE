@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Mue2MueDee.Application.Common;
 using Mue2MueDee.Application.Common.Exceptions;
 using Mue2MueDee.Application.Common.Interfaces;
 using Mue2MueDee.Application.DTOs;
@@ -67,17 +68,19 @@ public class SaleService : ISaleService
         }
 
         var totalCount = await query.CountAsync();
-        var totalPages = (int)Math.Ceiling(totalCount / (double)filter.PageSize);
+        var page = Math.Max(1, filter.Page);
+        var pageSize = Math.Clamp(filter.PageSize, 1, 100);
+        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
         var items = await query
             .OrderByDescending(so => so.SaleDate)
-            .Skip((filter.Page - 1) * filter.PageSize)
-            .Take(filter.PageSize)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
         var dtos = items.Select(MapToDto).ToList();
 
-        return new PagedResult<SaleOrderDto>(dtos, totalCount, filter.Page, filter.PageSize, totalPages);
+        return new PagedResult<SaleOrderDto>(dtos, totalCount, page, pageSize, totalPages);
     }
 
     public async Task<SaleOrderDto> GetSaleByIdAsync(Guid id)
@@ -106,6 +109,14 @@ public class SaleService : ISaleService
 
         if (request.Payments == null || request.Payments.Count == 0)
             throw AppException.BadRequest("กรุณาระบุข้อมูลการชำระเงินของลูกค้า");
+
+        if (request.Items.Select(i => i.InventoryItemId).Distinct().Count() != request.Items.Count)
+            throw AppException.BadRequest("ไม่สามารถขายสินค้าชิ้นเดียวกันซ้ำในบิลเดียวได้");
+        if (request.Payments.Any(p => p.Amount <= 0 || !Enum.IsDefined(p.PaymentMethod)))
+            throw AppException.BadRequest("ยอดชำระเงินต้องมากกว่า 0 บาทและระบุช่องทางชำระเงินที่ถูกต้อง");
+        if (request.CustomerId.HasValue && !await _context.Customers.AnyAsync(c =>
+            c.StoreId == storeId && c.Id == request.CustomerId.Value))
+            throw AppException.NotFound("ไม่พบข้อมูลลูกค้าในร้านค้านี้");
 
         var saleNumber = await GenerateSaleNumberAsync(storeId);
 
@@ -143,8 +154,10 @@ public class SaleService : ISaleService
                 throw AppException.BadRequest($"สินค้า SKU {invItem.Sku} อยู่ในสถานะ '{invItem.Status}' ไม่พร้อมสำหรับการขาย");
 
             var unitPrice = reqItem.UnitPrice > 0 ? reqItem.UnitPrice : invItem.SellingPrice;
-            var discount = Math.Max(0, reqItem.Discount ?? 0);
-            var subTotal = Math.Max(0, unitPrice - discount);
+            var discount = reqItem.Discount ?? 0;
+            if (reqItem.UnitPrice < 0 || discount < 0 || discount > unitPrice || reqItem.WarrantyDays < 0)
+                throw AppException.BadRequest($"ราคาขายหรือส่วนลดของ SKU {invItem.Sku} ไม่ถูกต้อง ส่วนลดต้องไม่เกินราคาขาย");
+            var subTotal = unitPrice - discount;
             var actualCost = invItem.ActualCost;
             var grossProfit = subTotal - actualCost;
             var margin = subTotal > 0 ? Math.Round((grossProfit / subTotal) * 100, 2) : 0;
@@ -247,8 +260,10 @@ public class SaleService : ISaleService
         if (order == null)
             throw AppException.NotFound($"ไม่พบรายการขายรหัส {id}");
 
-        if (order.Status == SaleStatus.Cancelled)
-            throw AppException.BadRequest("รายการขายนี้ถูกยกเลิกไปแล้ว");
+        if (order.Status != SaleStatus.Completed)
+            throw AppException.BadRequest("ยกเลิกได้เฉพาะรายการขายที่เสร็จสมบูรณ์เท่านั้น");
+        if (string.IsNullOrWhiteSpace(reason))
+            throw AppException.BadRequest("กรุณาระบุเหตุผลการยกเลิกการขาย");
 
         order.Status = SaleStatus.Cancelled;
         order.Notes = $"{order.Notes} [ยกเลิกบิล: {reason}]".Trim();
@@ -297,6 +312,9 @@ public class SaleService : ISaleService
 
         if (item.Status == InventoryStatus.Reserved)
             throw AppException.BadRequest("สินค้านี้อยู่ในสถานะจองอยู่แล้ว");
+
+        if (item.Status != InventoryStatus.Available)
+            throw AppException.BadRequest("จองได้เฉพาะสินค้าที่พร้อมขายเท่านั้น");
 
         item.Status = InventoryStatus.Reserved;
 
@@ -362,12 +380,14 @@ public class SaleService : ISaleService
         // Find source PO if any
         var purchaseItem = await _context.PurchaseItems
             .Include(pi => pi.PurchaseOrder).ThenInclude(po => po.Customer)
-            .FirstOrDefaultAsync(pi => pi.StoreId == storeId && (pi.InventoryItemId == item.Id || pi.SerialNumber.ToLower() == s.ToLower()));
+            .FirstOrDefaultAsync(pi => pi.StoreId == storeId && pi.InventoryItemId == item.Id);
 
         // Find sale item if any
         var saleItem = await _context.SaleItems
             .Include(si => si.SaleOrder)
-            .FirstOrDefaultAsync(si => si.StoreId == storeId && si.InventoryItemId == item.Id);
+            .Where(si => si.StoreId == storeId && si.InventoryItemId == item.Id && si.SaleOrder.Status == SaleStatus.Completed)
+            .OrderByDescending(si => si.SaleOrder.SaleDate)
+            .FirstOrDefaultAsync();
 
         // Get movements
         var movements = await _context.StockMovements
@@ -415,21 +435,8 @@ public class SaleService : ISaleService
     private async Task<string> GenerateSaleNumberAsync(Guid storeId)
     {
         var prefix = $"SO-{DateTime.UtcNow:yyMM}-";
-        var lastOrder = await _context.SaleOrders
-            .Where(so => so.StoreId == storeId && so.SaleNumber.StartsWith(prefix))
-            .OrderByDescending(so => so.SaleNumber)
-            .Select(so => so.SaleNumber)
-            .FirstOrDefaultAsync();
-
-        int nextSeq = 1;
-        if (!string.IsNullOrEmpty(lastOrder) && lastOrder.Length >= prefix.Length + 4)
-        {
-            var seqStr = lastOrder.Substring(prefix.Length, 4);
-            if (int.TryParse(seqStr, out int currentSeq))
-            {
-                nextSeq = currentSeq + 1;
-            }
-        }
+        var nextSeq = await SequentialCode.NextAsync(_context.SaleOrders.IgnoreQueryFilters()
+            .Where(so => so.StoreId == storeId).Select(so => so.SaleNumber), prefix);
 
         return $"{prefix}{nextSeq:D4}";
     }

@@ -354,6 +354,8 @@ export class PurchaseWizardComponent implements OnInit {
     }).subscribe({
       next: updated => {
         this.createdPO.set(updated);
+        this.paymentForm.controls.amount.setValue(Math.max(0,
+          Math.round((updated.totalAgreedPrice - updated.payments.reduce((sum, p) => sum + p.amount, 0)) * 100) / 100));
         this.isSubmitting.set(false);
       },
       error: err => {

@@ -165,7 +165,7 @@ public class CatalogService : ICatalogService
                 i.ShutterCount,
                 i.Accessories,
                 i.Defects,
-                i.Notes,
+                null, // Inventory notes are private to the store.
                 i.Images.OrderBy(img => img.SortOrder).Select(img => img.Url).FirstOrDefault() ?? i.Product.ImageUrl,
                 i.ReceivedAt,
                 i.Images.OrderBy(img => img.SortOrder).Select(img => img.Url).ToList()
@@ -229,7 +229,7 @@ public class CatalogService : ICatalogService
             item.ShutterCount,
             item.Accessories,
             item.Defects,
-            item.Notes,
+            null, // Inventory notes are private to the store.
             imageUrls.FirstOrDefault() ?? item.Product.ImageUrl,
             item.ReceivedAt,
             imageUrls

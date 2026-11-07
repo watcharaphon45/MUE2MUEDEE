@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Mue2MueDee.Application.Common.Exceptions;
 using Mue2MueDee.Application.Common.Interfaces;
 using Mue2MueDee.Application.DTOs;
 using Mue2MueDee.Domain.Entities;
@@ -118,6 +119,9 @@ public class AuthService : IAuthService
             throw new UnauthorizedAccessException("Refresh token ไม่ถูกต้องหรือหมดอายุแล้ว");
         }
 
+        if (!token.User.IsActive)
+            throw new UnauthorizedAccessException("บัญชีผู้ใช้นี้ถูกระงับการใช้งานแล้ว");
+
         // Revoke current token
         token.RevokedAt = DateTimeOffset.UtcNow;
         token.RevokedByIp = ipAddress;
@@ -149,6 +153,11 @@ public class AuthService : IAuthService
 
     public async Task<LoginResponse> RegisterStoreWithOwnerAsync(RegisterRequest request, string? ipAddress = null, CancellationToken ct = default)
     {
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Username) ||
+            string.IsNullOrWhiteSpace(request.FullName) || string.IsNullOrWhiteSpace(request.StoreName))
+            throw AppException.BadRequest("กรุณาระบุอีเมล ชื่อผู้ใช้ ชื่อเจ้าของร้าน และชื่อร้านค้าให้ครบถ้วน");
+        if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
+            throw AppException.BadRequest("รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร");
         var emailLower = request.Email.Trim().ToLower();
         var usernameLower = request.Username.Trim().ToLower();
 
@@ -160,6 +169,9 @@ public class AuthService : IAuthService
         var storeCode = !string.IsNullOrWhiteSpace(request.StoreCode) 
             ? request.StoreCode.Trim().ToUpper() 
             : request.StoreName.Trim().Substring(0, Math.Min(4, request.StoreName.Trim().Length)).ToUpper();
+
+        if (await _context.Stores.IgnoreQueryFilters().AnyAsync(s => s.Code.ToUpper() == storeCode, ct))
+            throw AppException.Conflict($"รหัสร้านค้า '{storeCode}' ถูกใช้งานแล้ว กรุณาใช้รหัสอื่น");
 
         var store = new Store
         {
@@ -246,7 +258,7 @@ public class AuthService : IAuthService
         return new LoginResponse(
             accessToken,
             refreshTokenString,
-            DateTimeOffset.UtcNow.AddHours(2),
+            DateTimeOffset.UtcNow.Add(_jwtTokenService.AccessTokenLifetime),
             authUser,
             storeId,
             role,

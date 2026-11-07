@@ -99,6 +99,9 @@ public class PricingService : IPricingService
         if (request.Amount <= 0)
             throw AppException.BadRequest("จำนวนเงินต้นทุนต้องมากกว่า 0 บาท");
 
+        if (!Enum.IsDefined(request.CostType))
+            throw AppException.BadRequest("ประเภทต้นทุนไม่ถูกต้อง");
+
         var cost = new InventoryCost
         {
             StoreId = storeId,

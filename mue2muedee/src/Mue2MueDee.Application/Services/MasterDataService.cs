@@ -196,6 +196,8 @@ public class MasterDataService : IMasterDataService
     public async Task<CategoryDto> CreateCategoryAsync(CreateCategoryRequest request)
     {
         var storeId = RequireStoreId();
+        if (!Enum.IsDefined(request.Type) || string.IsNullOrWhiteSpace(request.Name))
+            throw AppException.BadRequest("กรุณาระบุชื่อและประเภทหมวดหมู่ที่ถูกต้อง");
         var normalizedName = request.Name.Trim();
 
         var exists = await _context.Categories
@@ -222,6 +224,8 @@ public class MasterDataService : IMasterDataService
     public async Task<CategoryDto> UpdateCategoryAsync(Guid id, UpdateCategoryRequest request)
     {
         var storeId = RequireStoreId();
+        if (!Enum.IsDefined(request.Type) || string.IsNullOrWhiteSpace(request.Name))
+            throw AppException.BadRequest("กรุณาระบุชื่อและประเภทหมวดหมู่ที่ถูกต้อง");
         var category = await _context.Categories
             .Include(c => c.Products)
             .FirstOrDefaultAsync(c => c.StoreId == storeId && c.Id == id);
@@ -374,6 +378,9 @@ public class MasterDataService : IMasterDataService
         if (grade.InventoryItems.Count > 0)
             throw AppException.BadRequest($"ไม่สามารถลบเกรดสภาพ '{grade.GradeCode}' ได้ เนื่องจากมีสินค้าในคลังที่ใช้เกรดนี้อยู่ {grade.InventoryItems.Count} ชิ้น");
 
+        if (await _context.PurchaseItems.AnyAsync(i => i.StoreId == storeId && i.ConditionGradeId == id))
+            throw AppException.BadRequest("ไม่สามารถลบเกรดสภาพที่มีประวัติในใบรับซื้อได้");
+
         _context.ConditionGrades.Remove(grade);
         await _context.SaveChangesAsync();
     }
@@ -459,6 +466,8 @@ public class MasterDataService : IMasterDataService
     public async Task<CustomerDto> CreateCustomerAsync(CreateCustomerRequest request)
     {
         var storeId = RequireStoreId();
+        if (!Enum.IsDefined(request.CustomerType) || string.IsNullOrWhiteSpace(request.Name))
+            throw AppException.BadRequest("กรุณาระบุชื่อและประเภทลูกค้าที่ถูกต้อง");
         var phone = request.Phone.Trim();
 
         var customer = new Customer
@@ -506,6 +515,8 @@ public class MasterDataService : IMasterDataService
     public async Task<CustomerDto> UpdateCustomerAsync(Guid id, UpdateCustomerRequest request)
     {
         var storeId = RequireStoreId();
+        if (!Enum.IsDefined(request.CustomerType) || string.IsNullOrWhiteSpace(request.Name))
+            throw AppException.BadRequest("กรุณาระบุชื่อและประเภทลูกค้าที่ถูกต้อง");
         var customer = await _context.Customers
             .Include(c => c.SourcedInventoryItems)
             .FirstOrDefaultAsync(c => c.StoreId == storeId && c.Id == id);
@@ -562,6 +573,10 @@ public class MasterDataService : IMasterDataService
 
         if (customer.SourcedInventoryItems.Count > 0)
             throw AppException.BadRequest($"ไม่สามารถลบลูกค้า '{customer.Name}' ได้ เนื่องจากมีประวัติการรับซื้อสินค้าเข้าคลัง {customer.SourcedInventoryItems.Count} รายการ");
+
+        if (await _context.PurchaseOrders.AnyAsync(p => p.StoreId == storeId && p.CustomerId == id) ||
+            await _context.SaleOrders.AnyAsync(s => s.StoreId == storeId && s.CustomerId == id))
+            throw AppException.BadRequest("ไม่สามารถลบลูกค้าที่มีประวัติในใบรับซื้อหรือใบขายได้");
 
         _context.Customers.Remove(customer);
         await _context.SaveChangesAsync();
@@ -773,6 +788,10 @@ public class MasterDataService : IMasterDataService
 
         if (product.InventoryItems.Count > 0)
             throw AppException.BadRequest($"ไม่สามารถลบรุ่นสินค้า '{product.ModelName}' ได้ เนื่องจากมีรายการสต็อกสินค้าเชื่อมโยงอยู่ {product.InventoryItems.Count} รายการ");
+
+        if (await _context.PurchaseItems.AnyAsync(i => i.StoreId == storeId && i.ProductId == id) ||
+            await _context.SaleItems.AnyAsync(i => i.StoreId == storeId && i.ProductId == id))
+            throw AppException.BadRequest("ไม่สามารถลบรุ่นสินค้าที่มีประวัติในใบรับซื้อหรือใบขายได้");
 
         _context.Products.Remove(product);
         await _context.SaveChangesAsync();

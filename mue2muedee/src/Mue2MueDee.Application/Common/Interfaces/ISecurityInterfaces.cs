@@ -12,6 +12,7 @@ public interface IPasswordHasher
 
 public interface IJwtTokenService
 {
+    TimeSpan AccessTokenLifetime { get; }
     string GenerateAccessToken(User user, Guid? storeId, StoreRole? role);
     string GenerateRefreshToken();
     ClaimsPrincipal? GetPrincipalFromExpiredToken(string token);

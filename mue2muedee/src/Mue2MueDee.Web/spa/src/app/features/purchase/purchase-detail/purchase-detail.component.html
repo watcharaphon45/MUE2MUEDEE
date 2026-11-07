@@ -25,7 +25,7 @@
         ✓ ลูกค้าตกลง (Accept)
       </button>
 
-      <button *ngIf="po.status === 4" type="button" class="btn-primary" (click)="openPayment()">
+      <button *ngIf="(po.status === 4 || po.status === 6 || po.status === 7) && remainingPayment(po) > 0" type="button" class="btn-primary" (click)="openPayment()">
         ฿ จ่ายเงินให้ลูกค้า (Record Payment)
       </button>
 
