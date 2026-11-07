@@ -6,6 +6,8 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { SaleService } from '../sale.service';
 import { StatusBadgeComponent, TextareaComponent } from '../../../shared/components';
 
+import { NotificationService } from '../../../core/notifications/notification.service';
+
 @Component({
   selector: 'app-sale-detail',
   standalone: true,
@@ -21,6 +23,7 @@ import { StatusBadgeComponent, TextareaComponent } from '../../../shared/compone
   styleUrl: './sale-detail.component.css'
 })
 export class SaleDetailComponent implements OnInit {
+  private readonly notifications = inject(NotificationService);
   protected readonly saleService = inject(SaleService);
   private readonly route = inject(ActivatedRoute);
 
@@ -60,6 +63,7 @@ export class SaleDetailComponent implements OnInit {
 
   submitCancel(): void {
     if (this.cancelForm.invalid) {
+      this.notifications.validation();
       this.cancelForm.markAllAsTouched();
       return;
     }

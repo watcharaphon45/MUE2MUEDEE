@@ -70,13 +70,21 @@ describe('Purchase screens', () => {
   it('accepts an offer then receives stock through the existing PO, sending each action once', async () => {
     const { fixture, component, http } = await detail(order());
     expect(fixture.nativeElement.textContent).toContain('ชัตเตอร์: 0 sc');
-    component.acceptOffer();
-    component.acceptOffer();
+    const accept = component.acceptOffer();
+    void component.acceptOffer();
+    await fixture.whenStable();
+    http.expectNone('/api/purchases/po-1/accept');
+    (document.querySelector('.dialog-confirm') as HTMLButtonElement).click();
+    await accept;
     http.expectOne('/api/purchases/po-1/accept').flush({ data: order(PurchaseStatus.Accepted) });
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('นำเข้าคลังสินค้า');
-    component.receiveToStock();
-    component.receiveToStock();
+    const receive = component.receiveToStock();
+    void component.receiveToStock();
+    await fixture.whenStable();
+    http.expectNone('/api/purchases/po-1/receive');
+    (document.querySelector('.dialog-confirm') as HTMLButtonElement).click();
+    await receive;
     const received = order(PurchaseStatus.Received);
     received.items[0].inventoryItemId = 'stock-1';
     received.items[0].generatedSku = 'CAM-2611-0001';

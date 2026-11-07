@@ -1,0 +1,13 @@
+<section class="action-dialog" [class.danger]="data.tone === 'danger'">
+  <div class="dialog-heading">
+    <span class="material-icons-outlined dialog-icon" aria-hidden="true">{{ data.tone === 'danger' ? 'warning_amber' : 'info' }}</span>
+    <h2 id="action-dialog-title">{{ data.title }}</h2>
+  </div>
+  <p id="action-dialog-message">{{ data.message }}</p>
+  <div class="dialog-actions">
+    @if (data.showCancel) {
+      <button type="button" class="dialog-cancel" (click)="dialogRef.close(false)">{{ data.cancelText }}</button>
+    }
+    <button type="button" class="dialog-confirm" (click)="dialogRef.close(true)">{{ data.confirmText }}</button>
+  </div>
+</section>

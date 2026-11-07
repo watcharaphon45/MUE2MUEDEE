@@ -5,6 +5,8 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { TextboxComponent } from '../../shared/components';
 
+import { NotificationService } from '../../core/notifications/notification.service';
+
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -13,6 +15,7 @@ import { TextboxComponent } from '../../shared/components';
   styleUrl: './login.component.css'
 })
 export class LoginComponent {
+  private readonly notifications = inject(NotificationService);
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
@@ -44,6 +47,7 @@ export class LoginComponent {
 
   onSubmit(): void {
     if (this.loginForm.invalid) {
+      this.notifications.validation();
       this.loginForm.markAllAsTouched();
       return;
     }

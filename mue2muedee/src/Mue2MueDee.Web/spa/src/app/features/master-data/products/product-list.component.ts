@@ -11,6 +11,8 @@ import {
   SelectComponent
 } from '../../../shared/components';
 
+import { NotificationService } from '../../../core/notifications/notification.service';
+
 @Component({
   selector: 'app-product-list',
   standalone: true,
@@ -27,6 +29,7 @@ import {
   styleUrl: './product-list.component.css'
 })
 export class ProductListComponent implements OnInit {
+  private readonly notifications = inject(NotificationService);
   protected readonly masterDataService = inject(MasterDataService);
 
   showCreateModal = signal<boolean>(false);
@@ -78,6 +81,7 @@ export class ProductListComponent implements OnInit {
 
   onSubmit(): void {
     if (this.form.invalid) {
+      this.notifications.validation();
       this.form.markAllAsTouched();
       return;
     }

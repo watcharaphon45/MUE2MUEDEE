@@ -1,4 +1,5 @@
 import { TablePaginationComponent } from '../../../shared/components/table-pagination/table-pagination.component';
+import { ActionDialogService } from '../../../shared/components/action-dialog/action-dialog.service';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -23,6 +24,8 @@ import {
 } from '../../../shared/components';
 import { StickerDesignerModalComponent } from '../sticker-designer-modal/sticker-designer-modal.component';
 
+import { NotificationService } from '../../../core/notifications/notification.service';
+
 @Component({
   selector: 'app-inventory-detail',
   standalone: true,
@@ -43,6 +46,8 @@ import { StickerDesignerModalComponent } from '../sticker-designer-modal/sticker
   styleUrl: './inventory-detail.component.css'
 })
 export class InventoryDetailComponent implements OnInit {
+  private readonly notifications = inject(NotificationService);
+  private readonly dialogs = inject(ActionDialogService);
   protected readonly inventoryService = inject(InventoryService);
   private readonly route = inject(ActivatedRoute);
 
@@ -160,6 +165,7 @@ export class InventoryDetailComponent implements OnInit {
 
   submitAddCostItem(): void {
     if (this.costItemForm.invalid) {
+      this.notifications.validation();
       this.costItemForm.markAllAsTouched();
       return;
     }
@@ -185,17 +191,22 @@ export class InventoryDetailComponent implements OnInit {
     });
   }
 
-  deleteCostItem(costId: string): void {
-    if (!confirm('ยืนยันที่จะลบรายการต้นทุนนี้หรือไม่? ระบบจะปรับลดต้นทุนจริงให้อัตโนมัติ')) {
+  async deleteCostItem(costId: string): Promise<void> {
+    if (this.isSubmitting()) return;
+    this.isSubmitting.set(true);
+    if (!await this.dialogs.confirm({ title: 'ลบรายการต้นทุน', message: 'ยืนยันที่จะลบรายการต้นทุนนี้หรือไม่? ระบบจะปรับลดต้นทุนจริงให้อัตโนมัติ', confirmText: 'ยืนยันลบต้นทุน', tone: 'danger' })) {
+      this.isSubmitting.set(false);
       return;
     }
 
     this.inventoryService.deleteCostItem(this.itemId(), costId).subscribe({
       next: () => {
+        this.isSubmitting.set(false);
         this.feedbackMessage.set({ type: 'success', text: 'ลบรายการต้นทุนสำเร็จ' });
         this.recalculatePricing();
       },
       error: err => {
+        this.isSubmitting.set(false);
         this.feedbackMessage.set({ type: 'error', text: err.error?.message ?? 'ไม่สามารถลบต้นทุนได้' });
       }
     });
@@ -216,6 +227,7 @@ export class InventoryDetailComponent implements OnInit {
 
   submitUpdatePrice(): void {
     if (this.updatePriceForm.invalid) {
+      this.notifications.validation();
       this.updatePriceForm.markAllAsTouched();
       return;
     }
@@ -253,6 +265,7 @@ export class InventoryDetailComponent implements OnInit {
 
   submitChangeStatus(): void {
     if (this.statusForm.invalid) {
+      this.notifications.validation();
       this.statusForm.markAllAsTouched();
       return;
     }

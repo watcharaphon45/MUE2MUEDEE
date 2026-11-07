@@ -12,6 +12,8 @@ import {
   MultiImageUploaderComponent
 } from '../../../shared/components';
 
+import { NotificationService } from '../../../core/notifications/notification.service';
+
 @Component({
   selector: 'app-inventory-form',
   standalone: true,
@@ -29,6 +31,7 @@ import {
   styleUrl: './inventory-form.component.css'
 })
 export class InventoryFormComponent implements OnInit {
+  private readonly notifications = inject(NotificationService);
   private readonly inventoryService = inject(InventoryService);
   private readonly masterDataService = inject(MasterDataService);
   private readonly router = inject(Router);
@@ -126,6 +129,7 @@ export class InventoryFormComponent implements OnInit {
 
   onSubmit(): void {
     if (this.form.invalid) {
+      this.notifications.validation();
       this.form.markAllAsTouched();
       return;
     }

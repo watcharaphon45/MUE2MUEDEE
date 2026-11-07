@@ -1,0 +1,17 @@
+<section class="toast-region" aria-label="แจ้งเตือนผลการทำรายการ" [hidden]="loading.isLoading()">
+  @for (item of notifications.items(); track item.id) {
+    <article class="toast" [class.success]="item.kind === 'success'" [class.warning]="item.kind === 'warning'" [class.error]="item.kind === 'error'"
+      [attr.role]="item.kind === 'error' ? 'alert' : 'status'" aria-atomic="true"
+      (mouseenter)="notifications.pause(item.id, 'hover')" (mouseleave)="notifications.resume(item.id, 'hover')"
+      (focusin)="notifications.pause(item.id, 'focus')" (focusout)="notifications.resume(item.id, 'focus')">
+      <span class="material-icons-outlined toast-icon" aria-hidden="true">{{ icons[item.kind] }}</span>
+      <div class="toast-content">
+        <strong>{{ titles[item.kind] }}</strong>
+        <p>{{ item.message }}</p>
+      </div>
+      <button type="button" class="toast-close" (click)="notifications.dismiss(item.id)" [attr.aria-label]="'ปิดแจ้งเตือน: ' + item.message">
+        <span class="material-icons-outlined" aria-hidden="true">close</span>
+      </button>
+    </article>
+  }
+</section>

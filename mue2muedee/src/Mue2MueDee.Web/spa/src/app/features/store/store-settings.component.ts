@@ -14,6 +14,8 @@ import {
   CheckboxComponent 
 } from '../../shared/components';
 
+import { NotificationService } from '../../core/notifications/notification.service';
+
 @Component({
   selector: 'app-store-settings',
   standalone: true,
@@ -31,6 +33,7 @@ import {
   styleUrl: './store-settings.component.css'
 })
 export class StoreSettingsComponent implements OnInit {
+  private readonly notifications = inject(NotificationService);
   private readonly fb = inject(FormBuilder);
   protected readonly storeService = inject(StoreService);
   protected readonly authService = inject(AuthService);
@@ -174,6 +177,7 @@ export class StoreSettingsComponent implements OnInit {
 
   onSaveStore(): void {
     if (this.storeForm.invalid) {
+      this.notifications.validation();
       this.storeForm.markAllAsTouched();
       return;
     }
@@ -193,6 +197,7 @@ export class StoreSettingsComponent implements OnInit {
 
   onAddUserSubmit(): void {
     if (this.addUserForm.invalid) {
+      this.notifications.validation();
       this.addUserForm.markAllAsTouched();
       return;
     }

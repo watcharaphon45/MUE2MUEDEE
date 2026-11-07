@@ -14,6 +14,7 @@ import JsBarcode from 'jsbarcode';
 import QRCode from 'qrcode';
 import { InventoryItem } from '../inventory.models';
 import { AuthService } from '../../../core/auth/auth.service';
+import { ActionDialogService } from '../../../shared/components/action-dialog/action-dialog.service';
 import { StickerTemplateService } from '../sticker-template.service';
 import {
   StickerTemplate,
@@ -34,6 +35,8 @@ import { QrcodeComponent } from '../../../shared/components/qrcode/qrcode.compon
 export class StickerDesignerModalComponent implements OnInit {
   protected readonly templateService = inject(StickerTemplateService);
   private readonly authService = inject(AuthService);
+  private readonly dialogs = inject(ActionDialogService);
+  readonly isTemplateActionPending = signal(false);
 
   // Inputs & Outputs
   item = input<InventoryItem | null>(null);
@@ -408,30 +411,48 @@ export class StickerDesignerModalComponent implements OnInit {
     });
   }
 
-  deleteTemplate(): void {
+  async deleteTemplate(): Promise<void> {
+    if (this.isTemplateActionPending()) return;
     const id = this.currentTemplateId();
     if (!id) return;
 
-    if (!confirm(`คุณต้องการลบรูปแบบ "${this.templateName()}" ใช่หรือไม่?`)) return;
+    this.isTemplateActionPending.set(true);
+    if (!await this.dialogs.confirm({ title: 'ลบรูปแบบสติ๊กเกอร์', message: `คุณต้องการลบรูปแบบ "${this.templateName()}" ใช่หรือไม่?`, confirmText: 'ยืนยันลบรูปแบบ', tone: 'danger' })) {
+      this.isTemplateActionPending.set(false);
+      return;
+    }
 
     this.templateService.delete(id).subscribe({
       next: () => {
+        this.isTemplateActionPending.set(false);
         this.statusMessage.set('ลบรูปแบบเรียบร้อยแล้ว');
         setTimeout(() => this.statusMessage.set(null), 3000);
       },
-      error: err => this.errorMessage.set(err.error?.message || 'ไม่สามารถลบได้')
+      error: err => {
+        this.isTemplateActionPending.set(false);
+        this.errorMessage.set(err.error?.message || 'ไม่สามารถลบได้');
+      }
     });
   }
 
-  resetToSystemDefaults(): void {
-    if (!confirm('คุณต้องการรีเซ็ตรูปแบบสติ๊กเกอร์กลับเป็นค่ามาตรฐานเริ่มต้นทั้ง 4 รูปแบบของระบบใช่หรือไม่?')) return;
+  async resetToSystemDefaults(): Promise<void> {
+    if (this.isTemplateActionPending()) return;
+    this.isTemplateActionPending.set(true);
+    if (!await this.dialogs.confirm({ title: 'รีเซ็ตรูปแบบสติ๊กเกอร์', message: 'คุณต้องการรีเซ็ตรูปแบบสติ๊กเกอร์กลับเป็นค่ามาตรฐานเริ่มต้นทั้ง 4 รูปแบบของระบบใช่หรือไม่?', confirmText: 'ยืนยันรีเซ็ต', tone: 'danger' })) {
+      this.isTemplateActionPending.set(false);
+      return;
+    }
 
     this.templateService.resetDefaults().subscribe({
       next: () => {
+        this.isTemplateActionPending.set(false);
         this.statusMessage.set('รีเซ็ตเป็นค่ามาตรฐานระบบเรียบร้อยแล้ว');
         setTimeout(() => this.statusMessage.set(null), 3000);
       },
-      error: err => this.errorMessage.set(err.error?.message || 'เกิดข้อผิดพลาดในการรีเซ็ต')
+      error: err => {
+        this.isTemplateActionPending.set(false);
+        this.errorMessage.set(err.error?.message || 'เกิดข้อผิดพลาดในการรีเซ็ต');
+      }
     });
   }
 
@@ -961,7 +982,7 @@ export class StickerDesignerModalComponent implements OnInit {
 
     const doc = iframe.contentWindow?.document;
     if (!doc) {
-      alert('ไม่สามารถเปิดระบบพิมพ์ของเบราว์เซอร์ได้');
+      void this.dialogs.notify({ title: 'เปิดระบบพิมพ์ไม่สำเร็จ', message: 'ไม่สามารถเปิดระบบพิมพ์ของเบราว์เซอร์ได้ กรุณาลองใหม่', tone: 'danger' });
       return;
     }
 

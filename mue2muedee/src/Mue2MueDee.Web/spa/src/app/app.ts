@@ -1,11 +1,16 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { LoadingService } from './core/loading/loading.service';
+import { GlobalLoadingComponent } from './shared/components/global-loading/global-loading.component';
+import { NotificationToastComponent } from './shared/components/notification-toast/notification-toast.component';
 
 @Component({
   standalone: true,
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, GlobalLoadingComponent, NotificationToastComponent],
   selector: 'app-root',
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
-export class App {}
+export class App {
+  protected readonly loading = inject(LoadingService);
+}

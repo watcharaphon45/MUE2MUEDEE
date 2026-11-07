@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize, of, switchMap, tap } from 'rxjs';
+import { ActionDialogService } from '../../../shared/components/action-dialog/action-dialog.service';
 import { PurchaseService } from '../purchase.service';
 import { MasterDataService } from '../../master-data/master-data.service';
 import {
@@ -21,6 +22,8 @@ import {
   SelectComponent
 } from '../../../shared/components';
 
+import { NotificationService } from '../../../core/notifications/notification.service';
+
 @Component({
   selector: 'app-purchase-wizard',
   standalone: true,
@@ -37,6 +40,8 @@ import {
   styleUrl: './purchase-wizard.component.css'
 })
 export class PurchaseWizardComponent implements OnInit {
+  private readonly notifications = inject(NotificationService);
+  private readonly dialogs = inject(ActionDialogService);
   protected readonly purchaseService = inject(PurchaseService);
   protected readonly masterDataService = inject(MasterDataService);
   private readonly router = inject(Router);
@@ -205,11 +210,13 @@ export class PurchaseWizardComponent implements OnInit {
     this.errorMessage.set(null);
 
     if (step >= 2 && this.step1Form.invalid) {
+      this.notifications.validation();
       this.step1Form.markAllAsTouched();
       return;
     }
 
     if (step >= 3 && this.step2Form.invalid) {
+      this.notifications.validation();
       this.step2Form.markAllAsTouched();
       return;
     }
@@ -222,6 +229,7 @@ export class PurchaseWizardComponent implements OnInit {
   createAndSubmitPO(): void {
     if (this.isSubmitting() || this.createdPO()) return;
     if (this.step1Form.invalid || this.step2Form.invalid || this.step3Form.invalid) {
+      this.notifications.validation();
       this.step1Form.markAllAsTouched();
       this.step2Form.markAllAsTouched();
       this.step3Form.markAllAsTouched();
@@ -296,10 +304,10 @@ export class PurchaseWizardComponent implements OnInit {
 
   // --- Step 4 Actions ---
 
-  approveOverMax(): void {
-    if (this.isSubmitting() || this.hasPendingSubmission()) return;
+  async approveOverMax(): Promise<void> {
     const po = this.createdPO();
     if (!po) return;
+    if (!await this.confirmAction('อนุมัติราคาพิเศษ', `ยืนยันอนุมัติราคาเสนอซื้อเกินเกณฑ์ของใบรับซื้อ ${po.poNumber} หรือไม่?`)) return;
 
     this.isSubmitting.set(true);
     this.purchaseService.approvePurchase(po.id).subscribe({
@@ -314,10 +322,10 @@ export class PurchaseWizardComponent implements OnInit {
     });
   }
 
-  acceptOffer(): void {
-    if (this.isSubmitting() || this.hasPendingSubmission()) return;
+  async acceptOffer(): Promise<void> {
     const po = this.createdPO();
     if (!po) return;
+    if (!await this.confirmAction('ลูกค้าตกลงรับข้อเสนอ', `ยืนยันว่าลูกค้าตกลงขายสินค้าตามข้อเสนอในใบรับซื้อ ${po.poNumber} หรือไม่?`)) return;
 
     this.isSubmitting.set(true);
     this.purchaseService.acceptOffer(po.id).subscribe({
@@ -333,10 +341,10 @@ export class PurchaseWizardComponent implements OnInit {
     });
   }
 
-  rejectOffer(): void {
-    if (this.isSubmitting() || this.hasPendingSubmission()) return;
+  async rejectOffer(): Promise<void> {
     const po = this.createdPO();
     if (!po) return;
+    if (!await this.confirmAction('ปฏิเสธข้อเสนอรับซื้อ', `ยืนยันยกเลิก/ปฏิเสธข้อเสนอของใบรับซื้อ ${po.poNumber} หรือไม่?`, true)) return;
 
     this.isSubmitting.set(true);
     this.purchaseService.rejectOffer(po.id).subscribe({
@@ -355,6 +363,7 @@ export class PurchaseWizardComponent implements OnInit {
     if (this.isSubmitting() || this.hasPendingSubmission()) return;
     const po = this.createdPO();
     if (!po || this.paymentForm.invalid) {
+      this.notifications.validation();
       this.paymentForm.markAllAsTouched();
       return;
     }
@@ -381,10 +390,10 @@ export class PurchaseWizardComponent implements OnInit {
     });
   }
 
-  receiveToStock(): void {
-    if (this.isSubmitting() || this.hasPendingSubmission()) return;
+  async receiveToStock(): Promise<void> {
     const po = this.createdPO();
     if (!po) return;
+    if (!await this.confirmAction('รับสินค้าเข้าคลัง', `ยืนยันรับสินค้าจากใบรับซื้อ ${po.poNumber} เข้าคลัง? ระบบจะสร้าง SKU และบันทึกสต็อกให้อัตโนมัติ`)) return;
 
     this.isSubmitting.set(true);
     this.purchaseService.receiveToStock(po.id).subscribe({
@@ -398,5 +407,12 @@ export class PurchaseWizardComponent implements OnInit {
         this.errorMessage.set(err.error?.message ?? 'เกิดข้อผิดพลาดในการนำเข้าสต็อก');
       }
     });
+  }
+  private async confirmAction(title: string, message: string, danger = false): Promise<boolean> {
+    if (this.isSubmitting() || this.hasPendingSubmission()) return false;
+    this.isSubmitting.set(true);
+    const accepted = await this.dialogs.confirm({ title, message, tone: danger ? 'danger' : 'primary' });
+    if (!accepted) this.isSubmitting.set(false);
+    return accepted;
   }
 }

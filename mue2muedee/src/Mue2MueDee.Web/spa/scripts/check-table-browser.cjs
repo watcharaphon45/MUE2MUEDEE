@@ -76,11 +76,31 @@ function api(url) {
 (async () => {
   fs.mkdirSync(output, { recursive: true });
   const missing = [];
+  const mutations = [];
   const server = http.createServer((req, res) => {
     const url = new URL(req.url, 'http://localhost');
     if (url.pathname.startsWith('/api/')) {
+      if (url.pathname === '/api/__notification-test') {
+        const status = Number(url.searchParams.get('status') || 200);
+        const message = status === 200 ? 'บันทึกข้อมูลสำเร็จ' : status === 409
+          ? 'ไม่สามารถทำรายการได้ เนื่องจากสินค้านี้ถูกขายหรือมีการเปลี่ยนแปลงสถานะ กรุณาตรวจสอบข้อมูลก่อนทำรายการอีกครั้ง'
+          : 'ระบบไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง';
+        setTimeout(() => {
+          res.writeHead(status, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: status === 200, message, data: {} }));
+        }, 350);
+        return;
+      }
+      if (url.pathname === '/api/__loading-test') {
+        const status = Number(url.searchParams.get('status') || 200);
+        setTimeout(() => {
+          res.writeHead(status, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: status === 200, data: {}, message: 'Loading test' }));
+        }, Number(url.searchParams.get('delay') || 1000));
+        return;
+      }
       // All mutations are blocked by this mock server.
-      if (req.method !== 'GET') { res.writeHead(405).end(); return; }
+      if (req.method !== 'GET') { mutations.push(req.url); res.writeHead(405).end(); return; }
       try { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ success: true, statusCode: 200, data: api(url), message: 'Mock data', errors: null, timestamp: stamp })); }
       catch (error) { missing.push(error.message); res.writeHead(404).end('{}'); }
       return;
@@ -128,6 +148,78 @@ function api(url) {
       if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description || expression);
       return result.result.value;
     };
+    const checkActionCancellation = async (name, width, trigger) => {
+      const before = mutations.length;
+      await evaluate(trigger);
+      await until(() => evaluate("!!document.querySelector('app-action-dialog .dialog-cancel')"), name + ' confirmation');
+      await sleep(100);
+      const cancel = await evaluate(`(()=>{const e=document.querySelector('.dialog-cancel');const r=e.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,visible:!!document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.closest('.dialog-cancel'),fits:document.documentElement.scrollWidth<=innerWidth+2};})()`);
+      assert(cancel.visible && cancel.fits, name + ' confirmation is clipped or behind another modal');
+      const screenshot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
+      fs.writeFileSync(path.join(output, `action-${name}-${width}.png`), Buffer.from(screenshot.data, 'base64'));
+      await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: cancel.x, y: cancel.y, button: 'left', clickCount: 1 });
+      await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: cancel.x, y: cancel.y, button: 'left', clickCount: 1 });
+      await until(() => evaluate("!document.querySelector('app-action-dialog')"), name + ' cancellation');
+      await sleep(100);
+      assert.equal(mutations.length, before, name + ' sent a request despite cancellation');
+      console.log(`${name} ${width}px: action modal cancellation passed`);
+    };
+    const checkGlobalLoading = async width => {
+      await evaluate("document.getElementById('btn-open-create-store-modal').scrollIntoView({block:'center'})");
+      await evaluate("document.querySelector('table.stores-table tbody tr button').click()");
+      await until(() => evaluate("!!document.querySelector('app-action-dialog')"), 'underlying action dialog');
+      const before = mutations.length;
+      await evaluate(`(()=>{
+        window.__loadingResult={finished:0,errors:0};
+        const http=ng.getComponent(document.querySelector('app-super-admin-stores')).adminService.http;
+        for(const url of ['/api/__loading-test?delay=800','/api/__loading-test?delay=2200&status=500']) {
+          http.get(url).subscribe({next:()=>window.__loadingResult.finished++,error:()=>window.__loadingResult.errors++});
+        }
+      })()`);
+      await until(() => evaluate("!!document.querySelector('.loading-card')"), 'global loading overlay');
+      const state = await evaluate(`(()=>{
+        const button=document.getElementById('btn-open-create-store-modal');const r=button.getBoundingClientRect();
+        const hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);
+        return {inert:document.querySelector('.application-content').inert,x:r.x+r.width/2,y:r.y+r.height/2,blocked:!hit?.closest('#btn-open-create-store-modal'),scroll:scrollY};
+      })()`);
+      assert(state.inert && state.blocked, 'Global loading did not block page controls');
+      await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: state.x, y: state.y, button: 'left', clickCount: 1 });
+      await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: state.x, y: state.y, button: 'left', clickCount: 1 });
+      await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+      await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+      await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9 });
+      await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9 });
+      assert(await evaluate("!!document.activeElement?.closest('.global-loading-panel')"), 'Loading did not keep keyboard focus inside the overlay');
+      await send('Input.dispatchMouseEvent', { type: 'mouseWheel', x: 100, y: 100, deltaX: 0, deltaY: 500 });
+      assert(await evaluate(`!!document.querySelector('.loading-card') && !!document.querySelector('app-action-dialog') && !document.querySelector('.store-modal-panel') && scrollY===${state.scroll}`), 'Loading allowed clicking, closing a dialog or scrolling');
+      const screenshot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
+      fs.writeFileSync(path.join(output, `global-loading-${width}.png`), Buffer.from(screenshot.data, 'base64'));
+      await until(() => evaluate("window.__loadingResult.finished===1"), 'first concurrent request');
+      assert(await evaluate("!!document.querySelector('.loading-card') && document.querySelector('.application-content').inert"), 'Loading ended before all requests completed');
+      await until(() => evaluate("window.__loadingResult.errors===1 && !document.querySelector('.loading-card')"), 'failed final request unlocks screen');
+      assert(await evaluate("!document.querySelector('.application-content').inert && !!document.querySelector('app-action-dialog')"), 'Screen did not recover after API error');
+      await evaluate("document.querySelector('.dialog-cancel').click()");
+      await until(() => evaluate("!document.querySelector('app-action-dialog')"), 'original dialog cancellation');
+      assert.equal(mutations.length, before, 'Loading allowed a store action to be sent');
+      console.log(`global loading ${width}px: concurrent requests, blocked controls and error recovery passed`);
+    };
+    const checkNotifications = async width => {
+      await evaluate("(()=>{const n=ng.getComponent(document.querySelector('app-notification-toast')).notifications;for(const item of n.items())n.dismiss(item.id);})()");
+      for (const [status, kind] of [[200, 'success'], [409, 'warning'], [500, 'error'], [500, 'error']]) {
+        await evaluate(`(()=>{const http=ng.getComponent(document.querySelector('app-super-admin-stores')).adminService.http;http.post('/api/__notification-test?status=${status}',{}).subscribe({error:()=>{}});})()`);
+        await until(() => evaluate("!!document.querySelector('.loading-card')"), 'notification waits for loading');
+        assert(await evaluate("document.querySelector('.toast-region').hidden"), 'Notification was shown behind Loading');
+        await until(() => evaluate(`!document.querySelector('.loading-card') && !!document.querySelector('.toast.${kind}')`), kind + ' notification');
+      }
+      assert.equal(await evaluate("document.querySelectorAll('.toast.error').length"), 1, 'Duplicate error notifications were shown');
+      const layout = await evaluate(`(()=>{const r=document.querySelector('.toast-region').getBoundingClientRect();return {right:r.right,left:r.left,top:r.top,width:document.documentElement.scrollWidth,count:document.querySelectorAll('.toast').length};})()`);
+      assert(layout.count === 3 && layout.left >= 0 && layout.right <= width && layout.right >= width - 24 && layout.top >= 8 && layout.width <= width + 2, 'Notifications are not positioned at the top right or overflow the screen');
+      const screenshot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
+      fs.writeFileSync(path.join(output, `notifications-${width}.png`), Buffer.from(screenshot.data, 'base64'));
+      await evaluate("document.querySelector('.toast.warning .toast-close').click()");
+      await until(() => evaluate("!document.querySelector('.toast.warning')"), 'notification dismissal');
+      console.log(`notifications ${width}px: success, warning, error, duplicate prevention and dismissal passed`);
+    };
     await send('Page.enable'); await send('Runtime.enable');
     const storeInfo = { storeId: store.id, storeName: store.name, storeCode: store.code, role: 'Owner', primaryColor: '#0284c7' };
     const storage = { mue2_access_token: 'local-fixture-token', mue2_refresh_token: 'local-fixture-refresh', mue2_user: JSON.stringify({ id: id(101), username: 'fixture', fullName: 'ผู้ตรวจตัวอย่าง', isSuperAdmin: true }), mue2_current_store: JSON.stringify(storeInfo), mue2_stores: JSON.stringify([storeInfo]) };
@@ -162,6 +254,7 @@ function api(url) {
           throw error;
         }
         await sleep(100);
+        await until(() => evaluate("!document.querySelector('.loading-card')"), name + ' loading finished');
         const state = await evaluate(`(()=>({ width:innerWidth, documentWidth:document.documentElement.scrollWidth, tables:[...document.querySelectorAll('table.app-table')].filter(t=>t.getClientRects().length).map(t=>({rows:t.querySelectorAll('tbody tr').length,scroll:t.parentElement.scrollWidth>t.parentElement.clientWidth})),ranges:[...document.querySelectorAll('.page-range')].map(e=>e.textContent.trim()) }))()`);
         assert(state.documentWidth <= width + 2, `${name} overflows viewport at ${width}: ${state.documentWidth}`);
         for (const table of state.tables) assert(table.rows <= 25, `${name} did not paginate rows`);
@@ -224,6 +317,7 @@ function api(url) {
           const modalScreenshot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
           fs.writeFileSync(path.join(output, `purchase-payment-${width}.png`), Buffer.from(modalScreenshot.data, 'base64'));
           await evaluate("document.querySelector('.modal-close').click()");
+          await checkActionCancellation('purchase-receive', width, "document.querySelector('.btn-receive').click()");
         }
         if (name === 'stores') {
           await evaluate("document.getElementById('btn-open-create-store-modal').click()");
@@ -238,6 +332,14 @@ function api(url) {
           const modalScreenshot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
           fs.writeFileSync(path.join(output, `stores-modal-${width}.png`), Buffer.from(modalScreenshot.data, 'base64'));
           await evaluate("document.querySelector('[aria-label=\"ปิดหน้าต่างสร้างร้านค้า\"]').click()");
+          await checkActionCancellation('store-status', width, "document.querySelector('table.stores-table tbody tr button').click()");
+          await checkGlobalLoading(width);
+          await checkNotifications(width);
+        }
+        if (name === 'inventory') {
+          await evaluate("document.querySelector('table.inventory-table tbody tr button[title=\"พิมพ์ป้ายสติ๊กเกอร์บาร์โค้ด\"]').click()");
+          await until(() => evaluate("!!document.querySelector('button[title=\"รีเซ็ตกลับเป็น 4 รูปแบบมาตรฐานของระบบ\"]')"), 'sticker designer');
+          await checkActionCancellation('sticker-reset', width, "document.querySelector('button[title=\"รีเซ็ตกลับเป็น 4 รูปแบบมาตรฐานของระบบ\"]').click()");
         }
         results.push({ name, width, ...state });
         console.log(`${name} ${width}px: pagination and layout passed`);

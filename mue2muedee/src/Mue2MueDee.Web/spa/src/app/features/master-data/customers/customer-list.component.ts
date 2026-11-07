@@ -10,6 +10,8 @@ import {
   SelectComponent
 } from '../../../shared/components';
 
+import { NotificationService } from '../../../core/notifications/notification.service';
+
 @Component({
   selector: 'app-customer-list',
   standalone: true,
@@ -25,6 +27,7 @@ import {
   styleUrl: './customer-list.component.css'
 })
 export class CustomerListComponent implements OnInit {
+  private readonly notifications = inject(NotificationService);
   protected readonly masterDataService = inject(MasterDataService);
 
   showCreateModal = signal<boolean>(false);
@@ -72,6 +75,7 @@ export class CustomerListComponent implements OnInit {
 
   onSubmit(): void {
     if (this.form.invalid) {
+      this.notifications.validation();
       this.form.markAllAsTouched();
       return;
     }

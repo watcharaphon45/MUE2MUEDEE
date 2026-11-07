@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "@angular/cdk/overlay-prebuilt.css";
 
+.action-dialog-backdrop { background: rgb(15 23 42 / .55); backdrop-filter: blur(3px); }
+.global-loading-backdrop { background: rgb(15 23 42 / .55); backdrop-filter: blur(3px); cursor: wait; touch-action: none; }
+
 @layer base {
   :root {
     --font-sans: 'Prompt', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;

@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { SuperAdminStoresComponent } from './super-admin-stores.component';
@@ -14,7 +15,7 @@ describe('Store and owner management', () => {
   const stats = { totalStores: 32, activeStores: 32, totalOwners: 32, totalUsers: 64 };
 
   async function createPage(failLoad = false) {
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])] });
     const fixture = TestBed.createComponent(SuperAdminStoresComponent);
     const http = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
@@ -58,11 +59,14 @@ describe('Store and owner management', () => {
 
   it('sends one status request per store, preserves the page and reports a failed statistics refresh', async () => {
     const { fixture, component, http } = await createPage();
-    const confirmation = vi.spyOn(window, 'confirm').mockReturnValue(true);
     (fixture.nativeElement.querySelector('[aria-label="หน้าถัดไป"]') as HTMLButtonElement).click();
     fixture.detectChanges();
-    component.toggleStatus(stores[15]);
-    component.toggleStatus(stores[15]);
+    const pending = component.toggleStatus(stores[15]);
+    void component.toggleStatus(stores[15]);
+    await fixture.whenStable();
+    http.expectNone('/api/super-admin/stores/store-15/toggle-status');
+    (document.querySelector('.dialog-confirm') as HTMLButtonElement).click();
+    await pending;
     fixture.detectChanges();
     expect((fixture.nativeElement.querySelector('tbody tr button') as HTMLButtonElement).disabled).toBe(true);
     const request = http.expectOne('/api/super-admin/stores/store-15/toggle-status');
@@ -74,20 +78,31 @@ describe('Store and owner management', () => {
     expect(fixture.nativeElement.querySelector('tbody tr')?.textContent).toContain('SHOP-15');
     expect(fixture.nativeElement.querySelector('tbody tr')?.textContent).toContain('ระงับบริการ');
     expect(fixture.nativeElement.textContent).toContain('โหลดสรุปไม่สำเร็จ');
-    confirmation.mockRestore();
     http.verify();
   });
 
   it('releases a failed status request and keeps the existing status', async () => {
     const { fixture, component, http } = await createPage();
-    const confirmation = vi.spyOn(window, 'confirm').mockReturnValue(true);
-    component.toggleStatus(stores[0]);
+    const pending = component.toggleStatus(stores[0]);
+    await fixture.whenStable();
+    (document.querySelector('.dialog-confirm') as HTMLButtonElement).click();
+    await pending;
     http.expectOne('/api/super-admin/stores/store-0/toggle-status').flush({ message: 'ไม่มีสิทธิ์' }, { status: 403, statusText: 'Forbidden' });
     fixture.detectChanges();
     expect(component.pendingStoreIds().size).toBe(0);
     expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain('ไม่มีสิทธิ์');
     expect(fixture.nativeElement.querySelector('tbody tr')?.textContent).toContain('เปิดใช้งาน');
-    confirmation.mockRestore();
+    http.verify();
+  });
+
+  it('does not change store status when confirmation is cancelled', async () => {
+    const { fixture, component, http } = await createPage();
+    const pending = component.toggleStatus(stores[0]);
+    await fixture.whenStable();
+    (document.querySelector('.dialog-cancel') as HTMLButtonElement).click();
+    await pending;
+    expect(component.pendingStoreIds().size).toBe(0);
+    http.expectNone(req => req.method === 'PUT');
     http.verify();
   });
 

@@ -1,4 +1,5 @@
 import { TablePaginationComponent } from '../../../shared/components/table-pagination/table-pagination.component';
+import { ActionDialogService } from '../../../shared/components/action-dialog/action-dialog.service';
 import {
   Component,
   OnInit,
@@ -42,6 +43,8 @@ interface PaymentEntry {
   notes?: string;
 }
 
+import { NotificationService } from '../../../core/notifications/notification.service';
+
 @Component({
   selector: 'app-pos',
   standalone: true,
@@ -60,6 +63,8 @@ interface PaymentEntry {
   styleUrl: './pos.component.css'
 })
 export class PosComponent implements OnInit, OnDestroy {
+  private readonly notifications = inject(NotificationService);
+  private readonly dialogs = inject(ActionDialogService);
   protected readonly saleService = inject(SaleService);
   private readonly router = inject(Router);
 
@@ -245,6 +250,7 @@ export class PosComponent implements OnInit, OnDestroy {
 
   addPayment(): void {
     if (this.paymentForm.invalid) {
+      this.notifications.validation();
       this.paymentForm.markAllAsTouched();
       return;
     }
@@ -272,14 +278,17 @@ export class PosComponent implements OnInit, OnDestroy {
     this.paymentForm.controls.amount.setValue(this.remainingAmount());
   }
 
-  submitSale(): void {
+  async submitSale(): Promise<void> {
+    if (this.isSubmitting()) return;
     if (this.cartItems().length === 0) {
       this.errorMessage.set('กรุณาเลือกสินค้าลงตะกร้าก่อนทำการขาย');
+      this.notifications.warning(this.errorMessage()!);
       return;
     }
 
     if (this.totalPaid() < this.netAmount()) {
       this.errorMessage.set(`ยอดชำระเงินยังไม่ครบ ยังขาดอีก ฿${this.remainingAmount().toLocaleString('th-TH', { minimumFractionDigits: 2 })}`);
+      this.notifications.warning(this.errorMessage()!);
       return;
     }
 
@@ -306,6 +315,11 @@ export class PosComponent implements OnInit, OnDestroy {
       }))
     };
 
+    const accepted = await this.dialogs.confirm({ title: 'ยืนยันบันทึกการขาย', message: `ขายสินค้า ${request.items.length} ชิ้น ยอดสุทธิ ฿${this.netAmount().toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\nระบบจะบันทึกการชำระเงินและตัดสินค้าออกจากสต็อก`, confirmText: 'ยืนยันการขาย' });
+    if (!accepted) {
+      this.isSubmitting.set(false);
+      return;
+    }
     this.saleService.createSale(request).subscribe({
       next: sale => {
         this.isSubmitting.set(false);

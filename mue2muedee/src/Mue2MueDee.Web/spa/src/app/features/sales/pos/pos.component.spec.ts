@@ -56,4 +56,40 @@ describe('POS paginated cart actions', () => {
     fixture.detectChanges();
     expect(fixture.componentInstance.cartItems().some(row => row.inventoryItem.id === 'item-15')).toBe(false);
   });
+
+  it('keeps the cart and does not create a sale when confirmation is cancelled', async () => {
+    const fixture = await createCart();
+    const component = fixture.componentInstance;
+    const http = TestBed.inject(HttpTestingController);
+    component.payments.set([{ method: 1, methodName: 'เงินสด', amount: 32000 }]);
+    const pending = component.submitSale();
+    await fixture.whenStable();
+    http.expectNone('/api/sales');
+    (document.querySelector('.dialog-cancel') as HTMLButtonElement).click();
+    await pending;
+    expect(component.isSubmitting()).toBe(false);
+    expect(component.cartItems().length).toBe(32);
+    expect(component.payments().length).toBe(1);
+    http.verify();
+  });
+
+  it('sends the entire cart once after confirming the sale', async () => {
+    const fixture = await createCart();
+    const component = fixture.componentInstance;
+    const http = TestBed.inject(HttpTestingController);
+    component.payments.set([{ method: 1, methodName: 'เงินสด', amount: 32000 }]);
+    const pending = component.submitSale();
+    void component.submitSale();
+    await fixture.whenStable();
+    expect(document.querySelector('app-action-dialog')?.textContent).toContain('32,000.00');
+    http.expectNone('/api/sales');
+    (document.querySelector('.dialog-confirm') as HTMLButtonElement).click();
+    await pending;
+    const request = http.expectOne('/api/sales');
+    expect(request.request.body.items.length).toBe(32);
+    request.flush({ data: { id: 'sale-1', saleNumber: 'SO-2611-0001', status: 2, payments: [] } });
+    expect(component.successSaleNumber()).toBe('SO-2611-0001');
+    expect(component.isSubmitting()).toBe(false);
+    http.verify();
+  });
 });

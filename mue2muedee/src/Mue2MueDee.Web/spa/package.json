@@ -8,6 +8,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "check:tables": "node scripts/check-table-pagination.cjs",
+    "check:dialogs": "node scripts/check-native-dialogs.cjs",
     "check:tables:browser": "node scripts/check-table-browser.cjs"
   },
   "private": true,

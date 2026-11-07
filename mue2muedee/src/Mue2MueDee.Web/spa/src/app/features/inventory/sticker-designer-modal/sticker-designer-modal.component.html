@@ -89,6 +89,7 @@
             type="button"
             *ngIf="currentTemplateId()"
             (click)="deleteTemplate()"
+            [disabled]="isTemplateActionPending()"
             class="btn-sm-action bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300"
             title="ลบเทมเพลตนี้"
           >
@@ -99,6 +100,7 @@
           <button
             type="button"
             (click)="resetToSystemDefaults()"
+            [disabled]="isTemplateActionPending()"
             class="btn-sm-action bg-white hover:bg-slate-100 text-slate-500 border border-slate-200"
             title="รีเซ็ตกลับเป็น 4 รูปแบบมาตรฐานของระบบ"
           >
@@ -141,6 +143,7 @@
             <button
               *ngIf="currentTemplateId()"
               (click)="deleteTemplate(); showMobileTemplateMenu.set(false)"
+              [disabled]="isTemplateActionPending()"
               class="px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-rose-600"
             >
               <span class="material-icons-outlined text-sm text-rose-500">delete</span>
@@ -148,6 +151,7 @@
             </button>
             <button
               (click)="resetToSystemDefaults(); showMobileTemplateMenu.set(false)"
+              [disabled]="isTemplateActionPending()"
               class="px-3.5 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-600 border-t border-slate-100"
             >
               <span class="material-icons-outlined text-sm text-slate-500">restart_alt</span>

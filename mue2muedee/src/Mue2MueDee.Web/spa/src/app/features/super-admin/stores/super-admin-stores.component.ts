@@ -7,6 +7,9 @@ import { finalize } from 'rxjs';
 import { SuperAdminService } from '../super-admin.service';
 import { SuperAdminStoreItem } from '../super-admin.models';
 import { TextboxComponent } from '../../../shared/components';
+import { ActionDialogService } from '../../../shared/components/action-dialog/action-dialog.service';
+
+import { NotificationService } from '../../../core/notifications/notification.service';
 
 @Component({
   selector: 'app-super-admin-stores',
@@ -16,8 +19,10 @@ import { TextboxComponent } from '../../../shared/components';
   styleUrl: './super-admin-stores.component.css'
 })
 export class SuperAdminStoresComponent implements OnInit {
+  private readonly notifications = inject(NotificationService);
   protected readonly adminService = inject(SuperAdminService);
   private readonly fb = inject(FormBuilder);
+  private readonly dialogs = inject(ActionDialogService);
 
   readonly searchControl = new FormControl('', { nonNullable: true });
   readonly searchQuery = toSignal(this.searchControl.valueChanges, { initialValue: '' });
@@ -96,6 +101,7 @@ export class SuperAdminStoresComponent implements OnInit {
   onSubmit(): void {
     if (this.isSubmitting()) return;
     if (this.storeForm.invalid) {
+      this.notifications.validation();
       this.storeForm.markAllAsTouched();
       this.formError.set('กรุณากรอกข้อมูลที่จำเป็น (*) ให้ครบถ้วนและถูกต้อง');
       return;
@@ -119,16 +125,20 @@ export class SuperAdminStoresComponent implements OnInit {
     });
   }
 
-  toggleStatus(store: SuperAdminStoreItem): void {
+  async toggleStatus(store: SuperAdminStoreItem): Promise<void> {
     if (this.pendingStoreIds().has(store.id)) return;
     const confirmMsg = store.isActive
       ? `คุณต้องการระงับการใช้งานร้านค้า '${store.name}' ใช่หรือไม่?`
       : `คุณต้องการเปิดการใช้งานร้านค้า '${store.name}' ใช่หรือไม่?`;
 
-    if (!confirm(confirmMsg)) return;
-
-    this.statusError.set(null);
     this.pendingStoreIds.update(ids => new Set([...ids, store.id]));
+    const accepted = await this.dialogs.confirm({ title: store.isActive ? 'ระงับการใช้งานร้านค้า' : 'เปิดใช้งานร้านค้า', message: confirmMsg,
+      confirmText: store.isActive ? 'ยืนยันระงับร้าน' : 'ยืนยันเปิดใช้งาน', tone: store.isActive ? 'danger' : 'primary' });
+    if (!accepted) {
+      this.pendingStoreIds.update(ids => new Set([...ids].filter(id => id !== store.id)));
+      return;
+    }
+    this.statusError.set(null);
     this.adminService.toggleStoreStatus(store.id).pipe(finalize(() => {
       this.pendingStoreIds.update(ids => {
         const next = new Set(ids);

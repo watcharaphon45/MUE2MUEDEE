@@ -1,4 +1,5 @@
 import { TablePaginationComponent } from '../../../shared/components/table-pagination/table-pagination.component';
+import { ActionDialogService } from '../../../shared/components/action-dialog/action-dialog.service';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -11,6 +12,8 @@ import {
   SelectComponent,
   StatusBadgeComponent
 } from '../../../shared/components';
+
+import { NotificationService } from '../../../core/notifications/notification.service';
 
 @Component({
   selector: 'app-purchase-detail',
@@ -29,6 +32,8 @@ import {
   styleUrl: './purchase-detail.component.css'
 })
 export class PurchaseDetailComponent implements OnInit {
+  private readonly notifications = inject(NotificationService);
+  private readonly dialogs = inject(ActionDialogService);
   protected readonly purchaseService = inject(PurchaseService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -72,8 +77,8 @@ export class PurchaseDetailComponent implements OnInit {
     });
   }
 
-  approvePurchase(): void {
-    if (this.isSubmitting()) return;
+  async approvePurchase(): Promise<void> {
+    if (!await this.confirmAction('อนุมัติราคาพิเศษ', 'ยืนยันอนุมัติราคาเสนอซื้อที่สูงกว่าเกณฑ์ของใบรับซื้อนี้หรือไม่?')) return;
     this.isSubmitting.set(true);
     this.purchaseService.approvePurchase(this.poId()).subscribe({
       next: () => {
@@ -87,8 +92,8 @@ export class PurchaseDetailComponent implements OnInit {
     });
   }
 
-  acceptOffer(): void {
-    if (this.isSubmitting()) return;
+  async acceptOffer(): Promise<void> {
+    if (!await this.confirmAction('ลูกค้าตกลงรับข้อเสนอ', 'ยืนยันว่าลูกค้าตกลงขายสินค้าตามราคาเสนอซื้อของใบรับซื้อนี้หรือไม่?')) return;
     this.isSubmitting.set(true);
     this.purchaseService.acceptOffer(this.poId()).subscribe({
       next: () => {
@@ -102,8 +107,8 @@ export class PurchaseDetailComponent implements OnInit {
     });
   }
 
-  rejectOffer(): void {
-    if (this.isSubmitting()) return;
+  async rejectOffer(): Promise<void> {
+    if (!await this.confirmAction('ปฏิเสธข้อเสนอรับซื้อ', 'ยืนยันยกเลิก/ปฏิเสธข้อเสนอของใบรับซื้อนี้หรือไม่?', true)) return;
     this.isSubmitting.set(true);
     this.purchaseService.rejectOffer(this.poId()).subscribe({
       next: () => {
@@ -140,6 +145,7 @@ export class PurchaseDetailComponent implements OnInit {
   submitPayment(): void {
     if (this.isSubmitting()) return;
     if (this.paymentForm.invalid) {
+      this.notifications.validation();
       this.paymentForm.markAllAsTouched();
       return;
     }
@@ -165,8 +171,8 @@ export class PurchaseDetailComponent implements OnInit {
     });
   }
 
-  receiveToStock(): void {
-    if (this.isSubmitting()) return;
+  async receiveToStock(): Promise<void> {
+    if (!await this.confirmAction('รับสินค้าเข้าคลัง', 'ยืนยันรับสินค้าจากใบรับซื้อนี้เข้าคลัง? ระบบจะสร้าง SKU และบันทึกสต็อกให้อัตโนมัติ')) return;
     this.isSubmitting.set(true);
     this.purchaseService.receiveToStock(this.poId()).subscribe({
       next: () => {
@@ -178,5 +184,12 @@ export class PurchaseDetailComponent implements OnInit {
         this.feedback.set({ type: 'error', text: err.error?.message ?? 'เกิดข้อผิดพลาดในการนำเข้าสต็อก' });
       }
     });
+  }
+  private async confirmAction(title: string, message: string, danger = false): Promise<boolean> {
+    if (this.isSubmitting()) return false;
+    this.isSubmitting.set(true);
+    const accepted = await this.dialogs.confirm({ title, message, tone: danger ? 'danger' : 'primary' });
+    if (!accepted) this.isSubmitting.set(false);
+    return accepted;
   }
 }

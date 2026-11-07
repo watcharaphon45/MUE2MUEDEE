@@ -24,6 +24,8 @@ import {
 
 export type MasterTab = 'products' | 'brands' | 'categories' | 'grades' | 'customers';
 
+import { NotificationService } from '../../../core/notifications/notification.service';
+
 @Component({
   selector: 'app-master-data-hub',
   standalone: true,
@@ -42,6 +44,7 @@ export type MasterTab = 'products' | 'brands' | 'categories' | 'grades' | 'custo
   styleUrl: './master-data-hub.component.css'
 })
 export class MasterDataHubComponent implements OnInit {
+  private readonly notifications = inject(NotificationService);
   protected readonly masterDataService = inject(MasterDataService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -342,6 +345,7 @@ export class MasterDataHubComponent implements OnInit {
 
     if (tab === 'brands') {
       if (this.brandForm.invalid) {
+        this.notifications.validation();
         this.brandForm.markAllAsTouched();
         return;
       }
@@ -370,6 +374,7 @@ export class MasterDataHubComponent implements OnInit {
       }
     } else if (tab === 'categories') {
       if (this.categoryForm.invalid) {
+        this.notifications.validation();
         this.categoryForm.markAllAsTouched();
         return;
       }
@@ -398,6 +403,7 @@ export class MasterDataHubComponent implements OnInit {
       }
     } else if (tab === 'grades') {
       if (this.gradeForm.invalid) {
+        this.notifications.validation();
         this.gradeForm.markAllAsTouched();
         return;
       }
@@ -428,6 +434,7 @@ export class MasterDataHubComponent implements OnInit {
       }
     } else if (tab === 'products') {
       if (this.productForm.invalid) {
+        this.notifications.validation();
         this.productForm.markAllAsTouched();
         return;
       }
@@ -464,6 +471,7 @@ export class MasterDataHubComponent implements OnInit {
       }
     } else if (tab === 'customers') {
       if (this.customerForm.invalid) {
+        this.notifications.validation();
         this.customerForm.markAllAsTouched();
         return;
       }
