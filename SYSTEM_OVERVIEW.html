@@ -1,0 +1,2215 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MUE2MUEDEE (มือสองมือดี) — สถาปัตยกรรมระบบและขั้นตอนการทำงาน</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+  <style>
+    :root {
+      --bg-page: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-subtle: #f1f5f9;
+      --bg-sidebar: #0f172a;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --accent: #0284c7;
+      --accent-dark: #0369a1;
+      --accent-soft: #e0f2fe;
+      --emerald: #059669;
+      --emerald-soft: #d1fae5;
+      --amber: #d97706;
+      --amber-soft: #fef3c7;
+      --rose: #e11d48;
+      --rose-soft: #ffe4e6;
+      --border: #e2e8f0;
+      --border-strong: #cbd5e1;
+      --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
+      --shadow-md: 0 4px 16px rgba(15, 23, 42, 0.08);
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --sidebar-width: 295px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: 'IBM Plex Sans Thai', 'Sarabun', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-page);
+      color: var(--text-primary);
+      line-height: 1.7;
+      font-size: 15.5px;
+    }
+
+    code, pre {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+    }
+
+    /* Layout Shell */
+    .app-shell {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar Navigation */
+    .sidebar {
+      width: var(--sidebar-width);
+      flex-shrink: 0;
+      background: var(--bg-sidebar);
+      color: #e2e8f0;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #1e293b;
+      z-index: 40;
+    }
+
+    .sidebar-brand {
+      padding: 20px 20px 14px;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.12);
+      padding: 3px 10px;
+      border-radius: 999px;
+      margin-bottom: 8px;
+    }
+
+    .sidebar-brand h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.3;
+    }
+
+    .sidebar-brand p {
+      margin: 4px 0 0;
+      font-size: 12.5px;
+      color: #94a3b8;
+    }
+
+    .sidebar-search {
+      padding: 12px 16px 8px;
+    }
+
+    .sidebar-search input {
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #1e293b;
+      color: #f8fafc;
+      font-family: inherit;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .sidebar-search input:focus {
+      border-color: #38bdf8;
+    }
+
+    .sidebar-search input::placeholder {
+      color: #64748b;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 12px 24px;
+    }
+
+    .sidebar-nav::-webkit-scrollbar { width: 6px; }
+    .sidebar-nav::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+
+    .nav-group { margin-bottom: 12px; }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 8px;
+      color: #cbd5e1;
+      text-decoration: none;
+      font-size: 13.5px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+
+    .nav-link:hover {
+      background: #1e293b;
+      color: #ffffff;
+    }
+
+    .nav-link.active {
+      background: rgba(2, 132, 199, 0.22);
+      color: #38bdf8;
+      font-weight: 600;
+    }
+
+    .nav-link.nav-main {
+      font-weight: 700;
+      color: #f8fafc;
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    .nav-link.nav-sub {
+      padding-left: 26px;
+      font-size: 12.8px;
+      color: #94a3b8;
+    }
+
+    .nav-link.nav-sub.active {
+      color: #38bdf8;
+    }
+
+    .sidebar-footer {
+      padding: 12px 16px;
+      border-top: 1px solid #1e293b;
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-print {
+      width: 100%;
+      padding: 9px 12px;
+      border-radius: 8px;
+      border: 1px solid #0284c7;
+      background: #0284c7;
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.15s;
+    }
+
+    .btn-print:hover { background: #0369a1; }
+
+    /* Mobile Header */
+    .mobile-topbar {
+      display: none;
+      position: sticky;
+      top: 0;
+      z-index: 35;
+      background: var(--bg-sidebar);
+      color: #ffffff;
+      padding: 12px 16px;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .mobile-menu-btn {
+      background: #1e293b;
+      color: #f8fafc;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      min-width: 0;
+      padding: 32px 42px 72px;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    /* Hero Banner */
+    .hero-card {
+      background: linear-gradient(135deg, #0f172a 0%, #0c4a6e 60%, #0369a1 100%);
+      color: #ffffff;
+      border-radius: var(--radius-lg);
+      padding: 32px 36px;
+      margin-bottom: 32px;
+      box-shadow: var(--shadow-md);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      color: #e0f2fe;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 12px;
+    }
+
+    .hero-card h2 {
+      margin: 0 0 10px;
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .hero-card p {
+      margin: 0 0 20px;
+      color: #e0f2fe;
+      max-width: 860px;
+      font-size: 15.5px;
+    }
+
+    .hero-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+      gap: 12px;
+    }
+
+    .metric-pill {
+      background: rgba(15, 23, 42, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+
+    .metric-pill .m-val {
+      font-size: 20px;
+      font-weight: 700;
+      color: #38bdf8;
+      line-height: 1.2;
+    }
+
+    .metric-pill .m-lbl {
+      font-size: 12.5px;
+      color: #cbd5e1;
+      margin-top: 2px;
+    }
+
+    /* Section Headings */
+    section.doc-section {
+      margin-bottom: 48px;
+      scroll-margin-top: 24px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 20px;
+    }
+
+    .section-num {
+      background: var(--accent);
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 999px;
+      flex-shrink: 0;
+    }
+
+    .section-header h2 {
+      margin: 0;
+      font-size: 23px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    h3.sub-heading {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent-dark);
+      margin: 26px 0 10px;
+      scroll-margin-top: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    h4.mini-heading {
+      font-size: 15.5px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 18px 0 8px;
+    }
+
+    p { margin: 0 0 12px; color: var(--text-secondary); }
+
+    /* Cards & Grids */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card h4 {
+      margin: 0 0 8px;
+      font-size: 15.5px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .card ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--text-secondary);
+      font-size: 14.5px;
+    }
+
+    .card li { margin-bottom: 4px; }
+
+    /* Callout Boxes */
+    .callout {
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      margin: 16px 0;
+      border-left: 4px solid var(--accent);
+      background: var(--accent-soft);
+      color: #0c4a6e;
+      font-size: 14.5px;
+    }
+
+    .callout.callout-amber {
+      border-left-color: var(--amber);
+      background: var(--amber-soft);
+      color: #78350f;
+    }
+
+    .callout.callout-emerald {
+      border-left-color: var(--emerald);
+      background: var(--emerald-soft);
+      color: #064e3b;
+    }
+
+    .callout strong { display: block; margin-bottom: 4px; }
+
+    /* Tables */
+    .table-wrap {
+      overflow-x: auto;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+
+    thead th {
+      background: #f1f5f9;
+      color: #0f172a;
+      font-weight: 700;
+      padding: 11px 14px;
+      border-bottom: 2px solid var(--border-strong);
+      white-space: nowrap;
+    }
+
+    tbody td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-secondary);
+      vertical-align: top;
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: #f8fafc; }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .badge-blue { background: var(--accent-soft); color: var(--accent-dark); }
+    .badge-emerald { background: var(--emerald-soft); color: #047857; }
+    .badge-amber { background: var(--amber-soft); color: #b45309; }
+    .badge-rose { background: var(--rose-soft); color: #be123c; }
+    .badge-slate { background: #e2e8f0; color: #334155; }
+
+    .inline-code {
+      background: #f1f5f9;
+      color: #0369a1;
+      padding: 1px 6px;
+      border-radius: 5px;
+      font-size: 13px;
+      border: 1px solid #e2e8f0;
+    }
+
+    /* Diagram Container with Pan & Zoom */
+    .diagram-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      margin: 16px 0 24px;
+      overflow: hidden;
+    }
+
+    .diagram-card.is-fullscreen {
+      position: fixed;
+      inset: 16px;
+      z-index: 100;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
+    }
+
+    .diagram-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 12px 16px;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .diagram-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .diagram-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .zoom-btn {
+      background: #ffffff;
+      border: 1px solid var(--border-strong);
+      color: var(--text-primary);
+      border-radius: 7px;
+      padding: 5px 10px;
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .zoom-btn:hover {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--accent-dark);
+    }
+
+    .zoom-level-tag {
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-muted);
+      padding: 0 6px;
+      min-width: 48px;
+      text-align: center;
+    }
+
+    .diagram-viewport {
+      position: relative;
+      width: 100%;
+      height: 500px;
+      background-color: #ffffff;
+      background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+      background-size: 18px 18px;
+      overflow: hidden;
+      cursor: grab;
+      user-select: none;
+    }
+
+    .diagram-viewport.tall { height: 640px; }
+    .diagram-card.is-fullscreen .diagram-viewport {
+      flex: 1;
+      height: auto;
+    }
+
+    .diagram-viewport:active { cursor: grabbing; }
+
+    .diagram-viewport .mermaid {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .diagram-viewport svg {
+      width: 100% !important;
+      height: 100% !important;
+      max-width: none !important;
+    }
+
+    .diagram-caption {
+      padding: 10px 16px;
+      background: #f8fafc;
+      border-top: 1px solid var(--border);
+      font-size: 13.5px;
+      color: var(--text-secondary);
+    }
+
+    .diagram-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    /* Formula Block */
+    .formula-box {
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13.5px;
+      margin: 12px 0 18px;
+      overflow-x: auto;
+      line-height: 1.6;
+    }
+
+    .formula-box .hl { color: #38bdf8; font-weight: 600; }
+    .formula-box .cm { color: #94a3b8; }
+
+    /* Directory Tree */
+    .tree-box {
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: var(--radius-md);
+      padding: 20px 24px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      line-height: 1.65;
+      overflow-x: auto;
+      margin-bottom: 20px;
+      border: 1px solid #1e293b;
+    }
+
+    .tree-dir { color: #38bdf8; font-weight: 600; }
+    .tree-file { color: #f8fafc; }
+    .tree-note { color: #94a3b8; }
+
+    /* Responsive */
+    @media (max-width: 960px) {
+      .sidebar {
+        position: fixed;
+        left: -100%;
+        transition: left 0.25s ease;
+      }
+      .sidebar.open { left: 0; }
+      .mobile-topbar { display: flex; }
+      .main-content { padding: 20px 18px 48px; }
+      .diagram-viewport { height: 400px; }
+      .diagram-viewport.tall { height: 480px; }
+    }
+
+    /* Print / PDF Styles */
+    @media print {
+      @page { size: A4 portrait; margin: 14mm; }
+      body { background: #ffffff; font-size: 11.5pt; color: #000000; }
+      .sidebar, .mobile-topbar, .diagram-controls, .diagram-hint { display: none !important; }
+      .app-shell { display: block; }
+      .main-content { max-width: 100%; padding: 0; margin: 0; }
+      .hero-card {
+        background: #0f172a !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        break-inside: avoid;
+      }
+      .diagram-card, .table-wrap, .card, .callout {
+        break-inside: avoid;
+        box-shadow: none;
+      }
+      .diagram-viewport {
+        height: auto !important;
+        min-height: 220px;
+        background-image: none;
+        overflow: visible !important;
+      }
+      .diagram-viewport svg {
+        max-width: 100% !important;
+        height: auto !important;
+      }
+      a { text-decoration: none; color: inherit; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Mobile Topbar -->
+  <div class="mobile-topbar">
+    <div>
+      <strong>MUE2MUEDEE</strong>
+      <span style="font-size:12px; color:#94a3b8; margin-left:6px;">System Architecture</span>
+    </div>
+    <button type="button" class="mobile-menu-btn" onclick="toggleMobileSidebar()">☰ เมนูสารบัญ</button>
+  </div>
+
+  <div class="app-shell">
+    <!-- Left Sticky Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-badge">System Architecture</span>
+        <h1>MUE2MUEDEE (มือสองมือดี)</h1>
+        <p>เอกสารสถาปัตยกรรมระบบ &amp; โครงสร้างฐานข้อมูล</p>
+      </div>
+
+      <div class="sidebar-search">
+        <input type="text" id="navSearch" placeholder="ค้นหาหัวข้อในสารบัญ..." oninput="filterNav(this.value)" />
+      </div>
+
+      <nav class="sidebar-nav" id="sidebarNav">
+        <div class="nav-group">
+          <a href="#section-1" class="nav-link nav-main">1. ภาพรวมระบบ &amp; Tech Stack</a>
+          <a href="#sec-1-1" class="nav-link nav-sub">1.1 หน้าที่หลักและความสามารถ</a>
+          <a href="#sec-1-2" class="nav-link nav-sub">1.2 เทคโนโลยีและไลบรารีจริง</a>
+        </div>
+        <div class="nav-group">
+          <a href="#section-2" class="nav-link nav-main">2. สถาปัตยกรรมระบบ</a>
+          <a href="#sec-2-1" class="nav-link nav-sub">2.1 Clean Architecture ภาพรวม</a>
+          <a href="#sec-2-2" class="nav-link nav-sub">2.2 Multi-Tenancy &amp; Security</a>
+        </div>
+        <div class="nav-group">
+          <a href="#section-3" class="nav-link nav-main">3. ขั้นตอนการทำงานหลัก</a>
+          <a href="#sec-3-1" class="nav-link nav-sub">3.1 Auth &amp; Store Switching</a>
+          <a href="#sec-3-2" class="nav-link nav-sub">3.2 รับซื้อ ตรวจสภาพ &amp; รับเข้าคลัง</a>
+          <a href="#sec-3-3" class="nav-link nav-sub">3.3 ต้นทุนแฝง &amp; Pricing Engine</a>
+          <a href="#sec-3-4" class="nav-link nav-sub">3.4 ขายหน้าร้าน POS &amp; Void Bill</a>
+        </div>
+        <div class="nav-group">
+          <a href="#section-4" class="nav-link nav-main">4. โครงสร้างฐานข้อมูล (ER)</a>
+          <a href="#sec-4-1" class="nav-link nav-sub">4.1 แผนภาพ ER Diagram</a>
+          <a href="#sec-4-2" class="nav-link nav-sub">4.2 คำอธิบายตารางและฟิลด์สำคัญ</a>
+          <a href="#sec-4-3" class="nav-link nav-sub">4.3 Domain Enums ทั้งหมด</a>
+        </div>
+        <div class="nav-group">
+          <a href="#section-5" class="nav-link nav-main">5. โครงสร้างโฟลเดอร์โปรเจกต์</a>
+          <a href="#sec-5-1" class="nav-link nav-sub">5.1 แผนผังโฟลเดอร์โซลูชัน</a>
+          <a href="#sec-5-2" class="nav-link nav-sub">5.2 หน้าที่ของแต่ละโฟลเดอร์</a>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button type="button" class="btn-print" onclick="window.print()">🖨️ พิมพ์ / บันทึก PDF</button>
+      </div>
+    </aside>
+
+    <!-- Main Document Body -->
+    <main class="main-content">
+
+      <!-- Hero Banner -->
+      <header class="hero-card">
+        <span class="hero-tag">Technical Documentation • Analyzed from Codebase</span>
+        <h2>ระบบบริหารจัดการร้านกล้องและสินค้ามือสองครบวงจร (MUE2MUEDEE)</h2>
+        <p>
+          เอกสารวิเคราะห์สถาปัตยกรรมระบบ (System Architecture), กลไกการแยกข้อมูลหลายร้านค้า (Multi-Tenant Isolation),
+          ลำดับการทำงานทางธุรกิจ (Core Workflows), โครงสร้างฐานข้อมูล PostgreSQL ทั้ง 25 ตาราง (ER Diagram) และโครงสร้างซอร์สโค้ดจริงทั้งฝั่ง Backend (.NET 10) และ Frontend (Angular 22 SPA)
+        </p>
+        <div class="hero-metrics">
+          <div class="metric-pill">
+            <div class="m-val">4 Layers</div>
+            <div class="m-lbl">Clean Architecture (.NET 10)</div>
+          </div>
+          <div class="metric-pill">
+            <div class="m-val">Angular 22</div>
+            <div class="m-lbl">Standalone SPA + Signals</div>
+          </div>
+          <div class="metric-pill">
+            <div class="m-val">25 Tables</div>
+            <div class="m-lbl">PostgreSQL + Snake Case</div>
+          </div>
+          <div class="metric-pill">
+            <div class="m-val">Multi-Tenant</div>
+            <div class="m-lbl">JWT StoreId + Global Filters</div>
+          </div>
+        </div>
+      </header>
+
+      <!-- ===================================================================== -->
+      <!-- SECTION 1: ภาพรวมระบบและ Tech Stack -->
+      <!-- ===================================================================== -->
+      <section class="doc-section" id="section-1">
+        <div class="section-header">
+          <span class="section-num">ส่วนที่ 1</span>
+          <h2>ภาพรวมระบบและเทคโนโลยีที่ใช้ (System Overview &amp; Tech Stack)</h2>
+        </div>
+
+        <h3 class="sub-heading" id="sec-1-1">1.1 หน้าที่หลักและความสามารถของระบบ</h3>
+        <p>
+          <strong>MUE2MUEDEE (มือสองมือดี)</strong> เป็นระบบ ERP และ POS แบบหลายร้านค้า (Multi-Tenant SaaS) ที่ออกแบบเฉพาะสำหรับร้านซื้อ-ขายกล้องถ่ายภาพ เลนส์ และอุปกรณ์ถ่ายภาพมือสอง ซึ่งแตกต่างจากระบบขายสินค้าทั่วไปตรงที่สินค้าทุกชิ้นมีเอกลักษณ์เฉพาะตัว ต้องติดตามด้วย <strong>Serial Number</strong> และ <strong>SKU รายชิ้น</strong> พร้อมคำนวณต้นทุนแฝงจริงหลังรับซื้อ (ค่าซ่อม ค่าล้างเซนเซอร์ ค่าขนส่ง)
+        </p>
+
+        <div class="grid-3">
+          <div class="card">
+            <h4>📥 รับซื้อ &amp; ตรวจสภาพ (PO Wizard)</h4>
+            <ul>
+              <li>ประเมินสภาพตาม Checklist มาตรฐานแยกตามหมวดกล้องและเลนส์</li>
+              <li>คำนวณ <strong>Max Buy Price</strong> อัตโนมัติ (Target Margin 15%)</li>
+              <li>ระบบส่งอนุมัติ Owner/Admin เมื่อเสนอราคาเกินเพดาน</li>
+              <li>พิมพ์สัญญาซื้อขายและสร้าง SKU นำเข้าคลังอัตโนมัติ</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>📦 คลังสินค้า &amp; ต้นทุนรายชิ้น</h4>
+            <ul>
+              <li>จัดการคลังสินค้ารายชิ้นผูก Serial Number และ RowVersion</li>
+              <li>บันทึกต้นทุนแฝงย่อย (ซ่อม/ล้าง/ส่ง) เพื่อคำนวณ Actual Cost</li>
+              <li><strong>Pricing Engine</strong> แนะนำราคาขายและส่วนลดตามอายุสต็อก</li>
+              <li>ออกแบบและพิมพ์ป้ายสติ๊กเกอร์บาร์โค้ด/QR (1–3 คอลัมน์ &amp; A4)</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>🛒 ขายหน้าร้าน (POS) &amp; หน้าร้านออนไลน์</h4>
+            <ul>
+              <li>สแกนบาร์โค้ดด้วยเครื่องยิงหรือกล้องเว็บแคม (<span class="inline-code">@zxing/browser</span>)</li>
+              <li>รับชำระเงินหลายช่องทางในบิลเดียว (Multi-Tender Payments)</li>
+              <li>สืบค้นประวัติเครื่องตลอดอายุขัย (<span class="inline-code">Serial Trace</span>)</li>
+              <li>เผยแพร่แคตตาล็อกหน้าร้านสาธารณะ (<span class="inline-code">/shop/:storeCode</span>)</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3 class="sub-heading" id="sec-1-2">1.2 เทคโนโลยี เฟรมเวิร์ก และไลบรารีที่ใช้งานจริง</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>เลเยอร์ / ส่วนประกอบ</th>
+                <th>เทคโนโลยี / แพ็กเกจ</th>
+                <th>เวอร์ชันจริงในโปรเจกต์</th>
+                <th>หน้าที่และบทบาทในระบบ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Backend Runtime</strong></td>
+                <td>.NET / ASP.NET Core Web API</td>
+                <td><span class="badge badge-blue">net10.0</span></td>
+                <td>API หลักแบ่งโครงสร้าง 4 โปรเจกต์ตามหลัก Clean Architecture</td>
+              </tr>
+              <tr>
+                <td><strong>ORM &amp; Database</strong></td>
+                <td>PostgreSQL + Npgsql + EF Core + EFCore.NamingConventions</td>
+                <td><span class="badge badge-blue">EF Core 10.0.12</span><br><span class="badge badge-slate">Npgsql 10.0.3</span></td>
+                <td>ฐานข้อมูลเชิงสัมพันธ์ แปลงชื่อ C# PascalCase เป็น snake_case อัตโนมัติ</td>
+              </tr>
+              <tr>
+                <td><strong>Authentication &amp; Security</strong></td>
+                <td>JwtBearer + System.IdentityModel.Tokens.Jwt + PBKDF2</td>
+                <td><span class="badge badge-blue">10.0.12 / 8.23.0</span></td>
+                <td>ยืนยันตัวตนด้วย Access Token (JWT) ผูก <span class="inline-code">store_id</span> และหมุนเวียน Refresh Token</td>
+              </tr>
+              <tr>
+                <td><strong>Image Storage</strong></td>
+                <td>CloudinaryDotNet / LocalImageStorage</td>
+                <td><span class="badge badge-emerald">Cloudinary 1.29.3</span></td>
+                <td>สลับอัตโนมัติ: ใช้ Cloudinary เมื่อมี <span class="inline-code">CLOUDINARY_URL</span> หรือเก็บใน <span class="inline-code">App_Data/uploads</span></td>
+              </tr>
+              <tr>
+                <td><strong>API Spec &amp; Health</strong></td>
+                <td>Microsoft.AspNetCore.OpenApi + HealthChecks</td>
+                <td><span class="badge badge-blue">10.0.12</span></td>
+                <td>สร้างเอกสาร OpenAPI ในโหมด Dev และจุดตรวจสุขภาพ <span class="inline-code">/health</span>, <span class="inline-code">/api/health</span></td>
+              </tr>
+              <tr>
+                <td><strong>Frontend Framework</strong></td>
+                <td>Angular Standalone Components + Signals + Reactive Forms</td>
+                <td><span class="badge badge-rose">Angular ^22.2.0</span><br><span class="badge badge-slate">TS ~6.0.2</span></td>
+                <td>SPA แยกพอร์ต 4200 ใช้ Signal State และ <span class="inline-code">ControlValueAccessor</span> ทุก Input</td>
+              </tr>
+              <tr>
+                <td><strong>UI &amp; Styling</strong></td>
+                <td>Tailwind CSS v4 + Angular Material / CDK</td>
+                <td><span class="badge badge-blue">Tailwind ^4.3.3</span><br><span class="badge badge-slate">Mat ^22.2.1</span></td>
+                <td>ออกแบบ Responsive UI โทน Sky/Slate พร้อมป๊อปอัปและฟอร์มมาตรฐาน</td>
+              </tr>
+              <tr>
+                <td><strong>Barcode / QR / Scanner</strong></td>
+                <td>jsbarcode + qrcode + @zxing/browser</td>
+                <td><span class="badge badge-amber">3.12.3 / 1.5.4 / 0.2.1</span></td>
+                <td>สร้าง CODE128, QR Code บนป้ายสติ๊กเกอร์ และอ่านบาร์โค้ดผ่านกล้องบน POS</td>
+              </tr>
+              <tr>
+                <td><strong>Unit Testing</strong></td>
+                <td>Vitest + jsdom</td>
+                <td><span class="badge badge-slate">Vitest ^5.0.0</span></td>
+                <td>ทดสอบ Logic ฝั่ง Frontend Guards, Interceptors, Form Validation และ Components</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- SECTION 2: สถาปัตยกรรมระบบ -->
+      <!-- ===================================================================== -->
+      <section class="doc-section" id="section-2">
+        <div class="section-header">
+          <span class="section-num">ส่วนที่ 2</span>
+          <h2>สถาปัตยกรรมระบบ (System Architecture Diagram)</h2>
+        </div>
+
+        <h3 class="sub-heading" id="sec-2-1">2.1 สถาปัตยกรรม Clean Architecture และการเชื่อมต่อทุกส่วน</h3>
+        <p>
+          ระบบฝั่ง Backend ออกแบบตามแนวคิด <strong>Clean Architecture</strong> เพื่อแยกความรับผิดชอบของโค้ดออกจากเฟรมเวิร์กและฐานข้อมูล โดยให้ <span class="inline-code">Domain</span> อยู่ตรงกลางปราศจากการพึ่งพาภายนอก และให้ <span class="inline-code">Infrastructure</span> พึ่งพา <span class="inline-code">Application</span> ผ่าน Interfaces (<span class="inline-code">IApplicationDbContext</span>, <span class="inline-code">ICurrentStore</span>, <span class="inline-code">ICurrentUser</span>, <span class="inline-code">IImageStorage</span>)
+        </p>
+
+        <div class="diagram-card" data-diagram="arch-overview">
+          <div class="diagram-toolbar">
+            <div class="diagram-title">
+              <span>แผนภาพที่ 2.1: สถาปัตยกรรมระบบภาพรวม (Clean Architecture &amp; External Integration)</span>
+              <span class="diagram-hint">(ลากเพื่อเลื่อน • กดปุ่มเพื่อซูม)</span>
+            </div>
+            <div class="diagram-controls">
+              <button type="button" class="zoom-btn" data-action="zoom-in">＋ ซูมเข้า</button>
+              <button type="button" class="zoom-btn" data-action="zoom-out">－ ซูมออก</button>
+              <button type="button" class="zoom-btn" data-action="reset">⟲ 100%</button>
+              <button type="button" class="zoom-btn" data-action="fit">⛶ พอดีกรอบ</button>
+              <button type="button" class="zoom-btn" data-action="fullscreen">⤢ เต็มจอ</button>
+            </div>
+          </div>
+          <div class="diagram-viewport tall">
+            <pre class="mermaid">
+flowchart TB
+    subgraph Clients["1. ผู้ใช้งานและอุปกรณ์ฝั่ง Client"]
+        StaffUser["พนักงาน / ผู้จัดการ / เจ้าของร้าน&lt;br/&gt;(Owner / Admin / Staff)"]
+        SuperAdminUser["ผู้ดูแลระบบส่วนกลาง&lt;br/&gt;(Super Admin)"]
+        PublicVisitor["ลูกค้าทั่วไป&lt;br/&gt;(Public Storefront Visitor)"]
+        Hardware["อุปกรณ์หน้าร้าน&lt;br/&gt;(Barcode Scanner / กล้องเว็บแคม / Thermal Printer)"]
+    end
+
+    subgraph Frontend["2. Angular 22 SPA (Port 4200)"]
+        Guards["Route Guards&lt;br/&gt;(authGuard / superAdminGuard / storeUserGuard)"]
+        Features["Feature Modules (Signals + Reactive Forms)&lt;br/&gt;POS / Purchase / Inventory / Sticker / Reports / Catalog"]
+        Interceptors["HTTP Interceptors&lt;br/&gt;(authInterceptor -> Bearer JWT, apiInterceptor, loading, notification)"]
+        ClientLibs["Browser Libraries&lt;br/&gt;(JsBarcode / QRCode / ZXing Camera)"]
+    end
+
+    subgraph WebAPI["3. Mue2MueDee.Web (ASP.NET Core 10 API)"]
+        Middleware["ExceptionHandlingMiddleware&lt;br/&gt;(แปลง AppException เป็น ApiResponse&lt;T&gt;)"]
+        JwtAuth["JWT Bearer Auth &amp; CORS&lt;br/&gt;(TokenValidationParameters)"]
+        Controllers["13 Thin Controllers&lt;br/&gt;(Auth, Purchases, Inventory, Pricing, Sales, Catalog, Uploads, SuperAdmin)"]
+    end
+
+    subgraph AppLayer["4. Mue2MueDee.Application (Business Logic)"]
+        Services["Business Services&lt;br/&gt;(Auth, Purchase, Inventory, Pricing, Sale, Analytics, MasterData, Store, SuperAdmin)"]
+        Contracts["Interfaces &amp; DTOs&lt;br/&gt;(IApplicationDbContext, ICurrentStore, ICurrentUser, IImageStorage)"]
+    end
+
+    subgraph DomainLayer["5. Mue2MueDee.Domain (Core Contracts)"]
+        Entities["25 Domain Entities + 11 Enums&lt;br/&gt;(BaseEntity, AuditableEntity, ITenantEntity, ISoftDelete)"]
+    end
+
+    subgraph InfraLayer["6. Mue2MueDee.Infrastructure &amp; Storage"]
+        DbCtx["ApplicationDbContext&lt;br/&gt;(Global Query Filters + Auto AuditLog + Tenant Guard)"]
+        Security["JwtTokenService &amp; PBKDF2 PasswordHasher"]
+        CurrentCtx["CurrentUser &amp; CurrentStore&lt;br/&gt;(อ่าน Claims จาก HttpContext)"]
+        ImgStorage["IImageStorage Provider&lt;br/&gt;(CloudinaryImageStorage หรือ LocalImageStorage)"]
+    end
+
+    subgraph External["7. ฐานข้อมูลและพื้นที่เก็บไฟล์"]
+        Postgres[("PostgreSQL Database&lt;br/&gt;(mue2muedee / snake_case)")]
+        Cloudinary["Cloudinary Cloud CDN&lt;br/&gt;(เมื่อตั้งค่า CLOUDINARY_URL)"]
+        LocalDisk["Local File System&lt;br/&gt;(App_Data/uploads/)"]
+    end
+
+    StaffUser --> Features
+    SuperAdminUser --> Features
+    PublicVisitor --> Features
+    Hardware -.-> ClientLibs
+    ClientLibs <--> Features
+    Features --> Guards
+    Features --> Interceptors
+    Interceptors -->|"HTTPS / JSON ApiResponse&lt;T&gt;"| Middleware
+    Middleware --> JwtAuth --> Controllers
+    Controllers --> Services
+    Services --> Contracts
+    Services --> Entities
+    Contracts -.->|"Implement"| DbCtx
+    Contracts -.->|"Implement"| CurrentCtx
+    Contracts -.->|"Implement"| Security
+    Contracts -.->|"Implement"| ImgStorage
+    DbCtx -->|"Npgsql EF Core"| Postgres
+    ImgStorage -->|"Cloud API"| Cloudinary
+    ImgStorage -->|"Fallback Local Disk"| LocalDisk
+            </pre>
+          </div>
+          <div class="diagram-caption">
+            <strong>คำอธิบาย:</strong> การสื่อสารระหว่าง Frontend และ Backend ใช้รูปแบบ Envelope มาตรฐานเดียวกันผ่าน <span class="inline-code">ApiResponse&lt;T&gt;</span> และจัดการข้อผิดพลาดรวมศูนย์ที่ <span class="inline-code">ExceptionHandlingMiddleware</span> ส่วนการอัปโหลดรูปภาพสามารถสลับระหว่าง Local Disk กับ Cloudinary ได้อัตโนมัติตามค่า <span class="inline-code">CLOUDINARY_URL</span>
+          </div>
+        </div>
+
+        <h3 class="sub-heading" id="sec-2-2">2.2 กลไก Multi-Tenancy Isolation และความปลอดภัยในระดับ DbContext</h3>
+        <p>
+          ระบบรองรับการทำงานหลายร้านค้าภายในฐานข้อมูลเดียว (Shared Database, Discriminator Column <span class="inline-code">store_id</span>) โดยใช้กฎเหล็กตามมาตรฐานความปลอดภัยว่า <strong>ห้ามเชื่อถือ <span class="inline-code">StoreId</span> ที่ส่งมาจาก Client Body</strong> แต่ให้ยึด <span class="inline-code">store_id</span> จาก JWT Claims ของผู้ใช้ปัจจุบันเป็นหลัก
+        </p>
+
+        <div class="diagram-card" data-diagram="multitenant-pipeline">
+          <div class="diagram-toolbar">
+            <div class="diagram-title">
+              <span>แผนภาพที่ 2.2: กลไกการแยกข้อมูลหลายร้านค้า (Tenant Isolation) และ Audit Trail อัตโนมัติ</span>
+              <span class="diagram-hint">(ลากเพื่อเลื่อน • กดปุ่มเพื่อซูม)</span>
+            </div>
+            <div class="diagram-controls">
+              <button type="button" class="zoom-btn" data-action="zoom-in">＋ ซูมเข้า</button>
+              <button type="button" class="zoom-btn" data-action="zoom-out">－ ซูมออก</button>
+              <button type="button" class="zoom-btn" data-action="reset">⟲ 100%</button>
+              <button type="button" class="zoom-btn" data-action="fit">⛶ พอดีกรอบ</button>
+              <button type="button" class="zoom-btn" data-action="fullscreen">⤢ เต็มจอ</button>
+            </div>
+          </div>
+          <div class="diagram-viewport">
+            <pre class="mermaid">
+flowchart LR
+    Req["HTTP Request + Bearer JWT"] --> Decode["JwtBearer Middleware&lt;br/&gt;Validate Signature &amp; Expiry"]
+    Decode --> Claims["CurrentUser / CurrentStore&lt;br/&gt;อ่าน store_id, role, user_id, is_super_admin"]
+    Claims --> ReadOrWrite{"ประเภทคำสั่ง"}
+    ReadOrWrite -->|"Query (อ่านข้อมูล)"| QueryFilter["EF Core Global Query Filter&lt;br/&gt;!IsDeleted &amp;&amp; (StoreId == _currentStore.StoreId)"]
+    ReadOrWrite -->|"SaveChangesAsync (บันทึก)"| GuardTenant["1. Auto-assign StoreId เมื่อ Added&lt;br/&gt;2. ห้ามแก้ไข StoreId เดิม (Throw Error)"]
+    GuardTenant --> AuditFields["3. กำหนด CreatedAt / UpdatedAt&lt;br/&gt;4. แปลง Delete เป็น Soft Delete (IsDeleted=true)"]
+    AuditFields --> AuditLog["5. สร้าง AuditLog อัตโนมัติ&lt;br/&gt;บันทึก OldValues / NewValues แบบ JSON"]
+    QueryFilter --> DB[("PostgreSQL")]
+    AuditLog --> DB
+            </pre>
+          </div>
+          <div class="diagram-caption">
+            <strong>คำอธิบาย:</strong> ทุก Entity ที่สืบทอด <span class="inline-code">ITenantEntity</span> จะถูกกรองด้วย Global Query Filter อัตโนมัติใน <span class="inline-code">ApplicationDbContext.OnModelCreating()</span> และทุกการเปลี่ยนแปลงข้อมูล (ยกเว้นตาราง <span class="inline-code">AuditLog</span> และ <span class="inline-code">RefreshToken</span>) จะถูกบันทึกประวัติ Old/New JSON ลงตาราง <span class="inline-code">audit_logs</span> เสมอ
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- SECTION 3: ขั้นตอนการทำงานหลัก (Core Workflows) -->
+      <!-- ===================================================================== -->
+      <section class="doc-section" id="section-3">
+        <div class="section-header">
+          <span class="section-num">ส่วนที่ 3</span>
+          <h2>ขั้นตอนการทำงานหลักของระบบ (Core Workflows)</h2>
+        </div>
+
+        <!-- 3.1 Authentication -->
+        <h3 class="sub-heading" id="sec-3-1">3.1 การยืนยันตัวตน การหมุนเวียน Refresh Token และการสลับร้านค้า</h3>
+        <p>
+          ระบบจัดการ Identity รองรับผู้ใช้ 1 คนสังกัดหลายร้านค้าในบทบาทต่างกัน (ผ่านตาราง <span class="inline-code">user_stores</span>) รวมถึงบัญชี <span class="inline-code">Super Admin</span> ที่เข้าดูร้านค้าที่เปิดใช้งานอยู่ทั้งหมดได้โดยไม่ต้องสร้างสมาชิก <span class="inline-code">UserStore</span>
+        </p>
+
+        <div class="diagram-card" data-diagram="wf-auth">
+          <div class="diagram-toolbar">
+            <div class="diagram-title">
+              <span>แผนภาพที่ 3.1: ลำดับการเข้าสู่ระบบ, การต่ออายุ Token และสลับร้านค้า (Sequence Diagram)</span>
+              <span class="diagram-hint">(ลากเพื่อเลื่อน • กดปุ่มเพื่อซูม)</span>
+            </div>
+            <div class="diagram-controls">
+              <button type="button" class="zoom-btn" data-action="zoom-in">＋ ซูมเข้า</button>
+              <button type="button" class="zoom-btn" data-action="zoom-out">－ ซูมออก</button>
+              <button type="button" class="zoom-btn" data-action="reset">⟲ 100%</button>
+              <button type="button" class="zoom-btn" data-action="fit">⛶ พอดีกรอบ</button>
+              <button type="button" class="zoom-btn" data-action="fullscreen">⤢ เต็มจอ</button>
+            </div>
+          </div>
+          <div class="diagram-viewport">
+            <pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor User as ผู้ใช้งาน (Browser SPA)
+    participant AuthCtrl as AuthController
+    participant AuthSvc as AuthService
+    participant Security as PasswordHasher / JwtTokenService
+    participant DB as PostgreSQL
+
+    Note over User,DB: 1. ขั้นตอนการเข้าสู่ระบบ (Login)
+    User->>AuthCtrl: POST /api/auth/login (usernameOrEmail, password)
+    AuthCtrl->>AuthSvc: LoginAsync()
+    AuthSvc->>DB: Query User + UserStores + Store
+    DB-->>AuthSvc: User Entity (IsActive=true)
+    AuthSvc->>Security: VerifyPassword(password, PasswordHash)
+    Security-->>AuthSvc: Valid
+    alt เป็นบัญชี Super Admin
+        AuthSvc->>DB: ดึงทุกร้านค้าที่ IsActive = true
+    else เป็นผู้ใช้ระดับร้านค้า
+        AuthSvc->>AuthSvc: เลือกร้านแรก (ให้ความสำคัญ Role = Owner ก่อน)
+    end
+    AuthSvc->>Security: GenerateAccessToken(user, storeId, role) + GenerateRefreshToken()
+    AuthSvc->>DB: บันทึก RefreshToken (อายุ 7 วัน)
+    AuthSvc-->>User: LoginResponse (accessToken, refreshToken, activeUserStores)
+
+    Note over User,DB: 2. ขั้นตอนการสลับร้านค้า / สาขา (Switch Store)
+    User->>AuthCtrl: POST /api/auth/switch-store (storeId) + Bearer JWT
+    AuthCtrl->>AuthSvc: SwitchStoreAsync()
+    AuthSvc->>DB: ตรวจสอบสิทธิ์เข้าถึงร้านปลายทาง
+    AuthSvc->>Security: ออก JWT Access Token ใหม่ที่ผูก store_id &amp; role ใหม่
+    AuthSvc->>DB: บันทึก RefreshToken ใหม่
+    AuthSvc-->>User: LoginResponse ใหม่ (Frontend รีโหลดไปยัง /dashboard)
+
+    Note over User,DB: 3. ขั้นตอนการต่ออายุ Token (Refresh Token Rotation)
+    User->>AuthCtrl: POST /api/auth/refresh (refreshToken)
+    AuthCtrl->>AuthSvc: RefreshTokenAsync()
+    AuthSvc->>DB: ตรวจสอบ RefreshToken (ยังไม่ Revoked และไม่ Expired)
+    AuthSvc->>DB: Revoke RefreshToken เดิม (RevokedAt = UtcNow)
+    AuthSvc->>Security: ออก Access Token + Refresh Token ชุดใหม่
+    AuthSvc-->>User: LoginResponse ชุดใหม่
+            </pre>
+          </div>
+          <div class="diagram-caption">
+            <strong>คำอธิบาย:</strong> เมื่อสลับร้านค้า ระบบจะออก Access Token ใบใหม่ที่มี Claim <span class="inline-code">store_id</span> และ <span class="inline-code">role</span> ประจำร้านนั้นทันที เพื่อให้ Global Query Filter แยกข้อมูลคนละร้านอย่างเด็ดขาด
+          </div>
+        </div>
+
+        <!-- 3.2 Purchase & Inspection -->
+        <h3 class="sub-heading" id="sec-3-2">3.2 กระบวนการรับซื้อ ตรวจสภาพ ประเมินราคา อนุมัติ และนำเข้าคลัง (Purchase 4-Step Flow)</h3>
+        <p>
+          การรับซื้อกล้อง/เลนส์จากลูกค้าผ่านหน้า <span class="inline-code">/purchase/new</span> ถูกควบคุมด้วย State Machine ใน <span class="inline-code">PurchaseService.cs</span> เพื่อป้องกันการรับซื้อเกินราคาตลาดโดยไม่ได้รับอนุญาต และสร้างรหัส SKU เข้าคลังอัตโนมัติ
+        </p>
+
+        <div class="formula-box">
+          <span class="cm">// สูตรคำนวณเพดานราคารับซื้อสูงสุดที่แนะนำ (PurchaseService.CalculateMaxBuyPrice)</span><br/>
+          <span class="hl">BaseMax</span> = ExpectedSalePrice × (1 - 0.15) - EstimatedRepairCost - EstimatedCleaningCost - MissingAccessoriesDeduction<br/>
+          <span class="hl">MaxBuyPrice</span> = Math.Floor(Math.Max(0, BaseMax) / 100) × 100 <span class="cm">// ปัดลงหลักร้อย (100 บาท) และตั้ง NeedsApproval = true หาก OfferedPrice &gt; MaxBuyPrice</span>
+        </div>
+
+        <div class="diagram-card" data-diagram="wf-purchase">
+          <div class="diagram-toolbar">
+            <div class="diagram-title">
+              <span>แผนภาพที่ 3.2: กระบวนการรับซื้อ ตรวจสภาพ อนุมัติราคาพิเศษ และนำเข้าคลังสินค้า</span>
+              <span class="diagram-hint">(ลากเพื่อเลื่อน • กดปุ่มเพื่อซูม)</span>
+            </div>
+            <div class="diagram-controls">
+              <button type="button" class="zoom-btn" data-action="zoom-in">＋ ซูมเข้า</button>
+              <button type="button" class="zoom-btn" data-action="zoom-out">－ ซูมออก</button>
+              <button type="button" class="zoom-btn" data-action="reset">⟲ 100%</button>
+              <button type="button" class="zoom-btn" data-action="fit">⛶ พอดีกรอบ</button>
+              <button type="button" class="zoom-btn" data-action="fullscreen">⤢ เต็มจอ</button>
+            </div>
+          </div>
+          <div class="diagram-viewport tall">
+            <pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor Staff as พนักงานหน้าร้าน
+    actor Manager as Owner / Admin
+    participant API as PurchasesController &amp; Service
+    participant DB as PostgreSQL
+
+    Staff->>API: Step 1: POST /api/purchases (CustomerId, InitialItems)
+    API->>DB: ตรวจสอบ Serial ไม่ซ้ำ + สร้างเลข PO-yyMM-xxxx (Status = Appraising)
+    API-->>Staff: คืนข้อมูล PurchaseOrderDto
+
+    Staff->>API: Step 2: GET /api/purchases/inspection-templates/{categoryType}
+    API->>DB: โหลด Template กล้อง 6 ข้อ หรือ เลนส์ 5 ข้อ (Auto-seed หากยังไม่มี)
+    Staff->>API: POST /api/purchases/{id}/items/{itemId}/inspection (Pass / MinorIssue / Fail)
+    API->>DB: บันทึก InspectionResult ของแต่ละหัวข้อตรวจ
+
+    Staff->>API: Step 3: POST /api/purchases/{id}/offer (TotalOfferedPrice)
+    API->>API: เปรียบเทียบ TotalOfferedPrice กับ TotalMaxBuyPrice
+    alt TotalOfferedPrice > TotalMaxBuyPrice
+        API->>DB: ตั้งค่า NeedsApproval = true, Status = Offered
+        Manager->>API: POST /api/purchases/{id}/approve (ตรวจสิทธิ์ Owner/Admin)
+        API->>DB: NeedsApproval = false, ApprovedBy, ApprovedAt
+    else ราคาอยู่ในเกณฑ์แนะนำ
+        API->>DB: ตั้งค่า NeedsApproval = false, Status = Offered
+    end
+
+    Staff->>API: Step 4a: POST /api/purchases/{id}/accept (ลูกค้าตกลงขาย)
+    API->>DB: Status = Accepted + ปันส่วน TotalAgreedPrice ลง PurchaseItem.AgreedPrice
+
+    Staff->>API: Step 4b: POST /api/purchases/{id}/payments (บันทึกจ่ายเงิน OUT)
+    API->>DB: สร้าง PurchasePayment (หากจ่ายครบ Status = Paid)
+
+    Staff->>API: Step 4c: POST /api/purchases/{id}/receive (นำเข้าคลังสินค้า)
+    API->>API: สร้าง SKU อัตโนมัติ (CAM/LEN/FLA/ACC-yyMM-xxxx)
+    API->>DB: สร้าง InventoryItem (ActualCost = Agreed + Repair + Cleaning)
+    API->>DB: สร้าง InventoryCost (ค่าซ่อม/ล้าง) + StockMovement (Receive, +1)
+    API->>DB: ผูก PurchaseItem.InventoryItemId &amp; Status = Received
+            </pre>
+          </div>
+          <div class="diagram-caption">
+            <strong>คำอธิบาย:</strong> หากกดปฏิเสธข้อเสนอ (<span class="inline-code">POST /reject</span>) ใบรับซื้อจะเปลี่ยนสถานะเป็น <span class="inline-code">Rejected</span> และหากใบรับซื้อถูกนำเข้าคลังแล้วหรือมีการบันทึกจ่ายเงินแล้ว ระบบไม่อนุญาตให้ลบใบรับซื้อเพื่อรักษาความถูกต้องทางบัญชี
+          </div>
+        </div>
+
+        <!-- 3.3 Costing & Pricing Engine -->
+        <h3 class="sub-heading" id="sec-3-3">3.3 การบันทึกต้นทุนแฝงและการคำนวณราคาขายตามอายุสต็อก (Costing &amp; Pricing Engine)</h3>
+        <p>
+          หลังนำสินค้าเข้าคลัง หากมีค่าใช้จ่ายเพิ่มเติม (เช่น เปลี่ยนยางบวม ส่งซ่อมม่านชัตเตอร์ ล้างราเลนส์) ระบบใน <span class="inline-code">PricingService.cs</span> จะบวกต้นทุนเหล่านั้นเข้ากับ <span class="inline-code">ActualCost</span> อัตโนมัติ และคำนวณราคาแนะนำใหม่พร้อมปรับส่วนลดตามอายุสต็อก (Aging Buckets)
+        </p>
+
+        <div class="formula-box">
+          <span class="cm">// สูตร Pricing Engine (PricingService.CalculateFormula)</span><br/>
+          <span class="hl">BaseRecommended</span> = ActualCost / (1 - TargetMarginDecimal) <span class="cm">// เช่น 25,000 / (1 - 0.15) = 29,412 บาท</span><br/>
+          <span class="hl">RecommendedPrice</span> = Math.Max(ActualCost, Math.Round(BaseRecommended × (1 - AgingDiscount%), 0))<br/>
+          <span class="hl">MinimumPrice</span> = Round(ActualCost / 0.95, 0) <span class="cm">|</span> <span class="hl">MaximumPrice</span> = Round(ActualCost / (1 - Min(0.80, TargetMargin + 0.10)), 0)
+        </div>
+
+        <div class="diagram-card" data-diagram="wf-pricing">
+          <div class="diagram-toolbar">
+            <div class="diagram-title">
+              <span>แผนภาพที่ 3.3: Flowchart การปรับปรุงต้นทุนแฝงและกลไกคำนวณราคาขายตามอายุสต็อก</span>
+              <span class="diagram-hint">(ลากเพื่อเลื่อน • กดปุ่มเพื่อซูม)</span>
+            </div>
+            <div class="diagram-controls">
+              <button type="button" class="zoom-btn" data-action="zoom-in">＋ ซูมเข้า</button>
+              <button type="button" class="zoom-btn" data-action="zoom-out">－ ซูมออก</button>
+              <button type="button" class="zoom-btn" data-action="reset">⟲ 100%</button>
+              <button type="button" class="zoom-btn" data-action="fit">⛶ พอดีกรอบ</button>
+              <button type="button" class="zoom-btn" data-action="fullscreen">⤢ เต็มจอ</button>
+            </div>
+          </div>
+          <div class="diagram-viewport">
+            <pre class="mermaid">
+flowchart TD
+    Start(["เริ่มต้น: เพิ่ม/ลบ InventoryCost หรือเปิด Pricing Engine"]) --> UpdateCost{"มีการเพิ่ม/ลบต้นทุนย่อย?"}
+    UpdateCost -->|"ใช่"| RecalcActual["ปรับ InventoryItem.ActualCost&lt;br/&gt;พร้อมสร้าง StockMovement (CostAdjustment)"]
+    UpdateCost -->|"ไม่"| PickMargin
+    RecalcActual --> PickMargin{"เลือกลำดับ Target Margin"}
+    PickMargin -->|"1. ผู้ใช้ปรับแถบเลื่อน"| M1["ใช้ Custom Target Margin (5%-50%)"]
+    PickMargin -->|"2. หมวดหมู่กำหนดไว้"| M2["ใช้ Category.TargetMargin"]
+    PickMargin -->|"3. ค่าเริ่มต้นร้านค้า"| M3["ใช้ Store.DefaultTargetMargin (15%)"]
+    M1 --> CalcBase["คำนวณ BaseRecommended = ActualCost / (1 - Margin)"]
+    M2 --> CalcBase
+    M3 --> CalcBase
+    CalcBase --> CheckAging{"คำนวณอายุสต็อก (UtcNow - ReceivedAt)"}
+    CheckAging -->|"0 - 30 วัน"| A1["ใหม่: ส่วนลด Aging 0%"]
+    CheckAging -->|"31 - 60 วัน"| A2["ปกติ: ส่วนลด Aging 0%"]
+    CheckAging -->|"61 - 90 วัน"| A3["เริ่มนาน: ส่วนลด Aging 5%"]
+    CheckAging -->|"91 - 120 วัน"| A4["ค้างสต็อก: ส่วนลด Aging 10%"]
+    CheckAging -->|"120+ วัน"| A5["สต็อกจม: ส่วนลด Aging 15%"]
+    A1 &amp; A2 &amp; A3 &amp; A4 &amp; A5 --> GuardCost["คุ้มครองจุดคุ้มทุน: RecommendedPrice &gt;= ActualCost เสมอ"]
+    GuardCost --> OutputCards["แสดง 4 ระดับราคา: Break-even / Min 5% / Recommended / Max"]
+    OutputCards -->|"กดปรับใช้ราคา (PUT /price)"| SavePrice["อัปเดต SellingPrice + บันทึก PriceHistory"]
+            </pre>
+          </div>
+          <div class="diagram-caption">
+            <strong>คำอธิบาย:</strong> ทุกครั้งที่มีการเปลี่ยนราคาขายผ่านหน้า <span class="inline-code">/inventory/:id</span> ระบบจะบันทึกประวัติราคาเก่า-ใหม่, ส่วนต่าง, ผู้ปรับ และเหตุผลไว้ในตาราง <span class="inline-code">price_histories</span> เพื่อตรวจสอบย้อนหลังได้
+          </div>
+        </div>
+
+        <!-- 3.4 POS & Void Sale -->
+        <h3 class="sub-heading" id="sec-3-4">3.4 กระบวนการขายหน้าร้าน POS แบบหลายช่องทาง และการยกเลิกบิล (Checkout &amp; Void Sale)</h3>
+        <p>
+          ในหน้า POS (<span class="inline-code">/sales/pos</span>) พนักงานสามารถยิงบาร์โค้ดหรือสแกนผ่านกล้อง รองรับการจ่ายเงินผสมหลายช่องทางในบิลเดียว และล็อก Snapshot ต้นทุนจริง ณ ขณะขายเพื่อไม่ให้กำไรย้อนหลังผิดเพี้ยน
+        </p>
+
+        <div class="diagram-card" data-diagram="wf-pos">
+          <div class="diagram-toolbar">
+            <div class="diagram-title">
+              <span>แผนภาพที่ 3.4: ลำดับการขายหน้าร้าน POS และการยกเลิกบิลขาย (Checkout &amp; Void Sale)</span>
+              <span class="diagram-hint">(ลากเพื่อเลื่อน • กดปุ่มเพื่อซูม)</span>
+            </div>
+            <div class="diagram-controls">
+              <button type="button" class="zoom-btn" data-action="zoom-in">＋ ซูมเข้า</button>
+              <button type="button" class="zoom-btn" data-action="zoom-out">－ ซูมออก</button>
+              <button type="button" class="zoom-btn" data-action="reset">⟲ 100%</button>
+              <button type="button" class="zoom-btn" data-action="fit">⛶ พอดีกรอบ</button>
+              <button type="button" class="zoom-btn" data-action="fullscreen">⤢ เต็มจอ</button>
+            </div>
+          </div>
+          <div class="diagram-viewport">
+            <pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor Cashier as พนักงานขาย (POS)
+    participant SaleCtrl as SalesController
+    participant SaleSvc as SaleService
+    participant DB as PostgreSQL
+
+    Note over Cashier,DB: ก. ขั้นตอนการขายหน้าร้าน (POS Checkout)
+    Cashier->>SaleCtrl: POST /api/sales (Items + Discounts + Multi-Tender Payments)
+    SaleCtrl->>SaleSvc: CreateSaleAsync()
+    SaleSvc->>DB: ตรวจสอบสินค้าทุกชิ้นต้องเป็น Status = Available หรือ Reserved
+    SaleSvc->>SaleSvc: สร้างเลขที่บิล SO-yyMM-xxxx &amp; คำนวณ Snapshot กำไรรายชิ้น
+    SaleSvc->>SaleSvc: ตรวจสอบผลรวมยอดชำระ (totalPaid &gt;= netAmount)
+    SaleSvc->>DB: อัปเดต InventoryItem (Status = Sold, SoldAt = UtcNow)
+    SaleSvc->>DB: บันทึก SaleOrder + SaleItems + SalePayments + StockMovement (Sell, -1)
+    SaleSvc-->>Cashier: คืน SaleOrderDto พร้อมเปิดหน้าใบเสร็จ / ใบรับประกัน (30 วัน)
+
+    Note over Cashier,DB: ข. ขั้นตอนการยกเลิกบิลขาย (Void Sale)
+    Cashier->>SaleCtrl: POST /api/sales/{id}/cancel (Reason)
+    SaleCtrl->>SaleSvc: CancelSaleAsync()
+    SaleSvc->>DB: ตรวจสอบ Status == Completed และ Reason ไม่ว่าง
+    SaleSvc->>DB: เปลี่ยน SaleOrder.Status = Cancelled พร้อมแนบเหตุผล
+    loop สำหรับสินค้าทุกชิ้นในบิลขาย
+        SaleSvc->>DB: คืนสถานะ InventoryItem (Status = Available, SoldAt = null)
+        SaleSvc->>DB: บันทึก StockMovement (Return, +1)
+    end
+    SaleSvc-->>Cashier: คืน SaleOrderDto สถานะ Cancelled
+            </pre>
+          </div>
+          <div class="diagram-caption">
+            <strong>คำอธิบาย:</strong> ตาราง <span class="inline-code">sale_items</span> เก็บค่า Snapshot ทั้ง <span class="inline-code">actual_cost</span>, <span class="inline-code">unit_price</span>, <span class="inline-code">discount</span>, <span class="inline-code">sub_total</span>, <span class="inline-code">gross_profit</span> และ <span class="inline-code">margin_percentage</span> ณ เวลาที่ขาย เพื่อให้รายงานผลกำไรคงที่แม้ข้อมูลอ้างอิงในอนาคตจะเปลี่ยนไป
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- SECTION 4: โครงสร้างฐานข้อมูล (Database Schema / ER Diagram) -->
+      <!-- ===================================================================== -->
+      <section class="doc-section" id="section-4">
+        <div class="section-header">
+          <span class="section-num">ส่วนที่ 4</span>
+          <h2>โครงสร้างฐานข้อมูล (Database Schema &amp; ER Diagram)</h2>
+        </div>
+
+        <p>
+          ฐานข้อมูล PostgreSQL (<span class="inline-code">mue2muedee</span>) กำหนดโครงสร้างผ่าน Entity Configurations ในโฟลเดอร์ <span class="inline-code">Configurations/</span> และแปลงชื่อตารางและคอลัมน์จาก C# <strong>PascalCase</strong> เป็น PostgreSQL <strong>snake_case</strong> อัตโนมัติด้วย <span class="inline-code">.UseSnakeCaseNamingConvention()</span> รวมทั้งหมด <strong>25 ตาราง</strong>
+        </p>
+
+        <h3 class="sub-heading" id="sec-4-1">4.1 แผนภาพความสัมพันธ์ฐานข้อมูล (ER Diagram — ครบทั้ง 25 ตาราง)</h3>
+
+        <div class="diagram-card" data-diagram="er-schema">
+          <div class="diagram-toolbar">
+            <div class="diagram-title">
+              <span>แผนภาพที่ 4.1: Entity-Relationship Diagram (PostgreSQL Snake Case Schema)</span>
+              <span class="diagram-hint">(แนะนำ: กด "⤢ เต็มจอ" หรือลาก/ซูมเพื่ออ่านฟิลด์ทุกตารางได้ชัดเจน)</span>
+            </div>
+            <div class="diagram-controls">
+              <button type="button" class="zoom-btn" data-action="zoom-in">＋ ซูมเข้า</button>
+              <button type="button" class="zoom-btn" data-action="zoom-out">－ ซูมออก</button>
+              <button type="button" class="zoom-btn" data-action="reset">⟲ 100%</button>
+              <button type="button" class="zoom-btn" data-action="fit">⛶ พอดีกรอบ</button>
+              <button type="button" class="zoom-btn" data-action="fullscreen">⤢ เต็มจอ</button>
+            </div>
+          </div>
+          <div class="diagram-viewport tall">
+            <pre class="mermaid">
+erDiagram
+    stores {
+        uuid id PK
+        varchar name
+        varchar code UK
+        varchar primary_color
+        numeric default_target_margin
+        boolean is_active
+        boolean is_deleted
+    }
+    users {
+        uuid id PK
+        varchar email UK
+        varchar username UK
+        varchar password_hash
+        varchar full_name
+        boolean is_super_admin
+        boolean is_active
+    }
+    user_stores {
+        uuid id PK
+        uuid user_id FK
+        uuid store_id FK
+        int role "Owner=1 Admin=2 Staff=3"
+        boolean is_active
+    }
+    refresh_tokens {
+        uuid id PK
+        uuid user_id FK
+        varchar token_hash UK
+        timestamptz expires_at
+        timestamptz revoked_at
+    }
+    audit_logs {
+        uuid id PK
+        uuid store_id
+        uuid user_id
+        varchar action
+        varchar entity_name
+        varchar entity_id
+    }
+    brands {
+        uuid id PK
+        uuid store_id FK
+        varchar name
+        boolean is_active
+    }
+    categories {
+        uuid id PK
+        uuid store_id FK
+        varchar name
+        int type "Camera=1 Lens=2 Flash=3"
+        numeric target_margin
+    }
+    condition_grades {
+        uuid id PK
+        uuid store_id FK
+        varchar grade_code
+        varchar grade_name
+        int sort_order
+    }
+    customers {
+        uuid id PK
+        uuid store_id FK
+        int customer_type "Seller=1 Buyer=2 Both=3"
+        varchar name
+        varchar phone
+        varchar id_card_number
+    }
+    products {
+        uuid id PK
+        uuid store_id FK
+        uuid brand_id FK
+        uuid category_id FK
+        varchar model_name
+        varchar product_code
+        numeric default_selling_price
+    }
+    inventory_items {
+        uuid id PK
+        uuid store_id FK
+        varchar sku UK
+        uuid product_id FK
+        varchar serial_number
+        uuid condition_grade_id FK
+        uuid customer_id FK
+        int status "Available=3 Sold=5"
+        numeric purchase_cost
+        numeric actual_cost
+        numeric selling_price
+        int shutter_count
+        bytea row_version
+    }
+    inventory_item_images {
+        uuid id PK
+        uuid store_id FK
+        uuid inventory_item_id FK
+        varchar url
+        int sort_order
+    }
+    inventory_costs {
+        uuid id PK
+        uuid store_id FK
+        uuid inventory_item_id FK
+        int cost_type
+        numeric amount
+        timestamptz incurred_at
+    }
+    price_histories {
+        uuid id PK
+        uuid store_id FK
+        uuid inventory_item_id FK
+        numeric old_price
+        numeric new_price
+        varchar changed_by
+    }
+    stock_movements {
+        uuid id PK
+        uuid store_id FK
+        uuid inventory_item_id FK
+        int movement_type
+        int quantity
+        varchar reference_number
+    }
+    purchase_orders {
+        uuid id PK
+        uuid store_id FK
+        varchar po_number UK
+        uuid customer_id FK
+        int status
+        numeric total_max_buy_price
+        numeric total_offered_price
+        numeric total_agreed_price
+        boolean needs_approval
+    }
+    purchase_items {
+        uuid id PK
+        uuid store_id FK
+        uuid purchase_order_id FK
+        uuid product_id FK
+        uuid condition_grade_id FK
+        uuid inventory_item_id FK
+        varchar serial_number
+        numeric max_buy_price
+        numeric offered_price
+        numeric agreed_price
+    }
+    purchase_payments {
+        uuid id PK
+        uuid store_id FK
+        uuid purchase_order_id FK
+        int payment_method
+        numeric amount
+        timestamptz paid_at
+    }
+    inspection_templates {
+        uuid id PK
+        uuid store_id FK
+        int category_type
+        varchar name
+    }
+    inspection_template_items {
+        uuid id PK
+        uuid template_id FK
+        varchar category_group
+        varchar title
+        boolean is_critical
+    }
+    inspection_results {
+        uuid id PK
+        uuid purchase_item_id FK
+        uuid inspection_template_item_id FK
+        int result "Pass=1 Minor=2 Fail=3"
+    }
+    sale_orders {
+        uuid id PK
+        uuid store_id FK
+        varchar sale_number UK
+        uuid customer_id FK
+        int status
+        numeric net_amount
+        numeric total_cost
+        numeric total_gross_profit
+    }
+    sale_items {
+        uuid id PK
+        uuid store_id FK
+        uuid sale_order_id FK
+        uuid inventory_item_id FK
+        uuid product_id FK
+        numeric actual_cost
+        numeric sub_total
+        numeric gross_profit
+    }
+    sale_payments {
+        uuid id PK
+        uuid store_id FK
+        uuid sale_order_id FK
+        int payment_method
+        numeric amount
+    }
+    sticker_templates {
+        uuid id PK
+        uuid store_id FK
+        varchar name
+        boolean is_default
+        int columns_count
+        varchar code_style
+    }
+
+    users ||--o{ user_stores : "มีสิทธิ์ในร้าน"
+    stores ||--o{ user_stores : "มีสมาชิก"
+    users ||--o{ refresh_tokens : "ถือครอง Token"
+    stores ||--o{ brands : "แยกตามร้าน"
+    stores ||--o{ categories : "แยกตามร้าน"
+    stores ||--o{ condition_grades : "แยกตามร้าน"
+    stores ||--o{ customers : "แยกตามร้าน"
+    stores ||--o{ products : "แยกตามร้าน"
+    stores ||--o{ sticker_templates : "ตั้งค่าสติ๊กเกอร์"
+    stores ||--o{ inspection_templates : "เกณฑ์ตรวจสภาพ"
+    brands ||--o{ products : "จัดกลุ่มแบรนด์"
+    categories ||--o{ products : "จัดหมวดหมู่"
+    products ||--o{ inventory_items : "เป็นต้นแบบรุ่น"
+    condition_grades ||--o{ inventory_items : "กำหนดเกรด"
+    customers ||--o{ inventory_items : "ผู้ขายเครื่องเข้า"
+    inventory_items ||--o{ inventory_item_images : "มีหลายรูปภาพ"
+    inventory_items ||--o{ inventory_costs : "มีต้นทุนแฝง"
+    inventory_items ||--o{ price_histories : "ประวัติปรับราคา"
+    inventory_items ||--o{ stock_movements : "ประวัติเข้าออก"
+    customers ||--o{ purchase_orders : "ผู้ขายสินค้า"
+    purchase_orders ||--o{ purchase_items : "ประกอบด้วยรายการ"
+    purchase_orders ||--o{ purchase_payments : "จ่ายเงินซื้อเข้า"
+    products ||--o{ purchase_items : "รุ่นที่รับซื้อ"
+    condition_grades ||--o{ purchase_items : "เกรดที่ประเมิน"
+    inventory_items |o--o| purchase_items : "รับเข้าคลัง 1 ต่อ 1"
+    inspection_templates ||--o{ inspection_template_items : "มีหัวข้อตรวจ"
+    purchase_items ||--o{ inspection_results : "บันทึกผลตรวจ"
+    inspection_template_items ||--o{ inspection_results : "อ้างอิงหัวข้อ"
+    customers |o--o{ sale_orders : "ผู้ซื้อ (หรือ Walk-in)"
+    sale_orders ||--o{ sale_items : "รายการสินค้าในบิล"
+    sale_orders ||--o{ sale_payments : "รับชำระหลายช่องทาง"
+    inventory_items ||--o{ sale_items : "ถูกขายในบิล"
+    products ||--o{ sale_items : "อ้างอิงรุ่น"
+            </pre>
+          </div>
+          <div class="diagram-caption">
+            <strong>คำอธิบาย:</strong> ตารางระดับธุรกิจส่วนใหญ่สืบทอด <span class="inline-code">ITenantEntity</span> (มีคอลัมน์ <span class="inline-code">store_id</span>) เพื่อบังคับใช้ Tenant Isolation อัตโนมัติ ส่วนความสัมพันธ์ <span class="inline-code">users ↔ stores</span> เชื่อมแบบ Many-to-Many (N:M) ผ่านตาราง <span class="inline-code">user_stores</span> พร้อมคอลัมน์ <span class="inline-code">role</span>
+          </div>
+        </div>
+
+        <h3 class="sub-heading" id="sec-4-2">4.2 คำอธิบายตารางและฟิลด์สำคัญ (Data Dictionary ทั้ง 25 ตาราง)</h3>
+
+        <h4 class="mini-heading">กลุ่มที่ 1: ระบบผู้ใช้งาน ร้านค้า และความปลอดภัย (Identity, Multi-Tenancy &amp; Audit)</h4>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ตาราง DB (C# Entity)</th>
+                <th>สัญญา (Contracts)</th>
+                <th>Primary / Foreign Keys</th>
+                <th>ฟิลด์สำคัญและหน้าที่</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>stores</strong><br><span class="inline-code">Store</span></td>
+                <td><span class="badge badge-slate">Auditable</span> <span class="badge badge-amber">SoftDelete</span></td>
+                <td>PK: <span class="inline-code">id</span><br>UK: <span class="inline-code">code</span></td>
+                <td><span class="inline-code">name</span>, <span class="inline-code">code</span> (รหัสร้านสำหรับ Public URL), <span class="inline-code">logo_url</span>, <span class="inline-code">primary_color</span>, <span class="inline-code">default_target_margin</span> (15.0%), <span class="inline-code">line</span>, <span class="inline-code">facebook</span>, <span class="inline-code">is_active</span></td>
+              </tr>
+              <tr>
+                <td><strong>users</strong><br><span class="inline-code">User</span></td>
+                <td><span class="badge badge-slate">Auditable</span> <span class="badge badge-amber">SoftDelete</span></td>
+                <td>PK: <span class="inline-code">id</span><br>UK: <span class="inline-code">email</span>, <span class="inline-code">username</span></td>
+                <td><span class="inline-code">password_hash</span> (PBKDF2), <span class="inline-code">full_name</span>, <span class="inline-code">phone_number</span>, <span class="inline-code">is_super_admin</span> (เข้าจัดการทุกสาขาได้), <span class="inline-code">is_active</span></td>
+              </tr>
+              <tr>
+                <td><strong>user_stores</strong><br><span class="inline-code">UserStore</span></td>
+                <td><span class="badge badge-slate">Auditable</span></td>
+                <td>PK: <span class="inline-code">id</span><br>FK: <span class="inline-code">user_id</span>, <span class="inline-code">store_id</span></td>
+                <td>ตารางเชื่อม N:M ระบุ <span class="inline-code">role</span> (<span class="inline-code">Owner</span>/<span class="inline-code">Admin</span>/<span class="inline-code">Staff</span>) และ <span class="inline-code">is_active</span> เฉพาะร้านนั้นๆ</td>
+              </tr>
+              <tr>
+                <td><strong>refresh_tokens</strong><br><span class="inline-code">RefreshToken</span></td>
+                <td><span class="badge badge-slate">BaseEntity</span></td>
+                <td>PK: <span class="inline-code">id</span><br>FK: <span class="inline-code">user_id</span></td>
+                <td><span class="inline-code">token_hash</span>, <span class="inline-code">expires_at</span> (7 วัน), <span class="inline-code">revoked_at</span>, <span class="inline-code">created_by_ip</span>, <span class="inline-code">replaced_by_token_hash</span></td>
+              </tr>
+              <tr>
+                <td><strong>audit_logs</strong><br><span class="inline-code">AuditLog</span></td>
+                <td><span class="badge badge-slate">BaseEntity</span></td>
+                <td>PK: <span class="inline-code">id</span><br>(Nullable <span class="inline-code">store_id</span>, <span class="inline-code">user_id</span>)</td>
+                <td><span class="inline-code">action</span> (ADDED/MODIFIED/DELETED), <span class="inline-code">entity_name</span>, <span class="inline-code">entity_id</span>, <span class="inline-code">old_values</span> (JSON), <span class="inline-code">new_values</span> (JSON)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4 class="mini-heading">กลุ่มที่ 2: ข้อมูลหลักและทะเบียน (Master Data &amp; Customers)</h4>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ตาราง DB (C# Entity)</th>
+                <th>สัญญา (Contracts)</th>
+                <th>Primary / Foreign Keys</th>
+                <th>ฟิลด์สำคัญและหน้าที่</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>brands</strong> (<span class="inline-code">Brand</span>)</td>
+                <td><span class="badge badge-blue">Tenant</span> <span class="badge badge-amber">SoftDelete</span></td>
+                <td>PK: <span class="inline-code">id</span>, FK: <span class="inline-code">store_id</span></td>
+                <td><span class="inline-code">name</span> (Sony, Canon ฯลฯ), <span class="inline-code">description</span>, <span class="inline-code">logo_url</span>, <span class="inline-code">is_active</span></td>
+              </tr>
+              <tr>
+                <td><strong>categories</strong> (<span class="inline-code">Category</span>)</td>
+                <td><span class="badge badge-blue">Tenant</span> <span class="badge badge-amber">SoftDelete</span></td>
+                <td>PK: <span class="inline-code">id</span>, FK: <span class="inline-code">store_id</span></td>
+                <td><span class="inline-code">name</span>, <span class="inline-code">type</span> (<span class="inline-code">CategoryType</span> ใช้ระบุ prefix SKU และ Checklist), <span class="inline-code">target_margin</span></td>
+              </tr>
+              <tr>
+                <td><strong>condition_grades</strong> (<span class="inline-code">ConditionGrade</span>)</td>
+                <td><span class="badge badge-blue">Tenant</span> <span class="badge badge-amber">SoftDelete</span></td>
+                <td>PK: <span class="inline-code">id</span>, FK: <span class="inline-code">store_id</span></td>
+                <td><span class="inline-code">grade_code</span> (A+, A, B), <span class="inline-code">grade_name</span>, <span class="inline-code">description</span>, <span class="inline-code">sort_order</span></td>
+              </tr>
+              <tr>
+                <td><strong>customers</strong> (<span class="inline-code">Customer</span>)</td>
+                <td><span class="badge badge-blue">Tenant</span> <span class="badge badge-amber">SoftDelete</span></td>
+                <td>PK: <span class="inline-code">id</span>, FK: <span class="inline-code">store_id</span></td>
+                <td><span class="inline-code">customer_type</span>, <span class="inline-code">name</span>, <span class="inline-code">phone</span>, <span class="inline-code">id_card_number</span> (สำหรับสัญญาซื้อขาย), <span class="inline-code">line_id</span>, <span class="inline-code">bank_name</span>, <span class="inline-code">bank_account_number</span></td>
+              </tr>
+              <tr>
+                <td><strong>products</strong> (<span class="inline-code">Product</span>)</td>
+                <td><span class="badge badge-blue">Tenant</span> <span class="badge badge-amber">SoftDelete</span></td>
+                <td>PK: <span class="inline-code">id</span><br>FK: <span class="inline-code">store_id</span>, <span class="inline-code">brand_id</span>, <span class="inline-code">category_id</span></td>
+                <td><span class="inline-code">model_name</span> (เช่น Alpha 7 IV), <span class="inline-code">product_code</span>, <span class="inline-code">default_selling_price</span>, <span class="inline-code">image_url</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4 class="mini-heading">กลุ่มที่ 3: คลังสินค้ารายชิ้น ต้นทุนแฝง ราคาขาย และสติ๊กเกอร์ (Inventory, Costing &amp; Stickers)</h4>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ตาราง DB (C# Entity)</th>
+                <th>สัญญา (Contracts)</th>
+                <th>Primary / Foreign Keys</th>
+                <th>ฟิลด์สำคัญและหน้าที่</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>inventory_items</strong><br><span class="inline-code">InventoryItem</span></td>
+                <td><span class="badge badge-blue">Tenant</span> <span class="badge badge-amber">SoftDelete</span></td>
+                <td>PK: <span class="inline-code">id</span>, UK: <span class="inline-code">sku</span><br>FK: <span class="inline-code">store_id</span>, <span class="inline-code">product_id</span>, <span class="inline-code">condition_grade_id</span>, <span class="inline-code">customer_id</span></td>
+                <td><span class="inline-code">serial_number</span>, <span class="inline-code">status</span>, <span class="inline-code">purchase_cost</span>, <span class="inline-code">actual_cost</span> (ต้นทุนรวม), <span class="inline-code">selling_price</span>, <span class="inline-code">shutter_count</span>, <span class="inline-code">accessories</span>, <span class="inline-code">defects</span>, <span class="inline-code">received_at</span>, <span class="inline-code">sold_at</span>, <span class="inline-code">row_version</span></td>
+              </tr>
+              <tr>
+                <td><strong>inventory_item_images</strong><br><span class="inline-code">InventoryItemImage</span></td>
+                <td><span class="badge badge-blue">Tenant</span> <span class="badge badge-slate">Auditable</span></td>
+                <td>PK: <span class="inline-code">id</span><br>FK: <span class="inline-code">store_id</span>, <span class="inline-code">inventory_item_id</span></td>
+                <td><span class="inline-code">url</span> (รูปภาพรายชิ้นไม่จำกัดจำนวน), <span class="inline-code">sort_order</span> (0 = รูปปกที่แสดงหน้าร้าน)</td>
+              </tr>
+              <tr>
+                <td><strong>inventory_costs</strong><br><span class="inline-code">InventoryCost</span></td>
+                <td><span class="badge badge-blue">Tenant</span> <span class="badge badge-slate">Auditable</span></td>
+                <td>PK: <span class="inline-code">id</span><br>FK: <span class="inline-code">store_id</span>, <span class="inline-code">inventory_item_id</span></td>
+                <td><span class="inline-code">cost_type</span> (Purchase/Repair/Cleaning/Shipping/Other), <span class="inline-code">amount</span>, <span class="inline-code">description</span>, <span class="inline-code">incurred_at</span></td>
+              </tr>
+              <tr>
+                <td><strong>price_histories</strong><br><span class="inline-code">PriceHistory</span></td>
+                <td><span class="badge badge-blue">Tenant</span> <span class="badge badge-slate">Auditable</span></td>
+                <td>PK: <span class="inline-code">id</span><br>FK: <span class="inline-code">store_id</span>, <span class="inline-code">inventory_item_id</span></td>
+                <td><span class="inline-code">old_price</span>, <span class="inline-code">new_price</span>, <span class="inline-code">reason</span>, <span class="inline-code">changed_by</span>, <span class="inline-code">changed_at</span></td>
+              </tr>
+              <tr>
+                <td><strong>stock_movements</strong><br><span class="inline-code">StockMovement</span></td>
+                <td><span class="badge badge-blue">Tenant</span></td>
+                <td>PK: <span class="inline-code">id</span><br>FK: <span class="inline-code">store_id</span>, <span class="inline-code">inventory_item_id</span></td>
+                <td><span class="inline-code">movement_type</span> (Receive/Reserve/Sell/Return/CostAdjustment ฯลฯ), <span class="inline-code">quantity</span> (+1/-1/0), <span class="inline-code">reference_number</span> (PO/SO), <span class="inline-code">notes</span></td>
+              </tr>
+              <tr>
+                <td><strong>sticker_templates</strong><br><span class="inline-code">StickerTemplate</span></td>
+                <td><span class="badge badge-blue">Tenant</span> <span class="badge badge-amber">SoftDelete</span></td>
+                <td>PK: <span class="inline-code">id</span>, FK: <span class="inline-code">store_id</span></td>
+                <td><span class="inline-code">name</span>, <span class="inline-code">is_default</span>, <span class="inline-code">is_continuous_roll</span>, <span class="inline-code">paper_width_mm</span>, <span class="inline-code">label_width_mm</span>, <span class="inline-code">label_height_mm</span>, <span class="inline-code">columns_count</span>, <span class="inline-code">code_style</span>, <span class="inline-code">encode_value</span>, ฟิลด์เปิด/ปิดข้อมูลบนป้าย</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4 class="mini-heading">กลุ่มที่ 4: การรับซื้อและตรวจสภาพสินค้า (Purchase &amp; Inspection)</h4>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ตาราง DB (C# Entity)</th>
+                <th>สัญญา (Contracts)</th>
+                <th>Primary / Foreign Keys</th>
+                <th>ฟิลด์สำคัญและหน้าที่</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>purchase_orders</strong><br><span class="inline-code">PurchaseOrder</span></td>
+                <td><span class="badge badge-blue">Tenant</span> <span class="badge badge-amber">SoftDelete</span></td>
+                <td>PK: <span class="inline-code">id</span>, UK: <span class="inline-code">po_number</span><br>FK: <span class="inline-code">store_id</span>, <span class="inline-code">customer_id</span></td>
+                <td><span class="inline-code">status</span>, <span class="inline-code">total_estimated_value</span>, <span class="inline-code">total_max_buy_price</span>, <span class="inline-code">total_offered_price</span>, <span class="inline-code">total_agreed_price</span>, <span class="inline-code">needs_approval</span>, <span class="inline-code">approved_by</span>, <span class="inline-code">purchase_date</span></td>
+              </tr>
+              <tr>
+                <td><strong>purchase_items</strong><br><span class="inline-code">PurchaseItem</span></td>
+                <td><span class="badge badge-blue">Tenant</span> <span class="badge badge-slate">Auditable</span></td>
+                <td>PK: <span class="inline-code">id</span><br>FK: <span class="inline-code">purchase_order_id</span>, <span class="inline-code">product_id</span>, <span class="inline-code">condition_grade_id</span>, <span class="inline-code">inventory_item_id</span></td>
+                <td><span class="inline-code">serial_number</span>, <span class="inline-code">shutter_count</span>, <span class="inline-code">expected_sale_price</span>, <span class="inline-code">estimated_repair_cost</span>, <span class="inline-code">estimated_cleaning_cost</span>, <span class="inline-code">missing_accessories_deduction</span>, <span class="inline-code">max_buy_price</span>, <span class="inline-code">offered_price</span>, <span class="inline-code">agreed_price</span></td>
+              </tr>
+              <tr>
+                <td><strong>purchase_payments</strong><br><span class="inline-code">PurchasePayment</span></td>
+                <td><span class="badge badge-blue">Tenant</span></td>
+                <td>PK: <span class="inline-code">id</span>, FK: <span class="inline-code">store_id</span>, <span class="inline-code">purchase_order_id</span></td>
+                <td><span class="inline-code">payment_method</span>, <span class="inline-code">amount</span> (จ่ายเงินออกจากร้านให้ผู้ขาย), <span class="inline-code">paid_at</span>, <span class="inline-code">reference_number</span>, <span class="inline-code">proof_url</span></td>
+              </tr>
+              <tr>
+                <td><strong>inspection_templates</strong><br><span class="inline-code">InspectionTemplate</span></td>
+                <td><span class="badge badge-blue">Tenant</span> <span class="badge badge-amber">SoftDelete</span></td>
+                <td>PK: <span class="inline-code">id</span>, FK: <span class="inline-code">store_id</span></td>
+                <td><span class="inline-code">category_type</span>, <span class="inline-code">name</span>, <span class="inline-code">is_active</span> (แม่แบบรายการตรวจตามหมวดหมู่)</td>
+              </tr>
+              <tr>
+                <td><strong>inspection_template_items</strong><br><span class="inline-code">InspectionTemplateItem</span></td>
+                <td><span class="badge badge-slate">BaseEntity</span></td>
+                <td>PK: <span class="inline-code">id</span>, FK: <span class="inline-code">template_id</span></td>
+                <td><span class="inline-code">category_group</span>, <span class="inline-code">title</span>, <span class="inline-code">sort_order</span>, <span class="inline-code">is_critical</span> (จุดสำคัญ)</td>
+              </tr>
+              <tr>
+                <td><strong>inspection_results</strong><br><span class="inline-code">InspectionResult</span></td>
+                <td><span class="badge badge-slate">BaseEntity</span></td>
+                <td>PK: <span class="inline-code">id</span><br>FK: <span class="inline-code">purchase_item_id</span>, <span class="inline-code">inspection_template_item_id</span></td>
+                <td><span class="inline-code">result</span> (Pass/MinorIssue/Fail/NotApplicable), <span class="inline-code">notes</span>, <span class="inline-code">photo_url</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h4 class="mini-heading">กลุ่มที่ 5: ระบบขายหน้าร้านและการรับชำระเงิน (Sales &amp; POS)</h4>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ตาราง DB (C# Entity)</th>
+                <th>สัญญา (Contracts)</th>
+                <th>Primary / Foreign Keys</th>
+                <th>ฟิลด์สำคัญและหน้าที่</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>sale_orders</strong><br><span class="inline-code">SaleOrder</span></td>
+                <td><span class="badge badge-blue">Tenant</span> <span class="badge badge-amber">SoftDelete</span></td>
+                <td>PK: <span class="inline-code">id</span>, UK: <span class="inline-code">sale_number</span><br>FK: <span class="inline-code">store_id</span>, <span class="inline-code">customer_id</span></td>
+                <td><span class="inline-code">customer_name</span>, <span class="inline-code">customer_phone</span>, <span class="inline-code">sale_date</span>, <span class="inline-code">status</span>, <span class="inline-code">total_amount</span>, <span class="inline-code">discount_amount</span>, <span class="inline-code">net_amount</span>, <span class="inline-code">total_cost</span>, <span class="inline-code">total_gross_profit</span>, <span class="inline-code">total_margin_percentage</span></td>
+              </tr>
+              <tr>
+                <td><strong>sale_items</strong><br><span class="inline-code">SaleItem</span></td>
+                <td><span class="badge badge-blue">Tenant</span></td>
+                <td>PK: <span class="inline-code">id</span><br>FK: <span class="inline-code">sale_order_id</span>, <span class="inline-code">inventory_item_id</span>, <span class="inline-code">product_id</span></td>
+                <td>เก็บ Snapshot ณ วันขาย: <span class="inline-code">product_model_name</span>, <span class="inline-code">sku</span>, <span class="inline-code">serial_number</span>, <span class="inline-code">actual_cost</span>, <span class="inline-code">unit_price</span>, <span class="inline-code">discount</span>, <span class="inline-code">sub_total</span>, <span class="inline-code">gross_profit</span>, <span class="inline-code">margin_percentage</span>, <span class="inline-code">warranty_days</span></td>
+              </tr>
+              <tr>
+                <td><strong>sale_payments</strong><br><span class="inline-code">SalePayment</span></td>
+                <td><span class="badge badge-blue">Tenant</span></td>
+                <td>PK: <span class="inline-code">id</span>, FK: <span class="inline-code">store_id</span>, <span class="inline-code">sale_order_id</span></td>
+                <td><span class="inline-code">payment_method</span>, <span class="inline-code">amount</span>, <span class="inline-code">reference_number</span> (รองรับ Multi-Tender หลายรายการต่อบิล), <span class="inline-code">paid_at</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="sub-heading" id="sec-4-3">4.3 Domain Enums ทั้ง 11 ตัวในระบบ</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ชื่อ Enum (C#)</th>
+                <th>ค่าที่เป็นไปได้ (Values &amp; Integer Codes)</th>
+                <th>การใช้งานในระบบ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="inline-code">StoreRole</span></td>
+                <td>Owner (1), Admin (2), Staff (3)</td>
+                <td>กำหนดสิทธิ์รายร้านค้าใน <span class="inline-code">user_stores</span> และ JWT Claim <span class="inline-code">role</span></td>
+              </tr>
+              <tr>
+                <td><span class="inline-code">InventoryStatus</span></td>
+                <td>Draft (1), PendingInspection (2), Available (3), Reserved (4), Sold (5), Repair (6), Returned (7), Damaged (8), WrittenOff (9)</td>
+                <td>สถานะวงจรชีวิตของสินค้าใน <span class="inline-code">inventory_items</span></td>
+              </tr>
+              <tr>
+                <td><span class="inline-code">PurchaseStatus</span></td>
+                <td>Draft (1), Appraising (2), Offered (3), Accepted (4), Rejected (5), Paid (6), Received (7), Cancelled (8)</td>
+                <td>State Machine ของใบรับซื้อใน <span class="inline-code">purchase_orders</span></td>
+              </tr>
+              <tr>
+                <td><span class="inline-code">SaleStatus</span></td>
+                <td>Draft (1), Completed (2), Cancelled (3), Refunded (4)</td>
+                <td>สถานะบิลขายหน้าร้านใน <span class="inline-code">sale_orders</span></td>
+              </tr>
+              <tr>
+                <td><span class="inline-code">PaymentMethod</span></td>
+                <td>Cash (1), BankTransfer (2), PromptPay (3), CreditCard (4), Other (99)</td>
+                <td>ช่องทางรับเงินขาย (POS) และจ่ายเงินซื้อเข้า (PO)</td>
+              </tr>
+              <tr>
+                <td><span class="inline-code">PaymentDirection</span></td>
+                <td>In (1 — รับจากลูกค้า), Out (2 — จ่ายให้ผู้ขาย)</td>
+                <td>ระบุทิศทางกระแสเงินสดในรายงาน</td>
+              </tr>
+              <tr>
+                <td><span class="inline-code">CostType</span></td>
+                <td>Purchase (1), Repair (2), Cleaning (3), Shipping (4), Other (99)</td>
+                <td>จำแนกหมวดต้นทุนย่อยใน <span class="inline-code">inventory_costs</span></td>
+              </tr>
+              <tr>
+                <td><span class="inline-code">CategoryType</span></td>
+                <td>Camera (1), Lens (2), Flash (3), Accessory (4), Other (99)</td>
+                <td>เลือกแม่แบบ Checklist และรหัสคำนำหน้า SKU (CAM/LEN/FLA/ACC)</td>
+              </tr>
+              <tr>
+                <td><span class="inline-code">CustomerType</span></td>
+                <td>Seller (1), Buyer (2), Both (3)</td>
+                <td>จำแนกผู้ขายสินค้าเข้าและผู้ซื้อหน้าร้านใน <span class="inline-code">customers</span></td>
+              </tr>
+              <tr>
+                <td><span class="inline-code">StockMovementType</span></td>
+                <td>Receive (1), Reserve (2), CancelReservation (3), Sell (4), Return (5), StatusChange (6), CostAdjustment (7), WriteOff (8)</td>
+                <td>บันทึกสมุดรายวันความเคลื่อนไหวสต็อก <span class="inline-code">stock_movements</span></td>
+              </tr>
+              <tr>
+                <td><span class="inline-code">InspectionItemResult</span></td>
+                <td>Pass (1), MinorIssue (2), Fail (3), NotApplicable (4)</td>
+                <td>ผลการตรวจสภาพแต่ละหัวข้อใน <span class="inline-code">inspection_results</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- SECTION 5: โครงสร้างโฟลเดอร์โปรเจกต์ -->
+      <!-- ===================================================================== -->
+      <section class="doc-section" id="section-5">
+        <div class="section-header">
+          <span class="section-num">ส่วนที่ 5</span>
+          <h2>โครงสร้างโฟลเดอร์โปรเจกต์ (Project Directory Structure)</h2>
+        </div>
+
+        <h3 class="sub-heading" id="sec-5-1">5.1 แผนผังโครงสร้างโฟลเดอร์ทั้ง Backend และ Frontend</h3>
+        <p>
+          ซอร์สโค้ดทั้งหมดอยู่ภายใต้โฟลเดอร์ <span class="inline-code">mue2muedee/src/</span> โดยแยก Backend ออกเป็น 4 Class Library / Web API ตามสถาปัตยกรรม Clean Architecture และวางโปรเจกต์ Angular SPA ไว้ใน <span class="inline-code">Mue2MueDee.Web/spa/</span>
+        </p>
+
+        <pre class="tree-box"><span class="tree-dir">MUE2MUEDEE/</span>
+├── <span class="tree-file">AGENTS.md</span>                              <span class="tree-note"># กฎมาตรฐานการพัฒนา (Clean Architecture, Naming, Angular Rules)</span>
+├── <span class="tree-dir">mue2muedee/src/</span>
+│   ├── <span class="tree-dir">Mue2MueDee.Domain/</span>                 <span class="tree-note"># [Layer 1] Core Domain (ไร้ Dependency ภายนอก)</span>
+│   │   ├── <span class="tree-dir">Common/</span>                        <span class="tree-note"># BaseEntity, AuditableEntity, ITenantEntity, ISoftDelete</span>
+│   │   ├── <span class="tree-dir">Entities/</span>                      <span class="tree-note"># 25 Domain Entities (Store, User, InventoryItem, PurchaseOrder, SaleOrder ฯลฯ)</span>
+│   │   └── <span class="tree-dir">Enums/</span>                         <span class="tree-note"># 11 Business Enums (StoreRole, InventoryStatus, PurchaseStatus ฯลฯ)</span>
+│   │
+│   ├── <span class="tree-dir">Mue2MueDee.Application/</span>            <span class="tree-note"># [Layer 2] Application &amp; Use Cases</span>
+│   │   ├── <span class="tree-dir">Common/</span>
+│   │   │   ├── <span class="tree-file">SequentialCode.cs</span>          <span class="tree-note"># ตัวสร้างรหัสเอกสารรันเลข PO-yyMM-xxxx, SO-yyMM-xxxx, SKU</span>
+│   │   │   ├── <span class="tree-dir">Exceptions/</span>                <span class="tree-note"># AppException (BadRequest, NotFound, Conflict, Forbidden, Unauthorized)</span>
+│   │   │   ├── <span class="tree-dir">Interfaces/</span>                <span class="tree-note"># IApplicationDbContext, ICurrentUser, ICurrentStore, IImageStorage, IJwtTokenService</span>
+│   │   │   └── <span class="tree-dir">Models/</span>                    <span class="tree-note"># ApiResponse&lt;T&gt; และ PagedResult&lt;T&gt;</span>
+│   │   ├── <span class="tree-dir">DTOs/</span>                          <span class="tree-note"># Request/Response Records แยกตามโมดูล (11 ไฟล์)</span>
+│   │   └── <span class="tree-dir">Services/</span>                      <span class="tree-note"># Business Services (Auth, Purchase, Inventory, Pricing, Sale, Analytics, Catalog ฯลฯ)</span>
+│   │
+│   ├── <span class="tree-dir">Mue2MueDee.Infrastructure/</span>         <span class="tree-note"># [Layer 3] Database, Security &amp; External Storage</span>
+│   │   ├── <span class="tree-dir">Identity/</span>                      <span class="tree-note"># CurrentUser, CurrentStore (ดึง Claims จาก HttpContext)</span>
+│   │   ├── <span class="tree-dir">Persistence/</span>
+│   │   │   ├── <span class="tree-file">ApplicationDbContext.cs</span>    <span class="tree-note"># Global Query Filters, Auto AuditLog, Soft Delete, StoreId Protection</span>
+│   │   │   ├── <span class="tree-file">DbInitializer.cs</span>           <span class="tree-note"># Auto-seed ข้อมูลเริ่มต้นและบัญชี Demo (Owner/Staff/SuperAdmin)</span>
+│   │   │   ├── <span class="tree-dir">Configurations/</span>            <span class="tree-note"># IEntityTypeConfiguration แยกครบทั้ง 25 Entities</span>
+│   │   │   └── <span class="tree-dir">Migrations/</span>                <span class="tree-note"># ประวัติ EF Core Migrations (PostgreSQL)</span>
+│   │   ├── <span class="tree-dir">Security/</span>                      <span class="tree-note"># JwtTokenService &amp; PasswordHasher</span>
+│   │   └── <span class="tree-dir">Storage/</span>                       <span class="tree-note"># CloudinaryImageStorage &amp; LocalImageStorage</span>
+│   │
+│   └── <span class="tree-dir">Mue2MueDee.Web/</span>                    <span class="tree-note"># [Layer 4] Presentation / Web API Host</span>
+│       ├── <span class="tree-file">Program.cs</span>                     <span class="tree-note"># Pipeline, JWT Auth, CORS, OpenAPI, HealthChecks, Auto-seed</span>
+│       ├── <span class="tree-dir">Configuration/</span>                 <span class="tree-note"># ApiResponseDefaults (Model Validation &amp; Auth Failure Envelope)</span>
+│       ├── <span class="tree-dir">Controllers/</span>                   <span class="tree-note"># 13 Thin Controllers สืบทอด ApiControllerBase</span>
+│       ├── <span class="tree-dir">Middleware/</span>                    <span class="tree-note"># ExceptionHandlingMiddleware</span>
+│       ├── <span class="tree-dir">App_Data/uploads/</span>              <span class="tree-note"># พื้นที่เก็บไฟล์อัปโหลดบน Local Disk (เมื่อไม่ใช้ Cloudinary)</span>
+│       └── <span class="tree-dir">spa/</span>                           <span class="tree-note"># โปรเจกต์ Frontend Angular 22+ Standalone (รันบน Port 4200)</span>
+│           ├── <span class="tree-dir">scripts/</span>                   <span class="tree-note"># สคริปต์ตรวจสอบมาตรฐาน (check-table-pagination, check-native-dialogs)</span>
+│           └── <span class="tree-dir">src/app/</span>
+│               ├── <span class="tree-file">app.routes.ts</span>          <span class="tree-note"># Routing หลักพร้อม Auth/SuperAdmin/Store Guards</span>
+│               ├── <span class="tree-dir">core/</span>                  <span class="tree-note"># auth/, guards/, interceptors/, loading/, notifications/, models/</span>
+│               ├── <span class="tree-dir">layout/</span>                <span class="tree-note"># main-layout.component (Sidebar, Header, Store Switcher)</span>
+│               ├── <span class="tree-dir">shared/</span>
+│               │   ├── <span class="tree-dir">components/</span>        <span class="tree-note"># app-textbox, app-number, app-select, app-datepicker, app-image-uploader, app-barcode, app-qrcode ฯลฯ</span>
+│               │   └── <span class="tree-dir">forms/</span>             <span class="tree-note"># Helpers &amp; Validation Messages สำหรับ Reactive Forms</span>
+│               └── <span class="tree-dir">features/</span>              <span class="tree-note"># โมดูลแยกตามฟีเจอร์ (auth, catalog, dashboard, inventory, master-data, purchase, reports, sales, store, super-admin)</span></pre>
+
+        <h3 class="sub-heading" id="sec-5-2">5.2 สรุปหน้าที่ของโฟลเดอร์และไฟล์สำคัญ</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>โฟลเดอร์ / ไฟล์</th>
+                <th>ความรับผิดชอบหลัก</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="inline-code">Mue2MueDee.Domain/Common/BaseEntity.cs</span></td>
+                <td>กำหนด Contracts พื้นฐาน ได้แก่ <span class="inline-code">BaseEntity&lt;TId&gt;</span>, <span class="inline-code">AuditableEntity&lt;TId&gt;</span>, <span class="inline-code">ITenantEntity</span> (บังคับคอลัมน์ <span class="inline-code">StoreId</span>) และ <span class="inline-code">ISoftDelete</span></td>
+              </tr>
+              <tr>
+                <td><span class="inline-code">Mue2MueDee.Application/Services/</span></td>
+                <td>ศูนย์รวม Business Rules ทั้งหมด เช่น การคำนวณ <span class="inline-code">MaxBuyPrice</span> ใน <span class="inline-code">PurchaseService</span>, สูตร <span class="inline-code">PricingService</span>, การตัดสต็อกและคืนสต็อกใน <span class="inline-code">SaleService</span></td>
+              </tr>
+              <tr>
+                <td><span class="inline-code">Mue2MueDee.Infrastructure/Persistence/</span></td>
+                <td>รวม <span class="inline-code">ApplicationDbContext.cs</span> ที่บังคับ Global Query Filter, Audit Trail, Soft Delete และการตั้งค่าคอลัมน์แยกตาม Entity ใน <span class="inline-code">Configurations/</span></td>
+              </tr>
+              <tr>
+                <td><span class="inline-code">Mue2MueDee.Web/Controllers/</span></td>
+                <td>รับ HTTP Request, แปลงผลลัพธ์ผ่าน <span class="inline-code">ApiControllerBase.Success()</span> / <span class="inline-code">CreatedSuccess()</span> รวมถึง <span class="inline-code">UploadsController</span> ที่จำกัดนามสกุลและขนาดไฟล์ (10 MB/ไฟล์)</td>
+              </tr>
+              <tr>
+                <td><span class="inline-code">spa/src/app/core/</span></td>
+                <td>ศูนย์กลางระบบความมั่นคงฝั่งหน้าเว็บ: แนบ JWT Bearer Token ผ่าน <span class="inline-code">auth.interceptor.ts</span>, รีเฟรช Token อัตโนมัติ, จัดการ Global Loading และ Toast Notifications</td>
+              </tr>
+              <tr>
+                <td><span class="inline-code">spa/src/app/shared/components/</span></td>
+                <td>ชุด Standalone Form &amp; UI Components ที่ Implement <span class="inline-code">ControlValueAccessor</span> ครบทุกตัว พร้อมคอมโพเนนต์บาร์โค้ด (<span class="inline-code">app-barcode</span>), QR (<span class="inline-code">app-qrcode</span>) และตัวอัปโหลดรูปภาพ</td>
+              </tr>
+              <tr>
+                <td><span class="inline-code">spa/src/app/features/</span></td>
+                <td>หน้าจอการทำงานทั้ง 10 ฟีเจอร์ แยกไฟล์ 3 ส่วน (.ts/.html/.css) ใช้ Angular Signals และ Feature-level Service &amp; Models ตามกฎใน <span class="inline-code">AGENTS.md</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout-emerald">
+          <strong>วิธีใช้งานแผนภาพและการส่งออกเป็นเอกสาร PDF:</strong>
+          เอกสารนี้รองรับการลากเลื่อน (Drag to Pan) และกดปุ่ม <strong>ซูมเข้า / ซูมออก / พอดีกรอบ / เต็มจอ</strong> บนทุกแผนภาพ Mermaid เมื่อกดปุ่ม <strong>🖨️ พิมพ์ / บันทึก PDF</strong> ที่มุมซ้ายล่าง (หรือ <span class="inline-code">Ctrl + P</span>) ระบบจะซ่อนแถบเมนูและปรับขนาดแผนภาพทั้งหมดให้พอดีหน้ากระดาษ A4 อัตโนมัติ
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    // 1. Initialize Mermaid
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      securityLevel: 'loose',
+      fontFamily: '"IBM Plex Sans Thai", "Sarabun", sans-serif',
+      themeVariables: {
+        primaryColor: '#e0f2fe',
+        primaryTextColor: '#0f172a',
+        primaryBorderColor: '#0284c7',
+        lineColor: '#475569',
+        secondaryColor: '#f8fafc',
+        tertiaryColor: '#f1f5f9',
+        fontSize: '14px'
+      },
+      flowchart: { useMaxWidth: false, htmlLabels: true, curve: 'basis' },
+      sequence: { useMaxWidth: false, actorMargin: 45, messageMargin: 35, mirrorActors: false },
+      er: { useMaxWidth: false, layoutDirection: 'TB', entityPadding: 14 }
+    });
+
+    const panZoomInstances = new Map();
+
+    function updateZoomTag(card, scale) {
+      const controls = card.querySelector('.diagram-controls');
+      if (!controls) return;
+      let tag = controls.querySelector('.zoom-level-tag');
+      if (!tag) {
+        tag = document.createElement('span');
+        tag.className = 'zoom-level-tag';
+        const resetBtn = controls.querySelector('[data-action="reset"]');
+        controls.insertBefore(tag, resetBtn || null);
+      }
+      tag.textContent = Math.round(scale * 100) + '%';
+    }
+
+    function attachFallbackPanZoom(card, viewport, svg) {
+      let scale = 1;
+      let tx = 0;
+      let ty = 0;
+      let dragging = false;
+      let startX = 0;
+      let startY = 0;
+
+      svg.style.transformOrigin = 'center center';
+      svg.style.transition = 'transform 0.08s ease-out';
+
+      const apply = () => {
+        svg.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+        updateZoomTag(card, scale);
+      };
+
+      viewport.addEventListener('mousedown', (e) => {
+        dragging = true;
+        startX = e.clientX - tx;
+        startY = e.clientY - ty;
+        svg.style.transition = 'none';
+      });
+      window.addEventListener('mousemove', (e) => {
+        if (!dragging) return;
+        tx = e.clientX - startX;
+        ty = e.clientY - startY;
+        apply();
+      });
+      window.addEventListener('mouseup', () => {
+        dragging = false;
+        svg.style.transition = 'transform 0.08s ease-out';
+      });
+      viewport.addEventListener('wheel', (e) => {
+        if (!e.ctrlKey && !e.metaKey) return;
+        e.preventDefault();
+        scale = Math.min(4, Math.max(0.3, scale * (e.deltaY < 0 ? 1.12 : 0.89)));
+        apply();
+      }, { passive: false });
+
+      apply();
+
+      return {
+        zoomIn: () => { scale = Math.min(4, scale * 1.25); apply(); },
+        zoomOut: () => { scale = Math.max(0.3, scale * 0.8); apply(); },
+        reset: () => { scale = 1; tx = 0; ty = 0; apply(); },
+        fit: () => { scale = 1; tx = 0; ty = 0; apply(); },
+        resize: () => {}
+      };
+    }
+
+    async function renderAndEnhanceDiagrams() {
+      await mermaid.run({ querySelector: '.mermaid' });
+
+      document.querySelectorAll('.diagram-card').forEach((card) => {
+        const key = card.getAttribute('data-diagram');
+        const viewport = card.querySelector('.diagram-viewport');
+        const svg = viewport ? viewport.querySelector('svg') : null;
+        if (!svg) return;
+
+        svg.removeAttribute('style');
+        svg.style.width = '100%';
+        svg.style.height = '100%';
+        svg.style.maxWidth = 'none';
+
+        let controller;
+        if (typeof window.svgPanZoom === 'function') {
+          try {
+            const pz = window.svgPanZoom(svg, {
+              zoomEnabled: true,
+              controlIconsEnabled: false,
+              fit: true,
+              center: true,
+              minZoom: 0.25,
+              maxZoom: 8,
+              zoomScaleSensitivity: 0.28,
+              mouseWheelZoomEnabled: false,
+              onZoom: (newZoom) => updateZoomTag(card, newZoom)
+            });
+            // Allow Ctrl + Mouse Wheel zoom without hijacking normal page scrolling
+            viewport.addEventListener('wheel', (e) => {
+              if (!e.ctrlKey && !e.metaKey) return;
+              e.preventDefault();
+              if (e.deltaY < 0) pz.zoomIn();
+              else pz.zoomOut();
+            }, { passive: false });
+
+            updateZoomTag(card, pz.getZoom());
+            controller = {
+              zoomIn: () => pz.zoomIn(),
+              zoomOut: () => pz.zoomOut(),
+              reset: () => { pz.resetZoom(); pz.center(); pz.fit(); updateZoomTag(card, pz.getZoom()); },
+              fit: () => { pz.resize(); pz.fit(); pz.center(); updateZoomTag(card, pz.getZoom()); },
+              resize: () => { pz.resize(); pz.fit(); pz.center(); updateZoomTag(card, pz.getZoom()); }
+            };
+          } catch (err) {
+            controller = attachFallbackPanZoom(card, viewport, svg);
+          }
+        } else {
+          controller = attachFallbackPanZoom(card, viewport, svg);
+        }
+
+        panZoomInstances.set(key, controller);
+
+        card.querySelectorAll('.zoom-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const action = btn.getAttribute('data-action');
+            if (action === 'zoom-in') controller.zoomIn();
+            else if (action === 'zoom-out') controller.zoomOut();
+            else if (action === 'reset') controller.reset();
+            else if (action === 'fit') controller.fit();
+            else if (action === 'fullscreen') {
+              const isFs = card.classList.toggle('is-fullscreen');
+              btn.textContent = isFs ? '✕ ออกจากเต็มจอ' : '⤢ เต็มจอ';
+              setTimeout(() => controller.resize(), 60);
+            }
+          });
+        });
+      });
+    }
+
+    // 2. Sidebar Active Highlighting via IntersectionObserver
+    function initScrollSpy() {
+      const links = Array.from(document.querySelectorAll('.sidebar-nav .nav-link'));
+      const targets = links
+        .map((link) => {
+          const id = link.getAttribute('href')?.replace('#', '');
+          const el = id ? document.getElementById(id) : null;
+          return el ? { link, el } : null;
+        })
+        .filter(Boolean);
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              links.forEach((l) => l.classList.remove('active'));
+              const match = targets.find((t) => t.el === entry.target);
+              if (match) match.link.classList.add('active');
+            }
+          });
+        },
+        { rootMargin: '-15% 0px -70% 0px', threshold: 0.01 }
+      );
+
+      targets.forEach((t) => observer.observe(t.el));
+
+      links.forEach((link) => {
+        link.addEventListener('click', () => {
+          if (window.innerWidth <= 960) {
+            document.getElementById('sidebar').classList.remove('open');
+          }
+        });
+      });
+    }
+
+    // 3. Sidebar Search Filter
+    function filterNav(query) {
+      const q = (query || '').trim().toLowerCase();
+      document.querySelectorAll('.sidebar-nav .nav-link').forEach((link) => {
+        const text = link.textContent.toLowerCase();
+        link.style.display = !q || text.includes(q) ? 'flex' : 'none';
+      });
+    }
+
+    function toggleMobileSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+    }
+
+    // Close fullscreen modal with Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.diagram-card.is-fullscreen').forEach((card) => {
+          card.classList.remove('is-fullscreen');
+          const fsBtn = card.querySelector('[data-action="fullscreen"]');
+          if (fsBtn) fsBtn.textContent = '⤢ เต็มจอ';
+          const key = card.getAttribute('data-diagram');
+          const ctrl = panZoomInstances.get(key);
+          if (ctrl) setTimeout(() => ctrl.resize(), 60);
+        });
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initScrollSpy();
+      renderAndEnhanceDiagrams();
+    });
+  </script>
+</body>
+</html>
